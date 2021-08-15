@@ -1,0 +1,17 @@
+{
+  "name": "evaluation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "spaceFillingCurve.js",
+  "dependencies": {
+    "hilbert-curve": "^2.0.5"
+  },
+  "devDependencies": {
+    "http-server": "^13.0.0"
+  },
+  "scripts": {
+    "start": "http-server ."
+  },
+  "author": "",
+  "license": "ISC"
+}

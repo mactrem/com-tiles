@@ -1,7 +1,10 @@
 ### Cloud Optimized Map Tiles (COM Tiles)
 
-Why?
-- in cloud native applications data are often stored in object stores (AWS S3, Azure Blob storage, ...)
+Inspired by [Cloud Optimized GeoTIFF](https://www.cogeo.org/)   
+
+What are COM Tiles
+- Most geospatial data formats were developed only with the POSIX filesystem access in mind
+- In cloud native applications data are often stored in object stores (AWS S3, Azure Blob Storage, ...)
 - The geo/map services run in separated environment e.g. in a docker container
 - current geospatial formats are build to be used on a classic server where the services have direct access to the files
   e.g. via posix calls (fopen)
@@ -12,6 +15,17 @@ Concept
 - Index
     - 0-8 download full index
     - 9-14 only parts of the index
+  
+Index Design
+- Client download full index for zoom 0-8 for the planet -> which size? (500k)
+- Clients can query parts of the index -> center of the map can be used starting point 
+- Every zoom level has to be requested with a separate http range request
+  - Batch zoom levels via multipart ranges (multipart/byteranges) -> Get Range: bytes=200-400,100-300,500-600
+
+Use Cases
+- Browsing maps in the browser
+- Downloading extracts for offline usage in apps
+- Downloading extracts for usage in offline capable MapServer
     
 Problems
 - No compression in range requests?
@@ -40,12 +54,18 @@ Design
   -> 3 bytes -> 16.8 MB
 -> varying index record size -> for z0-z15 4 bytes -> for >= z16 5 bytes -> better when uint max reached
     
+    
+This repo contains the following components: 
+- Specification
+- Generator: 
+  - convert tiles stored in a MBTiles database to a COM Tiles file
+  - The generated COM Tiles can be deployed to an cloud object storage like Azure Blob Storage or AWS S3
+- Server: 
+  - Proxy for providing COM Tiles via the XYZ tiling scheme to (map) clients
+- Client: 
+  - For accessing COM Tiles from an object storage 
+  - Integration in MapLibre GL JS
 
-TODO: 
+
+TODO:
 - Restricted to WebMercator?
-
-Components 
-- Generators
-    - convert MVT stored in a MBTiles database to a COM Tiles
-- MapServer
-- Map client

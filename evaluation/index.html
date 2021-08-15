@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Display Tiles</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+    const zoom = 9;
+
+    const map = new maplibregl.Map({
+        container: 'map',
+        style: {
+            'version': 8,
+            'sources': {
+                'raster-tiles': {
+                    'type': 'raster',
+                    'tiles': [
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+                    ],
+                    'tileSize': 256,
+                   }
+            },
+            'layers': [
+                {
+                    'id': 'osm',
+                    'type': 'raster',
+                    'source': 'raster-tiles',
+                    'minzoom': 0,
+                    'maxzoom': 22
+                }
+            ]
+        },
+        center: [11.581981, 48.135125],
+        zoom: zoom
+    });
+
+    map.on('load', function () {
+        const polygon = drawTileBounds(zoom);
+
+        map.addSource('tiles', {
+            'type': 'geojson',
+            'data': {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Polygon',
+                    'coordinates': polygon
+                }
+            }
+        });
+        map.addLayer({
+            'id': 'tiles',
+            'type': 'fill',
+            'source': 'tiles',
+            'layout': {},
+            'paint': {
+                'fill-color': '#000000',
+                'fill-opacity': 0.4
+            }
+        });
+    });
+
+    function drawTileBounds(zoom){
+        /*
+        * -> calculate index for lower bound and upper bound -> index in XYZ tiling scheme (Y axis direction down from the top) which corresponds to hilbert curve lib
+        * -> calculate lng/lat coordinates for every tile
+        * -> calculate the hilbert index for every tile
+        */
+        const {_ne: ne, _sw: sw} = map.getBounds();
+        const numTilesPerSide = 1 << zoom;
+        const tileSizeLng = 360 / numTilesPerSide;
+        const tileSizeLat = 180 / numTilesPerSide;
+
+        const xyzXIndex = Math.floor((sw.lng + 180) / tileSizeLng);
+        //const xyzYIndex = Math.floor((sw.lat * -1 + 90) / tileSizeLat); //xyz tiling scheme
+        const mercatorY = (180 - (180 / Math.PI * Math.log(Math.tan(Math.PI / 4 + sw.lat * Math.PI / 360)))) / 360; // normalized to 0 .... 1
+        const xyzYIndex = Math.floor(mercatorY / (1 / numTilesPerSide));
+        const tmsIndex = numTilesPerSide - xyzYIndex;
+
+        const polygon = [[  [xyzXIndex * tileSizeLng - 180, xyzIndexToLng(zoom, xyzYIndex)], //nw
+                            [xyzXIndex * tileSizeLng - 180, xyzIndexToLng(zoom, xyzYIndex +1)], //sw
+                            [(xyzXIndex+1) * tileSizeLng - 180, xyzIndexToLng(zoom, xyzYIndex +1)], //se
+                            [(xyzXIndex+1) * tileSizeLng - 180, xyzIndexToLng(zoom, xyzYIndex)], //ne
+                            [xyzXIndex * tileSizeLng - 180, xyzIndexToLng(zoom, xyzYIndex)] //nw
+                            //[xyzXIndex * tileSizeLng - 180, (xyzYIndex * tileSizeLng - 90) * -1] //nw
+                        ]];
+
+        return polygon;
+    }
+
+    function xyzIndexToLng(zoom, xyzYIndex){
+        const n=Math.PI-2*Math.PI*xyzYIndex /Math.pow(2,zoom);
+        return (180/Math.PI*Math.atan(0.5*(Math.exp(n)-Math.exp(-n))));
+    }
+
+</script>
+
+</body>
