@@ -1,5 +1,5 @@
 {
-  "name": "evaluation",
+  "name": "@com-tiles/viewer",
   "version": "1.0.0",
   "description": "",
   "main": "spaceFillingCurve.js",
@@ -10,7 +10,7 @@
     "http-server": "^13.0.0"
   },
   "scripts": {
-    "start": "http-server ."
+    "start": "../node_modules/.bin/http-server ."
   },
   "author": "",
   "license": "ISC"

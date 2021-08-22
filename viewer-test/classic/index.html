@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:style="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>Space-filling curve Viewer</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+
+    <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%;}
+        #container {  position: fixed; z-index: 2;}
+    </style>
+</head>
+<body>
+
+<!--
+- Description -> calculates a space-filling curve with the specified method for the given zoom level and viewport
+- Select zoom
+- Select method -> Space-filling curve, z-order, row-major order
+- Number of tiles and ranges
+- Display: range or order
+-->
+
+<div id="container">
+    <h5><span class="badge badge-secondary">Visualize a space-filling curve with the specified method for the given zoom level and viewport</span></h5>
+    Zoom Level:
+    <select id="zoom" class="form-select form-select-lg mb-3" aria-label=".form-select-lg example">
+        <option value="0" selected>0</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+    </select>
+
+    <div id="app">
+        {{ message }}
+    </div>
+</div>
+
+
+<div id="map"></div>
+
+<script src="index.js" type="module"> </script>
+
+</body>

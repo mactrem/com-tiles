@@ -1,6 +1,6 @@
 ### Cloud Optimized Map Tiles (COM Tiles)
 
-Inspired by [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of general map tiles.  
+Inspired by [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of general raster and vector map tiles.  
 
 What are COM Tiles
 - Most geospatial data formats were developed only with the POSIX filesystem access in mind
@@ -70,7 +70,7 @@ Design
 This repo contains the following components: 
 - Specification
 - Generator: 
-  - convert tiles stored in a MBTiles database to a COM Tiles file
+  - Convert tiles stored in a MBTiles database to a COM Tiles archive
   - The generated COM Tiles can be deployed to an cloud object storage like Azure Blob Storage or AWS S3
 - Server: 
   - Proxy for providing COM Tiles via the XYZ tiling scheme to (map) clients
@@ -81,3 +81,9 @@ This repo contains the following components:
 
 TODO:
 - Restricted to WebMercator?
+
+Tasks:
+- Create Website to switch between hilbert curve, z-order and row-major order and deploy to GitLab pages
+- Implement generator for creating a COM-Tiles archive
+- Host the COM-Tiles archive on S3 and implement a MapServer and deploy on AWS Lambda
+- Compare costs and performance

@@ -1,4 +1,5 @@
-import * as hilbertCurve from "./node_modules/hilbert-curve/dist/hilbert-curve.esm.js";
+import * as hilbertCurve from "hilbert-curve";
+import pointToIndex from "./zOrderCurve.js";
 
 const zoom = 10;
 
@@ -8,6 +9,13 @@ const map = new maplibregl.Map({
     center: [11.581981, 48.135125],
     zoom: 7 //zoom
 });
+
+var app = new Vue({
+    el: '#app',
+    data: {
+        message: 'Hello Vue!  adsdf'
+    }
+})
 
 map.on('load', function () {
     const polygons = drawTileBounds(zoom);
@@ -76,8 +84,8 @@ map.on('load', function () {
         'type': 'symbol',
         'source': 'tiles',
         'layout': {
-            //"text-field": ['get', 'index'],
-            "text-field": ['get', 'range'],
+            "text-field": ['get', 'zIndex'],
+            //"text-field": ['get', 'range'],
         },
     });
 });
@@ -102,6 +110,7 @@ function drawTileBounds(zoom){
             const tile = getPolygonFromIndex(column, row);
 
             const zIndex = hilbertCurve.pointToIndex({ x: tile.xIndex, y: tile.yIndex }, zoom);
+            //const zIndex = pointToIndex(tile.xIndex, tile.yIndex, zoom)
             tile.zIndex = zIndex;
             indices.push(zIndex);
 
