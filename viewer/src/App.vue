@@ -1,5 +1,5 @@
 <template>
-  <MapView zoom="9" curve="Z-Order" display="Range"/>
+  <MapView/>
 </template>
 
 <script lang="ts">

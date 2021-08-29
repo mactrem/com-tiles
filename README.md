@@ -4,12 +4,18 @@ Inspired by [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for t
 
 What are COM Tiles
 - Most geospatial data formats were developed only with the POSIX filesystem access in mind
-- In cloud native applications data are often stored in object stores (AWS S3, Azure Blob Storage, ...)
+- In cloud native applications large datasets are often stored in object stores (AWS S3, Azure Blob Storage, ...)
 - The geo/map services run in separated environment e.g. in a docker container
 - current geospatial formats are build to be used on a classic server where the services have direct access to the files
   e.g. via posix calls (fopen)
-- Use an object store like Amazon S3 as a spatial database -> no backend and database server needed
-- Client holds the logic for accessing the tiles 
+- Use an object store like Amazon S3 as a spatial database -> basically there is no backend and database server needed
+  - Using S3 as a spatial database can significantly reduce coasts compared to storing the large geospatial datasets in a dedicated database
+- Client holds the logic for accessing the tiles
+
+General
+- This projects evaluates a cloud native (serverless) architecture for MapServer to reduce coasts for large amount of geospatial data
+- A MapServer provides map tiles for map client
+ 
     
 Concept
 - Http range requests
@@ -36,7 +42,7 @@ General
 Use Cases
 - Browsing maps in the browser
 - Downloading extracts for offline usage in apps
-- Downloading extracts for usage in offline capable MapServer
+- Downloading extracts for hosting in dedicated on-premise infrastructure
     
 Problems
 - No compression in range requests?
