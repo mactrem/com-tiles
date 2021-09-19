@@ -1,43 +1,39 @@
 import sqlite3 from "sqlite3";
 import fs from "fs";
-//import util from "util";
+import {OSMTileMetadataBuilder} from "./metadata";
+import * as path from "path";
 
-const fileName = "../dist/test.cot"
-const mbTilesFile = "../data/zurich.mbtiles";
-const db = new sqlite3.Database(mbTilesFile);
+const fileName = path.join(__dirname, "../test.cot")
+const mbTilesFile = path.resolve("data/zurich.mbtiles");
 
 const magic = "COMT";
-const metadata = await getMetadata();
-const numTiles = await getNumberOfTiles();
-const numIndexEntries = numTiles;
-const tiles = await getTiles();
-const index = buildIndex(tiles);
 
-createComTile(fileName, metadata, index, tiles);
+(async()=>{
+    const db = new sqlite3.Database(mbTilesFile)
 
-debugger;
+    const metadata = await createMetadata(db);
+    //const numTiles = await getNumberOfTiles(db);
+    const tiles = await getTiles(db);
 
+    const index = buildIndex(tiles);
+    createComTile(fileName, metadata, index, tiles);
+})();
+
+/*
+* - create metadata
+*   -> bbox
+*   -> per Zoom clusterSize (e.g. 4096), startIndexColumn/Row, numColumns/Rows, cluster order defaults to Hilbert Curve
+* - write magic
+* - write metadata size
+* - write index and data in separate buffer in parallel
+* - merge index and data buffer
+* */
 function createComTile(fileName, metadata, index, tiles){
     //TODO: add magic at beginning of the file
     //TODO: add metdata
-
     //TOTO: use buffer for endianness -> writeInt32LE
     const stream = fs.createWriteStream(fileName, { encoding: 'binary' });
 
-    //write magic
-    stream.write(magic);
-
-    //Add metadata
-    //stream.write(metadata.minZoom);
-    //stream.write(metadata.maxZoom);
-    //stream.write(new Float64Array([metadata.bounds]));
-    //const buffer = Buffer.alloc(32);
-    //buffer.write
-    /*
-    * for(const coord of metadata.bounds){
-        stream.write(coord);
-    }
-    * */
     const metadataJson = JSON.stringify(metadata);
     const indexBuffer = Buffer.alloc(tiles.length * 8);
     for(let i = 0; i< index.length; i++){
@@ -46,6 +42,10 @@ function createComTile(fileName, metadata, index, tiles){
         indexBuffer.writeUInt32LE(index[i].size, offset + 4);
     }
 
+    //write magic
+    stream.write(magic);
+
+    //write metadata and index size
     const buffer = Buffer.alloc(4);
     //TODO: the other stuff also has to be written in le byte order
     buffer.writeUInt32LE(metadataJson.length);
@@ -77,6 +77,8 @@ function createComTile(fileName, metadata, index, tiles){
 function buildIndex(tiles){
     const index = [];
     let offset = 0;
+
+    //TODO: cluster tiles for every zoom level -> clusterWidth and clusterHeight
     for(const tile of tiles){
         const size = tile.length;
         index.push({offset, size});
@@ -86,7 +88,7 @@ function buildIndex(tiles){
     return index;
 }
 
-function getTiles(){
+function getTiles(db: sqlite3.Database){
     return new Promise((resolve, reject) => {
         //TODO: batch read
         //TODO: check if tms or xyz order for the y-axis -> here tms is assumed
@@ -101,7 +103,7 @@ function getTiles(){
     })
 }
 
-function getNumberOfTiles(){
+function getNumberOfTiles(db: sqlite3.Database){
     //return util.promisify(db.get)("SELECT count(*) from map;");
     return new Promise((resolve, reject) => {
         db.get("SELECT count(*) from map;", (err, row) => {
@@ -110,7 +112,7 @@ function getNumberOfTiles(){
     });
 }
 
-function getMetadata(){
+function createMetadata(db: sqlite3.Database){
     return new Promise((resolve, reject) => {
         db.all("SELECT name, value FROM metadata;", (err, rows) => {
             if(err){
@@ -118,45 +120,31 @@ function getMetadata(){
                 return;
             }
 
-            const metadata = {};
+            const metadataBuilder = new OSMTileMetadataBuilder();
             for(const row of rows){
-                const name = row.name;
                 switch(row.name){
                     case "bounds":
-                        metadata.bounds = row.value.split(",").map(value => parseFloat(value.trim()));
+                        metadataBuilder.setBoundingBox(row.value.split(",").map(value => parseFloat(value.trim())));
                         break;
                     case "minzoom":
-                        metadata.minZoom = parseInt(row.value, 10);
+                        metadataBuilder.setMinZoom(parseInt(row.value, 10));
                         break;
                     case "maxzoom":
-                        metadata.maxZoom = parseInt(row.value, 10);
+                        metadataBuilder.setMaxZoom(parseInt(row.value, 10));
+                        break;
+                    case "format":
+                        metadataBuilder.setTileFormat(row.value);
+                        break;
+                    case "attribution":
+                        metadataBuilder.setAttribution(row.value);
                         break;
                 }
             }
+
+            const metadata = metadataBuilder.build();
             resolve(metadata);
         });
     });
-}
-
-class Metadata{
-
-    constructor(bounds, minZoom, maxZoom) {
-        this.bounds = bounds;
-        this.minZoom = minZoom;
-        this.maxZoom = maxZoom;
-    }
-
-    get bounds() {
-        return this.bounds;
-    }
-
-    get minZoom(){
-        return this.minZoom;
-    }
-
-    get maxZoom(){
-        return this.maxZoom;
-    }
 }
 
 

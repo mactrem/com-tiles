@@ -1,0 +1,97 @@
+export enum CurveType{
+    ROW_MAJOR = "Row-Major",
+    HILBERT= "Hilbert",
+    Z_ORDER= "Z-Order"
+}
+
+export type BoundingBox = [minLon: number, minLat: number, maxLon: number, maxLat: number];
+export type LngLat = [lon: number, lat: number];
+
+export default class TileMatrixSet{
+    constructor(private readonly _indexCurveType = CurveType.ROW_MAJOR, private readonly tileMatrix: TileMatrix[]) {
+    }
+}
+
+
+/*
+In a TCRS (Tile matrix CRS), for each resolution, a tilematrix coordinate system groups underlyingTCRS pixels into square tiles and
+counts tiles with the origin at the upper left corner of the tiled space and increasing right (column axis, horizontal)
+and downwards (row axis, vertical) respectively
+ */
+export class TileMatrix{
+    /**
+     * @param zoom Zoom level.
+     * @param bounds Bounding box of the tiles.
+     * @param startTileIndexRow Start index of the row within the quadtree tile pyramid.
+     * @param startTileIndexColumn Start index of the column within the quadtree tile pyramid.
+     * @param numRows Number of rows.
+     * @param numColumns Number of columns.
+     * @param indexRowClusterSize Number of indexed tiles per index row cluster for the specified zoom level. Defaults to 1024.
+     * @param indexColumnClusterSize Number of indexed tiles per index column cluster for the specified zoom level. Defaults to 1024.
+     * @param indexOrder Defaults to hilbert curve.
+     */
+    /*private constructor(private readonly _zoom: number, private readonly _topLeft: LngLat, private readonly _startTileIndexRow: number, private readonly _startTileIndexColumn: number,
+                        private readonly _numRows, private readonly _numColumns, private readonly _indexRowClusterSize = 1024,
+                        private readonly _indexColumnClusterSize = 1024, ) {
+    }*/
+
+    private constructor(private readonly _zoom: number, private readonly _topLeft: LngLat,
+                        private readonly _matrixWidth, private readonly _matrixHeight,
+                        private readonly _indexRowClusterSize = 1024, private readonly _indexColumnClusterSize = 1024 ) {
+    }
+
+    static createOSMQuad(zoom: number, bounds: BoundingBox): TileMatrix{
+        /*const numTilePerSide = 2**zoom;
+        const maxLat = (2 * Math.atan(Math.pow(Math.E, Math.PI)) - Math.PI/2) * 180 / Math.PI;
+        const deltaLon = bounds[2] - bounds[0];
+        const deltaLat = bounds[3] - bounds[1];
+        const tileSizeLon = 360 / numTilePerSide;
+        const tileSizeLat = maxLat * 2 / numTilePerSide; //TODO: or 170 for WebMercator?*/
+
+        const startIndexColumn = this.lon2tile(bounds[0], zoom);
+        const startIndexRow = this.lat2tile(bounds[1], zoom);
+        const endIndexColumn = this.lon2tile(bounds[2], zoom);
+        const endIndexRow = this.lat2tile(bounds[3], zoom);
+        const matrixWidth = endIndexColumn - startIndexColumn;
+        const matrixHeight = endIndexRow - startIndexRow;
+
+        return new TileMatrix(zoom, bounds, startIndexRow, startIndexColumn, matrixHeight, matrixWidth)
+    }
+
+    static lon2tile(lon,zoom): number{
+        return Math.floor((lon+180)/360 * 2 **zoom);
+    }
+
+    static lat2tile(lat,zoom): number{
+        return Math.floor((1-Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2 * 2**zoom);
+    }
+
+    get zoom(): number{
+        return this._zoom;
+    }
+
+    get topLeft(): LngLat{
+        return this._topLeft;
+    }
+
+    get matrixWidth(): number{
+        return this._matrixWidth;
+    }
+
+    get maxtrixHeight(): number{
+        return this._matrixHeight;
+    }
+
+    /*get bounds() : BoundingBox{
+        return this._bounds;
+    }
+
+    get startTileIndexRow(): number{
+        return this._startTileIndexRow;
+    }
+
+    get startTileIndexColumn(): number{
+        return this._startTileIndexColumn;
+    }*/
+}
+
