@@ -1,0 +1,25 @@
+{
+			"type": "object",
+			"description": "TileMatrix with TileMatrixLimits.",
+			"required": [
+				"zoom",
+				"aggregationCoefficient"
+			],
+			"properties": {
+				"zoom": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Zoom level of the TileMatrix."
+				},
+				"aggregationCoefficient": {
+					"type": "integer",
+					"description": "Describes how many index records are aggregated to a fragment."
+				},
+				"tileMatrixLimits": {
+					"type": "object",
+					"$ref": "tileMatrixLimits.json"
+					"description": "Declaration of a limited coverage of a tile matrix."
+				}
+		},
+		"additionalProperties": false
+}

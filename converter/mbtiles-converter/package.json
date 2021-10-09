@@ -1,7 +1,7 @@
 {
-  "name": "@com-tiles/generator",
+  "name": "@com-tiles/mbtiles-converter",
   "version": "1.0.0",
-  "description": "Converts a MBTiles file to a COMTile archive",
+  "description": "Converts a MBTiles database to a COMTiles archive",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

@@ -1,8 +1,6 @@
-//const x = 3;
-//const y = 4; //100101 -> 37
-/*const x = 7;
-const y = 7; //111111 -> 63
-const zoom = 3;*/
+
+/* const y = 4; //100101 -> 37
+const y = 7; //111111 -> 63*/
 
 
 export default function pointToIndex(x: number, y: number, zoom: number){

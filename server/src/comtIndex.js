@@ -3,8 +3,7 @@
 * Calculates the index based on a space filling cure with row-major order with origin in the lower left like TMS.
 * Tile coordinates hast to be in the TMS tiling scheme.
 * */
-//export default function calculateRangeIndex(bbox, z, x, y){
-function calculateRangeIndex(bbox, z, x, y){
+export default function calculateRangeIndex(bbox, z, x, y){
     /*
     * - use a intersection with the bounding box to get correct index
     * - use space filling curves for calculation
@@ -59,5 +58,3 @@ function calculateRangeIndex(bbox, z, x, y){
 
     return rangeIndex;
 }
-
-module.exports = calculateRangeIndex;

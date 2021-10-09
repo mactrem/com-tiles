@@ -40,9 +40,14 @@
           <option>Range</option>
         </select>
       </span>
+
+      <span>
+        <b>Show Curve</b>
+        <input type="checkbox" id="show-curve" v-model="showCurve" @change="onShowCurveChange($event.target.value)"/>
+      </span>
     </div>
 
-    <b>NumTiles: {{ numTiles }} &nbsp; &nbsp;  Ranges: {{ ranges }}</b>
+    <b>NumTiles: {{ numTiles }} &nbsp; &nbsp;  Ranges: {{ ranges }} &nbsp; &nbsp; Current Zoom: {{currentZoom}}</b>
   </div>
 
   <div id="map"></div>
@@ -50,7 +55,7 @@
 
 <script lang="ts">
 
-import maplibregl from "maplibre-gl";
+import maplibregl, {Visibility} from "maplibre-gl";
 import {Options, Vue} from "vue-class-component";
 import pointToIndex from "@/domain/zOrderCurve";
 import tileCoordToIndex from "@/domain/rowMajorOrderCurve";
@@ -76,11 +81,13 @@ export default class MapView extends Vue {
   curve!: HTMLSelectElement;*/
   //TODO: use values from outside
 
-  zoom= "9";
+  zoom = "9";
   display= "Range";
   curve = "Z-Order";
   numTiles = 0;
   ranges = 0;
+  showCurve = true;
+  currentZoom = this.zoom;
 
   mounted(){
     this.createMap();
@@ -98,12 +105,24 @@ export default class MapView extends Vue {
     this.map.on("load", () => {
       drawTiles(parseInt(this.zoom), this.curve, this.display);
     });
+    this.map.on("zoom", () => this.currentZoom = this.map.getZoom().toFixed(1));
   }
 
-  drawTiles(zoom: number, curve: string, display: string){
+  drawTiles(zoom: number, curve: string, display: string, showCurve = true){
     const polygons = this.drawTileBounds(zoom, curve, display);
 
     const features = [];
+    const lines = [];
+
+    polygons.sort((a, b) => {
+          if(a.zIndex < b.zIndex){
+            return -1
+          }
+          return a.zIndex === b.zIndex ? 0 : 1;
+    });
+
+    let beforeIndex = -2;
+    let counter = -1;
     for(const polygon of polygons){
       const feature =
           {
@@ -119,6 +138,18 @@ export default class MapView extends Vue {
             }
           };
       features.push(feature);
+
+      const shell = polygon.polygon[0];
+      const lon = shell[1][0] + (shell[2][0] - shell[1][0])/2
+      const lat = shell[1][1] + (shell[0][1] - shell[1][1])/2;
+      if(polygon.zIndex - beforeIndex === 1){
+        lines[counter].push([lon, lat]);
+      }
+      else{
+        counter++;
+        lines.push([[lon, lat]]);
+      }
+      beforeIndex = polygon.zIndex;
     }
 
     this.map.addSource("tiles", {
@@ -126,6 +157,17 @@ export default class MapView extends Vue {
       data: {
         type: "FeatureCollection",
         features
+      }
+    });
+
+    this.map.addSource("lines", {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        geometry: {
+          type: "MultiLineString",
+          coordinates: lines
+        },
       }
     });
 
@@ -158,6 +200,19 @@ export default class MapView extends Vue {
       'layout': {
         "text-field": display === "Range" ? ['get', 'range'] : ['get', 'zIndex'],
       },
+    });
+
+    this.map.addLayer({
+      'id': 'lines',
+      'type': 'line',
+      'source': 'lines',
+      'layout': {
+        'visibility': showCurve? 'visible' :'none'
+      },
+      'paint': {
+        'line-color': '#1C6D92',
+        'line-width': 2
+      }
     });
   }
 
@@ -262,33 +317,43 @@ export default class MapView extends Vue {
   }
 
   onZooomChange(zoom: number){
-    this.map.removeLayer("tiles");
-    this.map.removeLayer("outline");
-    this.map.removeLayer("range");
-    this.map.removeSource("tiles");
+    this.clearMap();
 
     //TODO: use direct binding
-    this.drawTiles(zoom, this.display, this.curve);
+    this.drawTiles(zoom, this.display, this.curve, this.showCurve);
   }
 
   onCurveChange(curve: string){
-    this.map.removeLayer("tiles");
-    this.map.removeLayer("outline");
-    this.map.removeLayer("range");
-    this.map.removeSource("tiles");
+    this.clearMap();
 
     //TODO: use direct binding
-    this.drawTiles(parseInt(this.zoom), curve, this.display);
+    this.drawTiles(parseInt(this.zoom), curve, this.display, this.showCurve);
   }
 
   onDisplayChange(display: string){
+    this.clearMap();
+
+    //TODO: use direct binding
+    this.drawTiles(parseInt(this.zoom), this.curve, display, this.showCurve);
+  }
+
+  onShowCurveChange(){
+    if(!this.showCurve){
+      this.map.setLayoutProperty("lines" , 'visibility', 'none');
+    }
+    else{
+      //TODO: use direct binding
+      this.map.setLayoutProperty("lines" , 'visibility', 'visible');
+    }
+  }
+
+  clearMap(){
     this.map.removeLayer("tiles");
     this.map.removeLayer("outline");
     this.map.removeLayer("range");
+    this.map.removeLayer("lines");
     this.map.removeSource("tiles");
-
-    //TODO: use direct binding
-    this.drawTiles(parseInt(this.zoom), this.curve, display);
+    this.map.removeSource("lines");
   }
 }
 </script>

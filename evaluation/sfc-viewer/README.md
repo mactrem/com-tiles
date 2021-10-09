@@ -1,4 +1,6 @@
-# viewer
+# sfc-viewer
+
+Visualization of the different Space-filling curve types applied to map tiles.
 
 ## Project setup
 ```

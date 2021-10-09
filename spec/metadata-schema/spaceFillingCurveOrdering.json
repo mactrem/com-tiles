@@ -1,0 +1,9 @@
+{
+  "type": "string",
+  "description": "",
+  "enum": [
+    "RowMajor",
+    "ZOrder",
+    "Hilbert"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@com-tiles/spec",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "generate-metadata": "json2ts -i metadata-schema/metadata.json -o types/metadata.d.ts --cwd metadata-schema"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "json-schema-to-typescript": "^10.1.5"
+  }
+}

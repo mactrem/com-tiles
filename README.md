@@ -1,8 +1,8 @@
-### Cloud Optimized Map Tiles (COM Tiles)
+### Cloud Optimized Map Tiles (COMTiles)
 
 Inspired by [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of general raster and vector map tiles.  
 
-What are COM Tiles
+What are COMTiles
 - Most geospatial data formats were developed only with the POSIX filesystem access in mind
 - In cloud native applications large datasets are often stored in object stores (AWS S3, Azure Blob Storage, ...)
 - The geo/map services run in separated environment e.g. in a docker container
@@ -23,7 +23,7 @@ Concept
 - Index
     - 0-8 download full index
     - 9-14 only parts of the index
-    - Index is ordered as a hilbert curve
+    - Index is clustered -> the cluster are ordered as a hilbert curve
   
 Index Design
 - Client download full index for zoom 0-8 for the planet -> which size? (500k)
@@ -40,7 +40,7 @@ General
 - Limited to the Spherical Mercator tiling scheme?
 
 Use Cases
-- Browsing maps in the browser
+- Browsing maps in the browser -> Also reduce number of tile request because of the space filling curve approach
 - Downloading extracts for offline usage in apps
 - Downloading extracts for hosting in dedicated on-premise infrastructure
     
@@ -51,15 +51,22 @@ Problems
 
 Design
 - Magic -> COMT -> 4 char
-- Metdata Size -> int
+- Metadata Size -> int
 - Index Size -> int
 - Metadata -> UTF-8 encoded JSON
     - Version
-    - BoundingBox
-- Array of ZoomLevel, StartIndexRow, StartIndexColumn, NumRows, NumColumns 
-- Index -> based on a quadtree data structure
+    - TileMatrixSet -> there can be different bounds for each zoom level e.g. 1-8 overview and 9-14 only extracts
+      -  TileMatrixCRS -> OSMTile, WGS84
+      -  IndexCurveType
+      -  DataCurveType
+      -  TileMatrix
+- Index -> Clustered per zoom
+  - Cluster size of the index -> current zoom - 6 e.g. current zoom 9, index cluster size zoom 3
+  - 4^6 index entries -> 4096 -> 32Kb size for a index cluster ordered as hilbert curve
   - offset to tile -> 4 bytes
   - size -> 4 bytes
+  - Within the index cluster the data could be compressed e.g. via protobuf and delta encoding -> no becuase then 
+    the index offset could not be calculated
 - Map data
 - Number of tiles
   - Zoom 14 -> 268 million

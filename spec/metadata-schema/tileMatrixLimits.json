@@ -1,0 +1,33 @@
+{
+			"type": "object",
+			"description": "Declaration of a limited coverage of a tile matrix.",
+			"required": [
+				"minTileRow",
+				"maxTileRow",
+				"minTileColumn",
+				"maxTileColumn"
+			],
+			"properties": {
+				"minTileRow": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Minimum tile row index."
+				},
+				"maxTileRow": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Maximum tile row index."
+				},
+				"minTileCol": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Minimum tile column index."
+				},
+				"maxTileCol": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Maximum tile column index."
+				}
+		},
+		"additionalProperties": false
+}

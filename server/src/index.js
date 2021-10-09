@@ -1,11 +1,11 @@
 import fs from "fs";
 import express from "express";
 import calculateRangeIndex from "./comtIndex.js";
-//const calculateRangeIndex = require("./comtIndex");
+import * as path from "path";
 
-const fileName = "../dist/test.cot";
+const fileName = path.resolve("../../converter/dist/test.cot")
 
-const stream = fs.createReadStream(fileName);
+//const stream = fs.createReadStream(fileName);
 
 /*
 * - read the first 500k of the index
@@ -18,7 +18,7 @@ const bounds = metadata.metadata.bounds;
 const indexBuffer = readIndex(metadata.metadataLength);
 
 
-const app = express();
+const app = express();cd
 
 //Zurich -> 12/2144/1434
 app.get('/tiles/:z/:x/:y', (req, res) => {

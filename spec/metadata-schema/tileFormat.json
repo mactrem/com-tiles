@@ -1,0 +1,10 @@
+{
+  "type": "string",
+  "description": "Based on the MBTiles spec. File format of the tile data. *.pbf as a format refers to gzip-compressed vector tile data in Mapbox Vector Tile format.",
+  "enum": [
+    "pbf",
+    "jpg",
+    "png",
+	"webp"
+  ]
+}
