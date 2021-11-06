@@ -1,4 +1,4 @@
-import TileMatrixSet, {BoundingBox, TileMatrix, TileMatrixFactory} from "./tileMatrixSet";
+import TileMatrixBuilder, {BoundingBox, TileMatrix, TileMatrixFactory} from "./tileMatrixBuilder";
 
 const VERSION = "1.0";
 
@@ -11,7 +11,7 @@ export interface Metadata{
      * pbf as a format refers to gzip-compressed vector tile data in Mapbox Vector Tile format.
      * */
     tileFormat: string;
-    tileMatrixSet: TileMatrixSet;
+    tileMatrixSet: TileMatrixBuilder;
 }
 
 export class OSMTileMetadataBuilder{
@@ -53,7 +53,7 @@ export class OSMTileMetadataBuilder{
     }
 
     /*
-    * The boundary is in all TileMatrix (zoom levels) instances of the TileMatrixSet the same.
+    * The boundary is in all TileMatrix (zoom levels) instances of the TileMatrixBuilder the same.
     * TODO: Add additional attributes of a mbtiles database e.g. pxel_scale, name, description, id, json with the vector layers
     * A distinction must be made between:
     * - COMTiles metadata
@@ -62,7 +62,7 @@ export class OSMTileMetadataBuilder{
     * */
     build(): Metadata{
         if(!this.bbox){
-            throw new Error("No bounding box specified for the TileMatrixSet.");
+            throw new Error("No bounding box specified for the TileMatrixBuilder.");
         }
 
         const tileMatrices: TileMatrix[] = [];
@@ -71,7 +71,7 @@ export class OSMTileMetadataBuilder{
             tileMatrices.push(tileMatrix);
         }
 
-        const tileMatrixSet = new TileMatrixSet(tileMatrices);
+        const tileMatrixSet = new TileMatrixBuilder(tileMatrices);
         return {
             version: this.version,
             attribution: this.attribution,

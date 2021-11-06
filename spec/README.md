@@ -12,11 +12,11 @@ Little endian encoding is used.
   - 4-byte ANSI string -> "comt"  
 - Version  
   - The version of the COMTiles archive. It is currently 1.
-- Metadata Length
+- MetadataBuilder Length
   - Length of the metadata document (unit32)
 - Index Length  
   - Length of the index (uint32)  
-- Metadata
+- MetadataBuilder
     - UTF-8 encoded JSON document which describes how to access the tileset
     - [JSON Schema definition](metadata-schema/metadata.json)
 - Index  
@@ -30,14 +30,14 @@ Little endian encoding is used.
     - TileSize -> unit32
 - Data
   - Raster or vector tile Blobs
-  - The content is specified in the Metadata ``tileFormat`` property
+  - The content is specified in the MetadataBuilder ``tileFormat`` property
   - The Data are ordered in a space filling curve as specified in the metatdata ``dataOrdering`` property. By ordering the data in a space filling curve. the get requests can be batched to minimize http rang request in addition to minimize cache misses and page fault on the OS side in the cloud
   - Reduce number of range request and therefore reduce the coast by batching tile request e.g. instead of 32 only 4 are needed when use row-major order for the data
   
 
 ## Concepts
 
-### TileMatrixSet
+### TileMatrixBuilder
 'OGC Two Dimensional Tile Matrix Set' OGC draft
 -> TileSet
 -> TileMatrixLimits
@@ -48,13 +48,13 @@ One important concept of COMTiles is that the index is also streamable which mea
 via http range requests. This important because when deploying a vector tiles tileset for the full planet the index can get about 2.7 GB of size (zoom 0-14).
 One main goal of COMTiles is to structure the index in a way that the index records of the index which are intersecting the current
 viewport of the map (and also with a additional buffer) can be requested with a minimal number of http requests. Two approaches where examined of how to organize
-the index entries of an index for a given TileMatrix (zoom level) of a TileMatrixSet:   
+the index entries of an index for a given TileMatrix (zoom level) of a TileMatrixBuilder:   
 - ordering via space filling curves (SFC) e.g. row-major order, hilbert curve, Z-Order (morton code)  
 - aggregating the index records in fragments 
 
 Tests showed that ordering the index entries in a row-major order is in most cases more efficient in terms of the number of requests compared to hilbert curve or Z-Order.   
 In the majority of cases it turned out to be more effective to cluster the index entries of a TileMatrix in cluster cells compared to using an SFC.  
-The number of index records which are part of a cluster cell are specified by the ``coalescence coefficient`` for every TileMatrix of TileMatrixSet. 
+The number of index records which are part of a cluster cell are specified by the ``coalescence coefficient`` for every TileMatrix of TileMatrixBuilder. 
 
 The number of index records will be aggregated by a quarter with a incrementation of the coalescenceCoefficient by one 
 -> NumberOfIndexRecordsPerClusterCell =  4^aggregationCoefficient  
@@ -62,7 +62,7 @@ For example a ``aggregation coefficient`` of 6 means that 4096 (4^6) index recor
 A index cluster always has the extent of a quadtree node at a specific zoom level to be cacheable in the browser.
 Test showed that ``aggregation coefficient`` of 6 shows good results regarding the latency.
 A index fragment can be dense or sparse depending on the used aggregation coefficient and area of the tileset. 
-The client has to handle the sparse matrix via the TileMatrixSet min/max rows/columns.
+The client has to handle the sparse matrix via the TileMatrixBuilder min/max rows/columns.
 
 Example:
 - TileMatrixCRS: WebMercatorQuad
@@ -77,7 +77,7 @@ Example:
 ## Glossary
 - MapTile
 - TileSet
-- TileMatrixSet
+- TileMatrixBuilder
 - TileMatrix
 - TileMatrixLimits
 - Index

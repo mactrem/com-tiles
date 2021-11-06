@@ -1,9 +1,10 @@
 {
 			"type": "object",
-			"description": "TileMatrix with TileMatrixLimits.",
+			"description": "In a TCRS (Tile matrix CRS), for each resolution, a TileMatrix coordinate system groups underlying TCRS pixels into square tiles and counts tiles with the origin at the upper left corner of the tiled space and increasing right (column axis, horizontal) and downwards (row axis, vertical) respectively",
 			"required": [
 				"zoom",
-				"aggregationCoefficient"
+				"aggregationCoefficient",
+				"tileMatrixLimits"
 			],
 			"properties": {
 				"zoom": {
@@ -13,11 +14,11 @@
 				},
 				"aggregationCoefficient": {
 					"type": "integer",
-					"description": "Describes how many index records are aggregated to a fragment."
+					"description": "Describes how many index records are aggregated to a fragment. A value of -1 specifies that no index fragmentation is used."
 				},
 				"tileMatrixLimits": {
 					"type": "object",
-					"$ref": "tileMatrixLimits.json"
+					"$ref": "tileMatrixLimits.json",
 					"description": "Declaration of a limited coverage of a tile matrix."
 				}
 		},
