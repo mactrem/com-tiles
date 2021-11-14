@@ -1,39 +1,43 @@
-import TileMatrixBuilder, {BoundingBox, TileMatrix, TileMatrixFactory} from "./tileMatrixBuilder";
+import TileMatrixSetBuilder, {BoundingBox, TileMatrixFactory} from "./tileMatrixSetBuilder";
+import {Metadata} from "@com-tiles/spec";
+import createWMQTileMatrixSet from "./tileMatrixSetBuilder";
+import {TileMatrix} from "@com-tiles/spec/types/tileMatrix";
 
-const VERSION = "1.0";
 
-export interface Metadata{
-    version: string;
-    attribution: string;
-    /**
-     * From MBTiles spec:
-     * File format of the tile data: pbf, jpg, png, webp, or an IETF media type for other formats.
-     * pbf as a format refers to gzip-compressed vector tile data in Mapbox Vector Tile format.
-     * */
-    tileFormat: string;
-    tileMatrixSet: TileMatrixBuilder;
-}
 
-export class OSMTileMetadataBuilder{
-    private version: string = VERSION;
-    private minZoom: number = 0;
-    private maxZoom: number = 14;
-    private tileFormat: string = "pbf";
-    private attribution: string = "";
+export class WebMercatorQuadMetadataBuilder {
+    private name: string;
+    private description = "";
+    private attribution = "";
+    private tileOffsetBytes = 4;
+    private tileFormat: Metadata["tileFormat"] = "pbf";
     private bbox: BoundingBox;
+    private minZoom =  0;
+    private maxZoom = 14;
+    private layers = "";
 
-    setVersion(version: string): OSMTileMetadataBuilder{
-        this.version = version;
+    setName(name: string){
+        this.name = name;
         return this;
     }
 
-    setMinZoom(minZoom: number){
-        this.minZoom = minZoom;
+    setDescription(description: string){
+        this.description = description;
         return this;
     }
 
-    setMaxZoom(maxZoom: number){
-        this.maxZoom = maxZoom;
+    setAttribution(attribution: string){
+        this.attribution = attribution;
+        return this;
+    }
+
+    setTileOffsetBytes(offset: number){
+        this.tileOffsetBytes = offset;
+        return this;
+    }
+
+    setTileFormat(tileFormat: Metadata["tileFormat"]){
+        this.tileFormat = tileFormat;
         return this;
     }
 
@@ -42,13 +46,21 @@ export class OSMTileMetadataBuilder{
         return this;
     }
 
-    setTileFormat(tileFormat: string){
-        this.tileFormat = tileFormat;
+    setMinZoom(zoom: number){
+        this.minZoom = zoom;
         return this;
     }
 
-    setAttribution(attribution: string){
-        this.attribution = attribution;
+    setMaxZoom(zoom: number){
+        this.maxZoom = zoom;
+        return this;
+    }
+
+    /**
+    * see https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md#user-content-vector-tileset-metadata
+    * */
+    setLayers(layers: string){
+        this.layers = layers;
         return this;
     }
 
@@ -59,23 +71,28 @@ export class OSMTileMetadataBuilder{
     * - COMTiles metadata
     * - Tile data metdadata like MVT because additional metadata are needed -> separate version, json with vector layers
     *   -> additional optional fields has to be possible like in the MBTiles format -> https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md
+    * - Zoom 0 - 8 have no aggregation factor, 9 - 14 an aggregation factor of 6
     * */
     build(): Metadata{
-        if(!this.bbox){
-            throw new Error("No bounding box specified for the TileMatrixBuilder.");
+        if(!this.name || !this.bbox ){
+            throw new Error("No name or bounding box specified for the TileMatrixBuilder.");
         }
 
         const tileMatrices: TileMatrix[] = [];
         for(let zoom = this.minZoom; zoom <= this.maxZoom; zoom++){
-            const tileMatrix = TileMatrixFactory.createOsmTile(zoom, this.bbox);
+            const aggregationCoefficient = zoom <=8 ? -1 : 6;
+            const tileMatrix = TileMatrixFactory.createWebMercatorQuad(zoom, this.bbox, aggregationCoefficient);
             tileMatrices.push(tileMatrix);
         }
 
-        const tileMatrixSet = new TileMatrixBuilder(tileMatrices);
+        const tileMatrixSet = createWMQTileMatrixSet(tileMatrices);
         return {
-            version: this.version,
+            name: this.name,
+            description: this.description,
             attribution: this.attribution,
+            tileOffsetBytes: this.tileOffsetBytes,
             tileFormat: this.tileFormat,
+            layers: this.layers,
             tileMatrixSet
         }
     }

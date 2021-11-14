@@ -7,7 +7,7 @@ export enum CurveType{
 export type BoundingBox = [minLon: number, minLat: number, maxLon: number, maxLat: number];
 export type LngLat = [lon: number, lat: number];
 
-export default class TileMatrixSet{
+export default class TileMatrixBuilder{
     constructor(private readonly _indexCurveType = CurveType.ROW_MAJOR, private readonly tileMatrix: TileMatrix[]) {
     }
 }

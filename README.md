@@ -51,11 +51,11 @@ Problems
 
 Design
 - Magic -> COMT -> 4 char
-- Metadata Size -> int
+- MetadataBuilder Size -> int
 - Index Size -> int
-- Metadata -> UTF-8 encoded JSON
+- MetadataBuilder -> UTF-8 encoded JSON
     - Version
-    - TileMatrixSet -> there can be different bounds for each zoom level e.g. 1-8 overview and 9-14 only extracts
+    - TileMatrixBuilder -> there can be different bounds for each zoom level e.g. 1-8 overview and 9-14 only extracts
       -  TileMatrixCRS -> OSMTile, WGS84
       -  IndexCurveType
       -  DataCurveType
@@ -97,6 +97,6 @@ TODO:
 
 Tasks:
 - Create Website to switch between hilbert curve, z-order and row-major order and deploy to GitLab pages
-- Implement generator for creating a COM-Tiles archive
+- Implement a converter for converting a MBTiles archive to a COM-Tiles archive
 - Host the COM-Tiles archive on S3 and implement a MapServer and deploy on AWS Lambda
 - Compare costs and performance

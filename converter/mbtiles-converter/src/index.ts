@@ -1,7 +1,10 @@
 import sqlite3 from "sqlite3";
 import fs from "fs";
-import {OSMTileMetadataBuilder} from "./metadata";
+import {WebMercatorQuadMetadataBuilder} from "./metadataBuilder";
 import * as path from "path";
+import {Metadata} from "@com-tiles/spec";
+
+type Tile = {}
 
 const fileName = path.join(__dirname, "../test.cot")
 const mbTilesFile = path.resolve("data/zurich.mbtiles");
@@ -12,8 +15,7 @@ const magic = "COMT";
     const db = new sqlite3.Database(mbTilesFile)
 
     const metadata = await createMetadata(db);
-    //const numTiles = await getNumberOfTiles(db);
-    const tiles = await getTiles(db);
+    const tiles = await getTilesByRowMajorOrder(db);
 
     const index = buildIndex(tiles);
     createComTile(fileName, metadata, index, tiles);
@@ -35,6 +37,8 @@ function createComTile(fileName, metadata, index, tiles){
     const stream = fs.createWriteStream(fileName, { encoding: 'binary' });
 
     const metadataJson = JSON.stringify(metadata);
+
+    //TODO: could be more then 8 bytes
     const indexBuffer = Buffer.alloc(tiles.length * 8);
     for(let i = 0; i< index.length; i++){
         const offset = i * 8;
@@ -74,11 +78,14 @@ function createComTile(fileName, metadata, index, tiles){
     stream.end();
 }
 
-function buildIndex(tiles){
+function buildIndex(tiles, tileMatrixSet: Metadata["tileMatrixSet"]["tileMatrixSet"]){
     const index = [];
     let offset = 0;
 
+
     //TODO: cluster tiles for every zoom level -> clusterWidth and clusterHeight
+    //TODO: use ArrayBuffer
+    //TODO: caclulte fragments and sparse fragements
     for(const tile of tiles){
         const size = tile.length;
         index.push({offset, size});
@@ -88,10 +95,12 @@ function buildIndex(tiles){
     return index;
 }
 
-function getTiles(db: sqlite3.Database){
+/**
+* Ordered by zoomLevel, tileRow and tileColumn in ascending order which is row-major order
+* */
+function getTilesByRowMajorOrder(db: sqlite3.Database){
     return new Promise((resolve, reject) => {
         //TODO: batch read
-        //TODO: check if tms or xyz order for the y-axis -> here tms is assumed
         db.all("SELECT zoom_level, tile_column, tile_row, tile_data FROM tiles ORDER BY zoom_level, tile_row, tile_column ASC;", (err, tiles) => {
             if(err){
                 reject(err);
@@ -120,9 +129,12 @@ function createMetadata(db: sqlite3.Database){
                 return;
             }
 
-            const metadataBuilder = new OSMTileMetadataBuilder();
+            const metadataBuilder = new WebMercatorQuadMetadataBuilder();
             for(const row of rows){
                 switch(row.name){
+                    case "name":
+                        metadataBuilder.setName(row.value);
+                        break;
                     case "bounds":
                         metadataBuilder.setBoundingBox(row.value.split(",").map(value => parseFloat(value.trim())));
                         break;
@@ -137,6 +149,9 @@ function createMetadata(db: sqlite3.Database){
                         break;
                     case "attribution":
                         metadataBuilder.setAttribution(row.value);
+                        break;
+                    case "json":
+                        metadataBuilder.setLayers(row.value);
                         break;
                 }
             }

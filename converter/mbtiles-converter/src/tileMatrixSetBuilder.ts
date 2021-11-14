@@ -1,14 +1,77 @@
 import {TileMatrix} from "@com-tiles/spec/types/tileMatrix";
-
+import {SpaceFillingCurveOrdering} from "@com-tiles/spec/types/spaceFillingCurveOrdering";
+import {Metadata} from "@com-tiles/spec";
 
 export type LngLat = [lon: number, lat: number];
 export type BoundingBox = [minLon: number, minLat: number, maxLon: number, maxLat: number];
 
-export default class TileMatrixBuilder {
-    constructor(private readonly _tileMatrix: TileMatrix[], private _tileMatrixCRS: TileMatrixCRS = TileMatrixCRS.OSMTILE,
-                private readonly _indexCurveType = CurveType.ROW_MAJOR, private readonly _dataCurveType = CurveType.ROW_MAJOR) {
+//TODO: define name of the crs in the JSON schema
+const tileMatrixCRS = "WebMercatorQuad ";
+export default function createWMQTileMatrixSet(tileMatrices: TileMatrix[], indexFragmentOrdering: SpaceFillingCurveOrdering = "RowMajor",
+                                       indexRecordOrdering: SpaceFillingCurveOrdering = "RowMajor",
+                                       dataOrdering: SpaceFillingCurveOrdering = "RowMajor"): Metadata["tileMatrixSet"]{
+    return {
+        tileMatrixCRS,
+        indexFragmentOrdering,
+        indexRecordOrdering,
+        dataOrdering,
+        tileMatrixSet: tileMatrices
     }
 }
+
+
+
+/*
+* Corresponds to the Tiled Coordinate Reference Systems of MapML
+* see https://maps4html.org/MapML/spec/#tiled-coordinate-reference-systems-0
+* */
+export class TileMatrixFactory{
+    private constructor(){}
+
+    /*
+    *
+    * see https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#62
+    * Y-axis goes downwards like XYZ tiling scheme
+    * */
+    static createWebMercatorQuad(zoom, bounds: BoundingBox, aggregationCoefficient: number = 6): TileMatrix{
+        const minTileCol = TileMatrixFactory.lon2tile(bounds[0], zoom);
+        const minTileRow = TileMatrixFactory.lat2tile(bounds[1], zoom);
+        const maxTileCol = TileMatrixFactory.lon2tile(bounds[2], zoom);
+        const maxTileRow = TileMatrixFactory.lat2tile(bounds[3], zoom);
+        //const matrixWidth = maxTileCol - minTileCol + 1;
+        /* Y-axis goes downwards in the XYZ tiling scheme */
+        //const matrixHeight = minTileRow -maxTileRow + 1;
+
+        return {
+            zoom,
+            aggregationCoefficient,
+            tileMatrixLimits: {
+                minTileCol,
+                minTileRow,
+                maxTileCol,
+                maxTileRow
+            }
+        }
+    }
+
+    /*
+    * see https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#63
+    * */
+    static createWorldCRS84Quad(): TileMatrix{
+        throw new Error("Not implemented yet.");
+    }
+
+    private static lon2tile(lon,zoom): number{
+        return Math.floor((lon+180)/360 * 2 **zoom);
+    }
+
+    //MBtiles uses tms global-mercator profile
+    private static lat2tile(lat,zoom): number{
+        const xyz = Math.floor((1-Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2 * 2**zoom);
+        return 2**zoom - xyz - 1;
+    }
+}
+
 
 /*
 In a TCRS (Tile matrix CRS), for each resolution, a tilematrix coordinate system groups underlying TCRS pixels into square tiles and
@@ -43,52 +106,4 @@ and downwards (row axis, vertical) respectively
         return this._matrixHeight;
     }
 }*/
-
-/*
-* Corresponds to the Tiled Coordinate Reference Systems of MapML
-* see https://maps4html.org/MapML/spec/#tiled-coordinate-reference-systems-0
-* */
-export class TileMatrixFactory{
-    private constructor(){}
-
-    /*
-    *
-    * see https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#62
-    * */
-    static createWebMercatorQuad(zoom, bounds: BoundingBox, aggregationCoefficient: number = 6): TileMatrix{
-        const minTileCol = TileMatrixFactory.lon2tile(bounds[0], zoom);
-        const minTileRow = TileMatrixFactory.lat2tile(bounds[1], zoom);
-        const maxTileCol = TileMatrixFactory.lon2tile(bounds[2], zoom);
-        const maxTileRow = TileMatrixFactory.lat2tile(bounds[3], zoom);
-        //const matrixWidth = maxTileCol - minTileCol + 1;
-        /* Y-axis goes downwards in the XYZ tiling scheme */
-        //const matrixHeight = minTileRow -maxTileRow + 1;
-
-        return {
-            zoom,
-            aggregationCoefficient,
-            tileMatrixLimits: {
-                minTileCol,
-                minTileRow,
-                maxTileCol,
-                maxTileRow
-            }
-        }
-    }
-
-    /*
-    * see https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#63
-    * */
-    static createWorldCRS84Quad(): TileMatrix{
-        throw new Error("Not implemented yet.");
-    }
-
-    private static lon2tile(lon,zoom): number{
-        return Math.floor((lon+180)/360 * 2 **zoom);
-    }
-
-    private static lat2tile(lat,zoom): number{
-        return Math.floor((1-Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2 * 2**zoom);
-    }
-}
 

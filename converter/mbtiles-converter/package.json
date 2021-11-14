@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Converts a MBTiles database to a COMTiles archive",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=15"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node src/index.ts",
@@ -13,7 +16,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "sqlite3": "^5.0.2"
+    "sqlite3": "^5.0.2",
+    "@com-tiles/spec": "^1.0.0"
   },
   "devDependencies": {
     "@types/jest": "^26.0.22",

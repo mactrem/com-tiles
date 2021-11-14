@@ -1,0 +1,8 @@
+{
+  "name": "com-tiles",
+  "workspaces": [
+    "spec",
+    "converter/mbtiles-converter",
+    "server"
+  ]
+}
