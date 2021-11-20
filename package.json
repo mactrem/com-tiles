@@ -4,5 +4,8 @@
     "spec",
     "converter/mbtiles-converter",
     "server"
-  ]
+  ],
+  "devDependencies": {
+    "@types/sqlite3": "^3.1.7"
+  }
 }
