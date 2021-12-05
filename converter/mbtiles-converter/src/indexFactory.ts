@@ -1,8 +1,8 @@
-import {Metadata} from "@com-tiles/spec";
 import {TileMatrix} from "@com-tiles/spec/types/tileMatrix";
 import {MBTilesRepository} from "./mbTilesRepository";
 
-type IndexEntry = {offset: number, size: number};
+/* 5 bytes offset and 3 bytes size as default */
+export type IndexEntry = {offset: number, size: number};
 type fragmentBounds = { minTileCol: number, minTileRow: number, maxTileCol: number, maxTileRow: number };
 
 /**
@@ -13,7 +13,7 @@ type fragmentBounds = { minTileCol: number, minTileRow: number, maxTileCol: numb
  */
 //export function createIndexInRowMajorOrder(tileRepository: TileRepository, tileMatrixSet: TileMatrix[]): IndexEntry[]{
 //TODO: this doesn't scale because the index is stored in memory
-export async function createIndexInRowMajorOrder(tileRepository: MBTilesRepository, tileMatrixSet: TileMatrix[]): IndexEntry[]{
+export async function createIndexInRowMajorOrder(tileRepository: MBTilesRepository, tileMatrixSet: TileMatrix[]): Promise<IndexEntry[]>{
     const index: IndexEntry[] = [];
     const minZoom = tileMatrixSet[0].zoom;
     const maxZoom = tileMatrixSet[tileMatrixSet.length-1].zoom;
@@ -21,7 +21,7 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
     for(let zoom = minZoom; zoom <= maxZoom; zoom++){
         const tileMatrix = tileMatrixSet[zoom];
         const limits = tileMatrix.tileMatrixLimits;
-        const numTiles = (limits.maxTileRow - limits.minTileRow + 1) * (limits.maxTileCol - limits.minTileRow + 1);
+        const numTiles = (limits.maxTileRow - limits.minTileRow + 1) * (limits.maxTileCol - limits.minTileCol+ 1);
 
         //has to queried batched when not fragments are used -> in zoom 8 > 65k tiles
         /*const tileCache = tileRepository.getTilesByRowMajorOrder(
@@ -36,10 +36,11 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
         * */
         if(!useIndexFragmentation(tileMatrix)){
             //reference to the current tile in the js array
-            let tileIndex = index.length;
+            let tileIndex = index.length -1;
             //reference to the current tile in the final blob
-            let offset = index[tileIndex].offset;
+            let offset = index.length ? (index[tileIndex].offset + index[tileIndex].size) : 0;
             const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, tileMatrix.tileMatrixLimits);
+            //const t = (await tileBatches).next();
             for await (const tileBatch of tileBatches){
                 for (const {data} of tileBatch){
                     const size = data.length;
@@ -51,11 +52,11 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
         else{
             //use index fragments and sparse fragments
             const numIndexEntriesPerFragment = 4**tileMatrix.aggregationCoefficient;
-            const numIndexEntriesPerSide = Math.sqrt(numIndexEntriesPerFragment);
-            const fragmentMinColIndex = Math.floor(limits.minTileCol/numIndexEntriesPerSide);
-            const fragmentMinRowIndex = Math.floor(limits.minTileRow/numIndexEntriesPerSide);
-            const fragmentMaxColIndex = Math.floor(limits.maxTileCol/numIndexEntriesPerSide);
-            const fragmentMaxRowIndex = Math.floor(limits.maxTileRow/numIndexEntriesPerSide);
+            const numIndexEntriesPerFragmentSide = Math.sqrt(numIndexEntriesPerFragment);
+            const fragmentMinColIndex = Math.floor(limits.minTileCol/numIndexEntriesPerFragmentSide);
+            const fragmentMinRowIndex = Math.floor(limits.minTileRow/numIndexEntriesPerFragmentSide);
+            const fragmentMaxColIndex = Math.floor(limits.maxTileCol/numIndexEntriesPerFragmentSide);
+            const fragmentMaxRowIndex = Math.floor(limits.maxTileRow/numIndexEntriesPerFragmentSide);
             const numFragments = Math.ceil(numTiles / numIndexEntriesPerFragment);
             const numFragmentsCol = fragmentMaxColIndex - fragmentMinColIndex + 1;
             const numFragmentsRow = fragmentMaxRowIndex - fragmentMinRowIndex + 1;
@@ -72,128 +73,76 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
             *     - case 2
             *       -> num fragments col and row are different
             * */
-
-            let fragmentBounds = {
-                minTileCol: limits.minTileCol,
-                minTileRow: limits.minTileRow,
-                maxTileCol: limits.minTileCol + numFragmentsCol - 1,
-                maxTileRow: limits.minTileRow + numFragmentsRow -1
-            };
-
             /*
+            * CRS
+            * - Fragment CRS
+            *   -> needed for iteration
+            *   -> calculate tile crs from fragment crs
+            * - Tile CRS -> needed for db query
             * - Calculate the tile index bounds of the fragment -> starting by min and iterating column and row wise
             * - Look up in TileMatrixSet if the fragment is fully contained or if it is a sparse fragment
             *   - Case dense fragment -> iterate row by row by the number of IndexEntries
             *   - Case sparse fragment -> iterate row by row by the number of delta IndexEntries
             * */
-            const tilesZoomOffset = index.length;
-            for(let i = 0; i < numFragments; i++){
-                if(isDense(tileMatrix.tileMatrixLimits, fragmentBounds)){
-                    const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, fragmentBounds);
 
-                    //calculate on which index the tiles array the fragment starts
-                    //calculate num columns and rows before the fragment
-                    const deltaRow = fragmentBounds.minTileRow - limits.minTileRow;
-                    const deltaCol = fragmentBounds.minTileCol - limits.minTileCol;
-                    //index in the tile array for the start of a index fragment row
-                    let beforeTilesIndex = deltaRow * Math.sqrt(numTiles) + deltaCol;
-                    //Iterate over all IndexEntries in the fragment
-                    /*for(let row = 0; row < numFragmentsRow; row++){
-                        for(let col = 0; col < numFragmentsCol; col++){
-                            const tile = tiles[tilesZoomOffset + beforeTilesIndex];
-                            const size = tile.length;
-                            index.push({offset, size});
-                            offset += size;
-                            beforeTilesIndex++;
-                        }
+            let fragmentBounds = {
+                minTileCol: fragmentMinColIndex * numIndexEntriesPerFragmentSide,
+                minTileRow: fragmentMinRowIndex * numIndexEntriesPerFragmentSide,
+                maxTileCol: ((fragmentMinColIndex +1) * numIndexEntriesPerFragmentSide) - 1,
+                maxTileRow: ((fragmentMinRowIndex +1) * numIndexEntriesPerFragmentSide) - 1
+            };
 
-                        beforeTilesIndex += ((fragmentBounds.minTileCol - limits.minTileCol)
-                            + (limits.maxTileCol - fragmentBounds.maxTileCol));
-                    }*/
-                    for await (const tileBatch of tileBatches){
-                        for (const {data} of tileBatch){
-                            const size = data.length;
-                            const offset = index.length;
-                            index.push({offset, size});
-                        }
-                    }
-                }
-                else{
-                    //sparse fragment
-                    //iterate over each IndexEntry and check for intersection with bounds of the TileSet -> can be optimized by calculating the area
-                    //how to calculate beforeTileIndex
-                    //calculate on which index the tiles array the fragment starts
-                    //calculate num columns and rows before the fragment
-                    /*const deltaRow = fragmentBounds.minTileRow - limits.minTileRow;
-                    const deltaCol = fragmentBounds.minTileCol - limits.minTileCol;
-                    let beforeTilesIndex = deltaRow * Math.sqrt(numTiles) + deltaCol;
-                    //Iterate over all IndexEntries in the fragment
-                    for(let row = 0; row < numFragmentsRow; row++){
-                        for(let col = 0; col < numFragmentsRow; col++){
-                            const currentCol =  fragmentBounds.minTileCol + col;
-                            const currentRow =  fragmentBounds.minTileRow + row;
-
-                            //test for intersection of the IndexEntry of the index fragment with bounds of the TileSet -> can be optimized by calculating the area
-                            if(currentCol >= limits.minTileCol && currentRow >= limits.minTileRow &&
-                                currentCol <= limits.maxTileCol && currentRow <= limits.maxTileRow){
-                                //TODO: use TileCache via TileRepository
-                                const tile = tiles[tilesZoomOffset + beforeTilesIndex];
-                                const size = tile.length;
-                                index.push({offset, size});
-                                offset += size;
-                                beforeTilesIndex++;
-                            }
-                        }
-
-                        //TODO: does this work
-                        const deltaCols = fragmentBounds.minTileCol - limits.minTileCol;
-                        const deltaRows = limits.maxTileCol - fragmentBounds.maxTileCol;
-                        //smaller 0 means this is a sparse row/column and should be ignored for the tile index calulation
-                        beforeTilesIndex += ((deltaCols < 0 ? 0 : deltaCols) + (deltaRows < 0 ? 0 : deltaRows));
-                    }*/
-
-                    //TODO: optimize -> only query the intersection between fragment and index
-                    const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, fragmentBounds);
-                    for await (const tileBatch of tileBatches){
-                        for (const {column, row, data} of tileBatch){
-                            //test for intersection of the IndexEntry of the index fragment with bounds of the TileSet -> can be optimized by calculating the area
-                            //TODO: get rid of this test by shifting it to the sql query
-                            if(column >= limits.minTileCol && row >= limits.minTileRow &&
-                                column <= limits.maxTileCol && row <= limits.maxTileRow){
+            for(let row = 0; row < numFragmentsRow; row++){
+                for(let col = 0; col < numFragmentsCol; col++){
+                    if(isDense(tileMatrix.tileMatrixLimits, fragmentBounds)){
+                        const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, fragmentBounds);
+                        for await (const tileBatch of tileBatches){
+                            for (const {data} of tileBatch){
                                 const size = data.length;
-                                const offset = index.length;
+                                let tileIndex = index.length - 1;
+                                //reference to the current tile in the final blob
+                                let offset = index.length ? index[tileIndex].offset : 0;
                                 index.push({offset, size});
                             }
-
                         }
                     }
-                }
+                    else{
+                        //sparse fragment
+                        //TODO: optimize -> only query the intersection between fragment and index
+                        const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, fragmentBounds);
+                        for await (const tileBatch of tileBatches){
+                            for (const {column, row, data} of tileBatch){
+                                //test for intersection of the IndexEntry of the index fragment with bounds of the TileSet -> can be optimized by calculating the area
+                                //TODO: get rid of this test by shifting it to the sql query
+                                if(column >= limits.minTileCol && row >= limits.minTileRow &&
+                                    column <= limits.maxTileCol && row <= limits.maxTileRow){
+                                    const size = data.length;
+                                    let tileIndex = index.length - 1;
+                                    let offset = index.length ? index[tileIndex].offset : 0
+                                    index.push({offset, size});
+                                }
+                            }
+                        }
+                    }
 
-                //increment tile index
-                //set fragment bounds
-                //add row
-                if((i+1) % numFragmentsCol === 0){
-                    //reset column and add row
-                    fragmentBounds = {
-                        minCol: limits.minTileCol,
-                        minRow: fragmentBounds.maxTileRow +1,
-                        maxCol: limits.minTileCol + Math.sqrt(numIndexEntriesPerFragment) -1,
-                        maxRow: fragmentBounds.maxTileRow + Math.sqrt(numIndexEntriesPerFragment)
-                    };
-                }
-                else{
                     //add column
                     fragmentBounds = {
-                        minCol: fragmentBounds.maxTileCol + 1,
-                        minRow: fragmentBounds.minTileRow,
-                        maxCol: fragmentBounds.maxTileCol + Math.sqrt(numIndexEntriesPerFragment),
-                        maxRow: fragmentBounds.maxTileRow
+                        minTileCol: fragmentBounds.maxTileCol + 1,
+                        minTileRow: fragmentBounds.minTileRow,
+                        maxTileCol: fragmentBounds.maxTileCol + numIndexEntriesPerFragmentSide,
+                        maxTileRow: fragmentBounds.maxTileRow
                     };
                 }
+
+                //reset column and add row
+                fragmentBounds = {
+                    minTileCol: fragmentMinColIndex * numIndexEntriesPerFragmentSide,
+                    minTileRow: fragmentBounds.maxTileRow +1,
+                    maxTileCol: ((fragmentMinColIndex +1) * numIndexEntriesPerFragmentSide) - 1,
+                    maxTileRow: fragmentBounds.maxTileRow + numIndexEntriesPerFragmentSide
+                };
             }
         }
-
-
     }
 
     return index;
@@ -208,7 +157,7 @@ function useIndexFragmentation(tileMatrix: TileMatrix): boolean{
     return tileMatrix.aggregationCoefficient !== -1;
 }
 
-function createIndexWithoutFragments(tiles: Uint8Array[], numTiles: number, tileIndex: number, offset: number){
+/*function createIndexWithoutFragments(tiles: Uint8Array[], numTiles: number, tileIndex: number, offset: number){
     for(let i = 0; i < numTiles; i++){
         const tile = tiles[tileIndex];
         const size = tile.length;
@@ -216,4 +165,4 @@ function createIndexWithoutFragments(tiles: Uint8Array[], numTiles: number, tile
         offset += size;
         tileIndex++;
     }
-}
+}*/

@@ -3,8 +3,8 @@ import fs from "fs";
 import {WebMercatorQuadMetadataBuilder} from "./metadataBuilder";
 import * as path from "path";
 import {Metadata} from "@com-tiles/spec";
-
-type Tile = {}
+import {createIndexInRowMajorOrder, IndexEntry} from "./indexFactory";
+import {MBTilesRepository} from "./mbTilesRepository";
 
 const fileName = path.join(__dirname, "../test.cot")
 const mbTilesFile = path.resolve("data/zurich.mbtiles");
@@ -13,13 +13,57 @@ const magic = "COMT";
 
 (async()=>{
     const db = new sqlite3.Database(mbTilesFile)
-
     const metadata = await createMetadata(db);
-    const tiles = await getTilesByRowMajorOrder(db);
+    //const tiles = await getTilesByRowMajorOrder(db);
+    const repo = new MBTilesRepository(mbTilesFile);
 
-    const index = buildIndex(tiles);
-    createComTile(fileName, metadata, index, tiles);
+    //TODO: return index and tile via generator and write batches at once in a file
+    //TODO: not all tiles in the lower zoom levels are queried because the bounds are calculated
+    const index = await createIndexInRowMajorOrder(repo, metadata.tileMatrixSet.tileMatrixSet)
+
+    createComTileArchive(fileName, metadata, index);
 })();
+
+function createComTileArchive(fileName: string, metadata: Metadata, index: IndexEntry[]){
+    const stream = fs.createWriteStream(fileName, { encoding: 'binary' });
+
+    const metadataJson = JSON.stringify(metadata);
+    const indexLengthInBytes = index.length * (4 + metadata.tileOffsetBytes);
+    writeHeader(stream, metadataJson.length, indexLengthInBytes);
+    writeMetadata(stream, metadataJson);
+    writeIndex(stream, indexLengthInBytes, index);
+}
+
+function writeHeader(stream: fs.WriteStream, metadataLength: number, indexLength: number){
+    stream.write(magic);
+    const buffer = Buffer.alloc(4);
+    //TODO: the other stuff also has to be written in le byte order
+    buffer.writeUInt32LE(metadataLength);
+    stream.write(buffer);
+    //TODO: Index size can be variable -> 4 or 5 bytes
+    const indexLengthBuffer = Buffer.alloc(4);
+    indexLengthBuffer.writeUInt32LE(indexLength);
+    stream.write(indexLengthBuffer);
+}
+
+function writeMetadata(stream: fs.WriteStream, metadataJson: string){
+    stream.write(metadataJson, "utf-8" );
+}
+
+function writeIndex(stream: fs.WriteStream, indexLengthInBytes: number, index: IndexEntry[]){
+    const indexBuffer = Buffer.alloc(indexLengthInBytes);
+    for(let i = 0; i< index.length; i++){
+        const offset = i * 8;
+        indexBuffer.writeUInt32LE(index[i].offset, offset);
+        //how to write 5 or more bytes to a buffer
+        //TODO: set offsetSize in the metadata document
+        //TODO: offset is count at beginning of the data section -> write in the specification
+        //TODO: with 4 bytes only 4GB can be stored -> rename from tileOffsetBytes to tile data size in bytes?
+        indexBuffer.writeUInt32LE(index[i].size, offset + 4);
+    }
+
+    stream.write(indexBuffer);
+}
 
 /*
 * - create metadata
@@ -121,7 +165,7 @@ function getNumberOfTiles(db: sqlite3.Database){
     });
 }
 
-function createMetadata(db: sqlite3.Database){
+function createMetadata(db: sqlite3.Database): Promise<Metadata>{
     return new Promise((resolve, reject) => {
         db.all("SELECT name, value FROM metadata;", (err, rows) => {
             if(err){
@@ -156,6 +200,7 @@ function createMetadata(db: sqlite3.Database){
                 }
             }
 
+            //metadataBuilder.set
             const metadata = metadataBuilder.build();
             resolve(metadata);
         });

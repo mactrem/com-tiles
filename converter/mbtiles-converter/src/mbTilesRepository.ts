@@ -9,7 +9,7 @@ export interface Tile{
 }
 
 export class MBTilesRepository {
-    private static readonly TILES_TABLE_NAME = "tile";
+    private static readonly TILES_TABLE_NAME = "tiles";
 
     constructor(private readonly fileName: string) {
     }
@@ -43,16 +43,17 @@ export class MBTilesRepository {
 
         let query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
         if(limit){
-            query += ` WHERE tile_column >= ${limit.minTileCol} && tile_column <= ${limit.maxTileCol} && tile_row >= ${limit.maxTileRow} && tile_row<= ${limit.maxTileRow}`;
+            query += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
         }
-        query += " ORDER BY tile_row, tile_column ASC;"
+        query += " ORDER BY tile_row, tile_column ASC"
         for(let offset = 0; ; offset+=batchSize){
             //TODO: use prepared statement
-            query += ` LIMIT ${batchSize} OFFSET ${offset};`
+            const limitQuery = ` ${query} LIMIT ${batchSize} OFFSET ${offset};`
 
-            const rows = await util.promisify(db.all.bind(db))(query);
+            const rows = await util.promisify(db.all.bind(db))(limitQuery);
             if(!rows.length){
                 db.close();
+                return;
             }
 
             yield rows;

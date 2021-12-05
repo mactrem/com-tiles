@@ -7,6 +7,7 @@ function range(to: number){
     return [...Array(to).keys()];
 }
 
+/*
 describe("createIndexInRowMajorOrder", ()=> {
     it("should create dense index fragments in row-major order", ()=>{
         const numTiles = 4**0 + 4**1 + 4**2;
@@ -99,4 +100,4 @@ describe("createIndexInRowMajorOrder", ()=> {
             expect(tiles[offset]).toStrictEqual(new Uint8Array([i]));
         }
     });
-})
+})*/

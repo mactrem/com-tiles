@@ -21,13 +21,16 @@ Little endian encoding is used.
     - [JSON Schema definition](metadata-schema/metadata.json)
 - Index  
   - The index is also streamable which means that only parts of the index can be requested
-  - This is important because at planet scale the index can have size about 2.7 GB
+  - This is important because at planet scale the index can have size about 2.7 GB with 8 bytes per IndexEntry?
   - The index consists of a array of index entries and is clustered per zoom in cluster cells
   - A index entry consists of a TileOffset (default 4 bytes) and TileSize (default 4 bytes)
   - The size of the cluster cells is defined via the coalescence coefficient in the metadata document
+  - Store offset per fragment and ensure that the tiles are also ordered in the same way
+  - TODO: merge indexFragmentOrdering, indexRecordOrdering and dataOrdering
+  - At the beginning of each index fragment the offset is stored with 5 bytes 
   - Layout IndexRecord
-    - Offset -> size specified in the metadata document -> defaults to uint32
-    - TileSize -> unit32
+    - Offset -> size specified in the metadata document -> defaults to uint32 > 2 bytes for relative offset
+    - TileSize -> unit32 or 3 bytes (16 MB)?
 - Data
   - Raster or vector tile Blobs
   - The content is specified in the MetadataBuilder ``tileFormat`` property
