@@ -3,10 +3,18 @@
 * Calculates the index based on a space filling cure with row-major order with origin in the lower left like TMS.
 * Tile coordinates hast to be in the TMS tiling scheme.
 * */
+//TODO: refactor it should be used XYZ like specified in the OGC WebMercatorQuad -> but TMS is used in the MBTiles spec
 export default function calculateRangeIndex(bbox, z, x, y){
     /*
-    * - use a intersection with the bounding box to get correct index
-    * - use space filling curves for calculation
+    * - Get TileMatrixSet for the current zoo level
+    * - Calculate 4 intersection fragments
+    * - Calculate the sparse fragments
+    *    - Inspect upperRow, lowerRowe, leftColumn, rightColumn
+    *    - sparse/dense upperRow, sparse/dense lower Row, ...
+    *
+    * - Calculate fragment row and column of the specified tile
+    * - Iterate over every row and sum up number of tiles
+    * - Then calculate
     * */
 
     if(z === 0){

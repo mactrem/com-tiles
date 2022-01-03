@@ -7,14 +7,14 @@ export type BoundingBox = [minLon: number, minLat: number, maxLon: number, maxLa
 
 //TODO: define name of the crs in the JSON schema
 const tileMatrixCRS = "WebMercatorQuad ";
-export default function createWMQTileMatrixSet(tileMatrices: TileMatrix[], indexFragmentOrdering: SpaceFillingCurveOrdering = "RowMajor",
+export default function createWMQTileMatrixSet(tileMatrices: TileMatrix[],
+                                               fragmentOrdering: SpaceFillingCurveOrdering = "RowMajor",
                                        indexRecordOrdering: SpaceFillingCurveOrdering = "RowMajor",
-                                       dataOrdering: SpaceFillingCurveOrdering = "RowMajor"): Metadata["tileMatrixSet"]{
+                                       tileOrdering: SpaceFillingCurveOrdering = "RowMajor"): Metadata["tileMatrixSet"]{
     return {
         tileMatrixCRS,
-        indexFragmentOrdering,
-        indexRecordOrdering,
-        dataOrdering,
+        fragmentOrdering,
+        tileOrdering,
         tileMatrixSet: tileMatrices
     }
 }

@@ -35,17 +35,13 @@ export interface Metadata {
      */
     tileMatrixCRS?: string;
     /**
-     * Specifies how the index fragments of an index are ordered. Defaults to row-major order
+     * Specifies how the index fragments and data fragments are ordered. Defaults to row-major order
      */
-    indexFragmentOrdering?: "RowMajor" | "ZOrder" | "Hilbert";
+    fragmentOrdering?: "RowMajor" | "ZOrder" | "Hilbert";
     /**
-     * Specifies how the index records within an index fragment are ordered. Defaults to row-major order
+     * Specifies how the index records within an index fragment and the tiles within an tile fragment are ordered. Defaults to row-major order
      */
-    indexRecordOrdering?: "RowMajor" | "ZOrder" | "Hilbert";
-    /**
-     * Specifies how the map tiles in the data section are ordered. Defaults to row-major order
-     */
-    dataOrdering?: "RowMajor" | "ZOrder" | "Hilbert";
+    tileOrdering?: "RowMajor" | "ZOrder" | "Hilbert";
     /**
      * Definition of the TileMatrixSet.
      */

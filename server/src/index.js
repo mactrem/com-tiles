@@ -3,7 +3,7 @@ import express from "express";
 import calculateRangeIndex from "./comtIndex.js";
 import * as path from "path";
 
-const fileName = path.resolve("../../converter/dist/test.cot")
+const fileName = path.resolve("../../converter/mbtiles-converter/dist/test.cot")
 
 //const stream = fs.createReadStream(fileName);
 
@@ -18,7 +18,7 @@ const bounds = metadata.metadata.bounds;
 const indexBuffer = readIndex(metadata.metadataLength);
 
 
-const app = express();cd
+const app = express();
 
 //Zurich -> 12/2144/1434
 app.get('/tiles/:z/:x/:y', (req, res) => {
@@ -72,7 +72,16 @@ function readIndex(metadataLength){
     const offset = metadataStartIndex + metadataLength;
     fs.readSync(fd, indexBuffer, 0, indexLength, offset);
 
-    return indexBuffer;
+    const indexEntries = [];
+    const numIndexEntries = indexBuffer.length / 8;
+    for(let i = 0; i  < numIndexEntries; i++){
+        const bufferOffset = i * 8;
+        const offset =  indexBuffer.readUInt32LE(bufferOffset);
+        const size = indexBuffer.readUInt32LE(bufferOffset + 4);
+        indexEntries.push({offset, size});
+    }
+
+    return indexEntries;
 }
 
 function readTile(offset, size){

@@ -33,16 +33,12 @@
 					"type": "string",
 					"description": "Name of the Common TileMatrixSet definition (https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#61) as defined in the 'OGC Two Dimensional Tile Matrix Set' OGC draft. Defaults to WebMercatorQuad."
 				},
-				"indexFragmentOrdering": {
-					"description": "Specifies how the index fragments of an index are ordered. Defaults to row-major order",
+				"fragmentOrdering": {
+					"description": "Specifies how the index fragments and data fragments are ordered. Defaults to row-major order",
 					"$ref": "spaceFillingCurveOrdering.json"
 				},
-				"indexRecordOrdering": {
-					"description": "Specifies how the index records within an index fragment are ordered. Defaults to row-major order",
-					"$ref": "spaceFillingCurveOrdering.json"
-				},
-				"dataOrdering": {
-					"description": "Specifies how the map tiles in the data section are ordered. Defaults to row-major order",
+				"tileOrdering": {
+					"description": "Specifies how the index records within an index fragment and the tiles within an tile fragment are ordered. Defaults to row-major order",
 					"$ref": "spaceFillingCurveOrdering.json"
 				},
 				"tileMatrixSet": {

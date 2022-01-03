@@ -11,7 +11,21 @@ const mbTilesFile = path.resolve("data/zurich.mbtiles");
 
 const magic = "COMT";
 
+
+/*
+//convert number to le bytes e.g. 290
+const buffer = Buffer.alloc(5);
+//buffer.writeUInt8()
+//buffer[0] = 10;
+const num = 290;
+const hex = num.toString(16);
+
+buffer[0] = 0x01;
+buffer.writeBigInt64LE()*/
+
 (async()=>{
+    console.log("Start converting tiles.");
+
     const db = new sqlite3.Database(mbTilesFile)
     const metadata = await createMetadata(db);
     //const tiles = await getTilesByRowMajorOrder(db);
@@ -21,10 +35,12 @@ const magic = "COMT";
     //TODO: not all tiles in the lower zoom levels are queried because the bounds are calculated
     const index = await createIndexInRowMajorOrder(repo, metadata.tileMatrixSet.tileMatrixSet)
 
-    createComTileArchive(fileName, metadata, index);
+    await createComTileArchive(fileName, metadata, index, repo);
+
+    console.log("Finished converting tiles.");
 })();
 
-function createComTileArchive(fileName: string, metadata: Metadata, index: IndexEntry[]){
+async function createComTileArchive(fileName: string, metadata: Metadata, index: IndexEntry[], repo: MBTilesRepository){
     const stream = fs.createWriteStream(fileName, { encoding: 'binary' });
 
     const metadataJson = JSON.stringify(metadata);
@@ -32,6 +48,7 @@ function createComTileArchive(fileName: string, metadata: Metadata, index: Index
     writeHeader(stream, metadataJson.length, indexLengthInBytes);
     writeMetadata(stream, metadataJson);
     writeIndex(stream, indexLengthInBytes, index);
+    await writeTiles(stream, index, repo);
 }
 
 function writeHeader(stream: fs.WriteStream, metadataLength: number, indexLength: number){
@@ -40,7 +57,7 @@ function writeHeader(stream: fs.WriteStream, metadataLength: number, indexLength
     //TODO: the other stuff also has to be written in le byte order
     buffer.writeUInt32LE(metadataLength);
     stream.write(buffer);
-    //TODO: Index size can be variable -> 4 or 5 bytes
+    //TODO: Index size can be variable -> 4 or 5 bytes -> 4 bytes only 4G max index size
     const indexLengthBuffer = Buffer.alloc(4);
     indexLengthBuffer.writeUInt32LE(indexLength);
     stream.write(indexLengthBuffer);
@@ -52,17 +69,38 @@ function writeMetadata(stream: fs.WriteStream, metadataJson: string){
 
 function writeIndex(stream: fs.WriteStream, indexLengthInBytes: number, index: IndexEntry[]){
     const indexBuffer = Buffer.alloc(indexLengthInBytes);
+    //Quick and dirty implementation -> data section can be max 4 GB and also tile size should be 3 bytes per default
     for(let i = 0; i< index.length; i++){
         const offset = i * 8;
         indexBuffer.writeUInt32LE(index[i].offset, offset);
-        //how to write 5 or more bytes to a buffer
         //TODO: set offsetSize in the metadata document
         //TODO: offset is count at beginning of the data section -> write in the specification
         //TODO: with 4 bytes only 4GB can be stored -> rename from tileOffsetBytes to tile data size in bytes?
+        /*
+        * - Every fragment has a offset field
+        * - Every index entry has a size
+        * */
         indexBuffer.writeUInt32LE(index[i].size, offset + 4);
     }
 
     stream.write(indexBuffer);
+}
+
+async function writeTiles(stream: fs.WriteStream, index: IndexEntry[], tileRepository: MBTilesRepository){
+    const lastTile = index[index.length-1];
+    const dataBufferSize = lastTile.offset + lastTile.size;
+    //TODO: doesn't scale
+    const dataBuffer = Buffer.alloc(dataBufferSize);
+
+    let offset = 0;
+    for(const {zoom, row, column} of index){
+        const {data} = await tileRepository.getTile(zoom, row, column);
+        const tileBuffer = Buffer.from(data);
+        tileBuffer.copy(dataBuffer, offset);
+        offset += tileBuffer.length;
+    }
+
+    stream.write(dataBuffer);
 }
 
 /*
@@ -91,6 +129,7 @@ function createComTile(fileName, metadata, index, tiles){
     }
 
     //write magic
+
     stream.write(magic);
 
     //write metadata and index size

@@ -2,12 +2,12 @@ import {TileMatrix} from "@com-tiles/spec/types/tileMatrix";
 import {MBTilesRepository} from "./mbTilesRepository";
 
 /* 5 bytes offset and 3 bytes size as default */
-export type IndexEntry = {offset: number, size: number};
+export type IndexEntry = {offset: number, size: number, zoom: number, row: number, column: number};
 type fragmentBounds = { minTileCol: number, minTileRow: number, maxTileCol: number, maxTileRow: number };
 
 /**
  *
- * Create an index where the fragments and the index entries of a fragment are arrange in row-major order.
+ * Create an index where the fragments and the index entries of a fragment are arranged in row-major order.
  *
  * @param tiles Map tiles in row-major order
  */
@@ -42,9 +42,9 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
             const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, tileMatrix.tileMatrixLimits);
             //const t = (await tileBatches).next();
             for await (const tileBatch of tileBatches){
-                for (const {data} of tileBatch){
+                for (const {data, row, column} of tileBatch){
                     const size = data.length;
-                    index.push({offset, size});
+                    index.push({offset, size,zoom, row, column});
                     offset += size;
                 }
             }
@@ -97,12 +97,12 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
                     if(isDense(tileMatrix.tileMatrixLimits, fragmentBounds)){
                         const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, fragmentBounds);
                         for await (const tileBatch of tileBatches){
-                            for (const {data} of tileBatch){
+                            for (const {data, row, column} of tileBatch){
                                 const size = data.length;
                                 let tileIndex = index.length - 1;
                                 //reference to the current tile in the final blob
-                                let offset = index.length ? index[tileIndex].offset : 0;
-                                index.push({offset, size});
+                                let offset = index.length ? (index[tileIndex].offset + index[tileIndex].size) : 0;
+                                index.push({offset, size, zoom, row, column});
                             }
                         }
                     }
@@ -118,8 +118,8 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
                                     column <= limits.maxTileCol && row <= limits.maxTileRow){
                                     const size = data.length;
                                     let tileIndex = index.length - 1;
-                                    let offset = index.length ? index[tileIndex].offset : 0
-                                    index.push({offset, size});
+                                    let offset = index.length ? (index[tileIndex].offset + index[tileIndex].size): 0
+                                    index.push({offset, size, zoom, row, column});
                                 }
                             }
                         }
