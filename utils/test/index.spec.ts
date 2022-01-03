@@ -180,6 +180,41 @@ describe("calculateIndexOffsetForTile", () => {
         * */
         const index2 = calculateIndexOffsetForTile(metadata, 2, 2,3);
         expect(index2).toBe((1 + 2 + 7) * 8);
+
+
+        metadata.tileMatrixSet.tileMatrixSet[2] = {
+            zoom: 2,
+            aggregationCoefficient: 1,
+            tileMatrixLimits: {
+                minTileRow: 0,
+                minTileCol: 0,
+                maxTileRow: 2,
+                maxTileCol: 2
+            }
+        };
+        /*metadata.tileMatrixSet.tileMatrixSet[3] = {
+            zoom: 3,
+            aggregationCoefficient: 1,
+            tileMatrixLimits: {
+                minTileRow: 7,
+                minTileCol: 3,
+                maxTileRow: 10,
+                maxTileCol: 6
+            }
+        };*/
+        //const index3 = calculateIndexOffsetForTile(metadata, 3, 5, 11);
+        metadata.tileMatrixSet.tileMatrixSet[3] = {
+            zoom: 3,
+            aggregationCoefficient: 1,
+            tileMatrixLimits: {
+                minTileRow: 1,
+                minTileCol: 3,
+                maxTileRow: 6,
+                maxTileCol: 6
+            }
+        };
+        const index3 = calculateIndexOffsetForTile(metadata, 3, 5, 5);
+        expect(index3).toBe((1 + 2 + 9 + 17) * 8);
     });
 
     /*it("should return O as index for first tile in zoom level 2", () => {
