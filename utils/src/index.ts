@@ -5,6 +5,19 @@ const NUM_BYTES_TILE_SIZE = 4;
 const Supported_TILE_MATRIX_CRS = "WebMercatorQuad";
 const SUPPORTED_ORDERING = "RowMajor";
 
+
+export interface FragmentRange{
+
+}
+
+/*
+* Tile coordinates has to be in TMS tiling scheme
+* @returns Fragment ranges
+* */
+export function getFragmentRangesForTiles(tmsTiles: {z: number, x: number, y: number}[]): FragmentRange[]{
+    return null;
+}
+
 /*
 *
 * Calculates the offset in the index (IndexEntry) for the specified tile based on the metadata.

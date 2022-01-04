@@ -14,14 +14,25 @@
 <body>
 <div id="map"></div>
 <script>
-    var map = new maplibregl.Map({
+    /* const map = new maplibregl.Map({
         container: 'map',
         style: 'http://localhost:8081/data/style.json',
         center: [8.529727, 47.371622],
         zoom: 10
-        /*center: [8.529727, 47.371622],
-        zoom: 0*/
-    });
+    });*/
+
+    fetch("http://127.0.0.1:9001/api/v1/buckets/comtiles/objects/download?prefix=dGVzdC5jb3Q=", {
+        headers: {
+            //'content-type': 'multipart/byteranges',
+            'range': 'bytes=2-5',
+        },
+    }).then(response => {
+            if (response.ok) {
+                return response.blob();
+            }
+        }).then(response => {
+            console.log(response);
+        });
 </script>
 
 </body>
