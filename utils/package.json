@@ -1,8 +1,8 @@
 {
-  "name": "utils",
+  "name": "@com-tiles/utils",
   "version": "0.0.1",
   "description": "Utility functions for working with COMTiles",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "engines": {
     "node": ">=15"
   },

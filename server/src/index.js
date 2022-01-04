@@ -1,7 +1,14 @@
 import fs from "fs";
 import express from "express";
+import cors from "cors";
 import calculateRangeIndex from "./comtIndex.js";
 import * as path from "path";
+import vt from "@mapbox/vector-tile";
+import Protobuf from 'pbf';
+import {calculateIndexOffsetForTile} from "@com-tiles/utils";
+//use --experimental-json-modules
+import tilesJson from "./tiles.json";
+import * as zlib from "zlib";
 
 const fileName = path.resolve("../../converter/mbtiles-converter/dist/test.cot")
 
@@ -17,34 +24,53 @@ const metadata = await readMetadata();
 const bounds = metadata.metadata.bounds;
 const indexBuffer = readIndex(metadata.metadataLength);
 
-
 const app = express();
+app.use(cors())
 
-//Zurich -> 12/2144/1434
+//TODO: get size from metadata document
+const INDEX_ENTRY_SIZE = 8;
+
+//Zurich -> 12/2144/1434 -> http://localhost:8080/tiles/12/2144/1434
 app.get('/tiles/:z/:x/:y', (req, res) => {
     const zoom = parseInt(req.params.z, 10);
     const x = parseInt(req.params.x, 10);
     const y = parseInt(req.params.y, 10);
 
-    const index = calculateRangeIndex(bounds, zoom, x, y);
-    const indexOffset = index * 8;
-    const startIndex = indexBuffer.readUInt32LE(indexOffset);
-    const size = indexBuffer.readUInt32LE(indexOffset + 4);
+    //const index = calculateRangeIndex(bounds, zoom, x, y);
+    //TODO: refactor metadata
 
-    const tileOffset = metadataStartIndex + metadata.metadataLength + indexBuffer.length + startIndex;
+    //convert xyz to tms
+    const tmsY = 2** zoom - y - 1;
+    const [byteOffset, indexOffset] = calculateIndexOffsetForTile(metadata.metadata, zoom, x, tmsY);
+    const {offset, size} = indexBuffer[indexOffset];
+
+    const tileOffset = metadataStartIndex + metadata.metadataLength + (indexBuffer.length * INDEX_ENTRY_SIZE) + offset;
     const tile = readTile(tileOffset, size)
 
-    res.send("Test");
+    analyzeTile(tile);
 
     res.writeHead(200, {
         "Content-Type": "application/x-protobuf",
-        "Content-Length": tile.length
+        "Content-Length": tile.length,
+        "Content-Encoding": "gzip"
     });
 
     res.end(tile);
 })
 
+app.get('/tiles/tiles.json', (req, res) => {
+    res.end(JSON.stringify(tilesJson));
+})
+
 app.listen(8080);
+
+function analyzeTile(data){
+    const result = zlib.unzipSync(data);
+    const proto = new Protobuf(result);
+    const tile = new vt.VectorTile(proto);
+
+    console.log(tile);
+}
 
 function readMetadata(){
     const stream = fs.createReadStream(fileName);

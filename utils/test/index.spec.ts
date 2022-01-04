@@ -27,8 +27,9 @@ describe("calculateIndexOffsetForTile", () => {
                     }
                 ];
 
-        const index = calculateIndexOffsetForTile(metadata, 0, 0,0);
+        const [byteOffset, index] = calculateIndexOffsetForTile(metadata, 0, 0,0);
 
+        expect(byteOffset).toBe(0);
         expect(index).toBe(0);
     });
 
@@ -96,8 +97,8 @@ describe("calculateIndexOffsetForTile", () => {
                 tileMatrixLimits: {
                     minTileRow: 0,
                     minTileCol: 0,
-                    maxTileRow: 2,
-                    maxTileCol: 2
+                    maxTileRow: 3,
+                    maxTileCol: 3
                 }
             }
         ];
@@ -105,15 +106,20 @@ describe("calculateIndexOffsetForTile", () => {
         /*
         * TMS -> x=2, y=3
         * ^
-        * | -> 0 -> 0 -> 1 -> 0
+        * | -> 1 -> 1 -> 1 -> 0
         * | -> 1 -> 1 -> 1 -> 1
         * | -> 1 -> 1 -> 1 -> 1
         * |    1 -> 1 -> 1 -> 1
         * | _ _ >
         * */
         const index = calculateIndexOffsetForTile(metadata, 2, 2,3);
-
         expect(index).toBe((1 + 2 + 14) * 8);
+
+        const index2 = calculateIndexOffsetForTile(metadata, 2, 3,3);
+        expect(index2).toBe((1 + 2 + 15) * 8);
+
+        const index3 = calculateIndexOffsetForTile(metadata, 2, 2,2);
+        expect(index3).toBe((1 + 2 + 12) * 8);
     });
 
     it("should return valid offset when a aggregationCoefficient with sparse fragments is used", () => {
