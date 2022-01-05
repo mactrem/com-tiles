@@ -9,7 +9,8 @@ import {MBTilesRepository} from "./mbTilesRepository";
 const fileName = path.join(__dirname, "../test.cot")
 const mbTilesFile = path.resolve("data/zurich.mbtiles");
 
-const magic = "COMT";
+const MAGIC = "COMT";
+//const VERSION = 1;
 
 
 /*
@@ -52,15 +53,13 @@ async function createComTileArchive(fileName: string, metadata: Metadata, index:
 }
 
 function writeHeader(stream: fs.WriteStream, metadataLength: number, indexLength: number){
-    stream.write(magic);
-    const buffer = Buffer.alloc(4);
+    stream.write(MAGIC);
+    //TODO: add version
+    //stream.write(Buffer.alloc(4).writeUInt32LE(VERSION));
     //TODO: the other stuff also has to be written in le byte order
-    buffer.writeUInt32LE(metadataLength);
-    stream.write(buffer);
+    stream.write(Buffer.alloc(4).writeUInt32LE(metadataLength));
     //TODO: Index size can be variable -> 4 or 5 bytes -> 4 bytes only 4G max index size
-    const indexLengthBuffer = Buffer.alloc(4);
-    indexLengthBuffer.writeUInt32LE(indexLength);
-    stream.write(indexLengthBuffer);
+    stream.write(Buffer.alloc(4).writeUInt32LE(indexLength));
 }
 
 function writeMetadata(stream: fs.WriteStream, metadataJson: string){
@@ -130,7 +129,7 @@ function createComTile(fileName, metadata, index, tiles){
 
     //write magic
 
-    stream.write(magic);
+    stream.write(MAGIC);
 
     //write metadata and index size
     const buffer = Buffer.alloc(4);
