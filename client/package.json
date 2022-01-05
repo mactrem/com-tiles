@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "http-server": "^14.0.0"
+    "http-server": "^14.0.0",
+    "pako": "^2.0.4"
   }
 }

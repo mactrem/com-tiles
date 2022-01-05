@@ -83,7 +83,5 @@
     2.5444437451708134e-14,
     1
   ],
-  "tiles": [
-    "http://localhost:8080/tiles/{z}/{x}/{y}"
-  ]
+  "tiles": ["comt://http://localhost:8080/tiles/{z}/{x}/{y}"]
 }
