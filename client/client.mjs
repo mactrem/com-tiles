@@ -11,19 +11,14 @@ const COMT_URL = "http://0.0.0.0:9000/comtiles/test.cot?X-Amz-Algorithm=AWS4-HMA
 
 
 async function createMap(metadata, partialIndex, dataOffset, comtUrl){
-    //TODO: attribute with pmtiles
-    let re = new RegExp(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/)
+    //TODO: attribute that idea with github snippet
     maplibregl.addProtocol('comt', (params, callback) => {
-        let result = params.url.match(re);
-        const comTilesUrl = result[1];
-        const z = result[2];
-        const x = result[3];
-        const y = result[4];
+        let result = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
+        const [tileUrl, url, z, x, y] = result;
 
         //get data offset from partial index -> use utils lib -> convert to tms from xyz for using the utils lib
-        const tmsY = 2**z - y -1;
-        const [offset, index] = calculateIndexOffsetForTile(metadata, z, x, tmsY);
-        //const [offset, index] = calculateIndexOffsetForTile(metadata, 0, 0,0 );
+        const tmsY = 2** parseInt(z) - parseInt(y) -1;
+        const [offset, index] = calculateIndexOffsetForTile(metadata, parseInt(z), parseInt(x), tmsY);
 
         if(offset >= partialIndex.byteLength){
             throw Error("Fetching index fragments not implemented yet.");
@@ -49,15 +44,15 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
         });
 
 
-        //TODO: attribute with pmtiles
-        return { cancel: () => { console.log("Cancel not implemented") } };
+        return { cancel: () => console.log("Canceling the tile request is not implemented (yet).")  };
     });
 
     const map = new maplibregl.Map({
         container: "map",
         style: "http://localhost:8081/data/style.json",
         center: [8.529727, 47.371622],
-        zoom: 10
+        //zoom: 10
+        zoom: 0
     });
 }
 
