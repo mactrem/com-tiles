@@ -21,17 +21,20 @@
         zoom: 10
     });*/
 
-    fetch("http://127.0.0.1:9001/api/v1/buckets/comtiles/objects/download?prefix=dGVzdC5jb3Q=", {
+    fetch("http://0.0.0.0:9000/comtiles/test.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=OZQGBL3EQSS2UIHW07W3%2F20220105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220105T123702Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJPWlFHQkwzRVFTUzJVSUhXMDdXMyIsImV4cCI6MTY0MTM4OTY1MiwicGFyZW50IjoibWluaW9hZG1pbiJ9.gdkcUWTKnV3jDG3XSghuNL4zEyjQH99yHN-zl7FHViSoW8HJxwM-ro6Hng1Y15E_iKnNppjE0oNn4XSMJy0_xQ&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=3350f0085a4a91fd75230f5edf1642bf9543bf90017f0756d0b3d2e32c6fee9e", {
         headers: {
             //'content-type': 'multipart/byteranges',
-            'range': 'bytes=2-5',
+            'range': 'bytes=0-100',
         },
     }).then(response => {
-            if (response.ok) {
-                return response.blob();
+        if (response.ok) {
+                return response.arrayBuffer();
             }
-        }).then(response => {
-            console.log(response);
+        }).then(buffer => {
+            const enc = new TextDecoder("utf-8");
+            const text = enc.decode(buffer);
+
+            console.log(text);
         });
 </script>
 
