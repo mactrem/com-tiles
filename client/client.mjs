@@ -22,8 +22,8 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
 
         //get data offset from partial index -> use utils lib -> convert to tms from xyz for using the utils lib
         const tmsY = 2**z - y -1;
-        //const [offset, index] = calculateIndexOffsetForTile(metadata, z, x, tmsY);
-        const [offset, index] = calculateIndexOffsetForTile(metadata, 0, 0,0 );
+        const [offset, index] = calculateIndexOffsetForTile(metadata, z, x, tmsY);
+        //const [offset, index] = calculateIndexOffsetForTile(metadata, 0, 0,0 );
 
         if(offset >= partialIndex.byteLength){
             throw Error("Fetching index fragments not implemented yet.");
@@ -44,11 +44,13 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
             }
         }).then(buffer=>{
             const arr = new Uint8Array(buffer);
-            const unzippedBuffer = pako.ungzip(arr);
-            callback(null, unzippedBuffer, null, null);
+            const uncompressedBuffer = pako.ungzip(arr);
+            callback(null, uncompressedBuffer, null, null);
         });
 
-        //return { cancel: () => { console.log("Cancel not implemented") } };
+
+        //TODO: attribute with pmtiles
+        return { cancel: () => { console.log("Cancel not implemented") } };
     });
 
     const map = new maplibregl.Map({
