@@ -153,4 +153,4 @@ function calculateDenseTileSetFragmentBounds(numTilePerFramgentSide, tileSetLimi
 function inRange(x, y, tileSetLimits) {
     return x >= tileSetLimits.minTileCol && x <= tileSetLimits.maxTileCol && y >= tileSetLimits.minTileRow && y <= tileSetLimits.maxTileRow;
 }
-//# sourceMappingURL=converter.js.map
+//# sourceMappingURL=converter.mjs.map
