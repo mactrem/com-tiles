@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "node src/index.ts",
+    "start": "node dist/src/index.js",
     "test": "jest",
     "lint": "eslint . --ext .ts"
   },

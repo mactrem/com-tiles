@@ -18,6 +18,10 @@ export function getFragmentRangesForTiles(tmsTiles: {z: number, x: number, y: nu
     return null;
 }
 
+export function getFragmentRangesForTils(tmsTile: {z: number, x: number, y: number}[]): FragmentRange{
+    return null;
+}
+
 /*
 *
 * Calculates the offset in the index (IndexEntry) for the specified tile based on the metadata.
