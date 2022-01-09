@@ -5,11 +5,12 @@ import * as path from "path";
 import {Metadata} from "@com-tiles/spec";
 import {createIndexInRowMajorOrder, IndexEntry} from "./indexFactory";
 import {MBTilesRepository} from "./mbTilesRepository";
+import {convertNumberToBufferLE} from "./utils";
 
 //const fileName = path.join(__dirname, "../europe.cot")
 //const mbTilesFile = path.resolve("data/europe.mbtiles");
-const fileName = path.join("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/europe.cot")
-const mbTilesFile = path.resolve("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/europe.mbtiles");
+const fileName = path.join("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany.cot")
+const mbTilesFile = path.resolve("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany.mbtiles");
 
 console.info(fileName);
 console.info(mbTilesFile);
@@ -25,9 +26,12 @@ const buffer = Buffer.alloc(5);
 //buffer[0] = 10;
 const num = 290;
 const hex = num.toString(16);
-
 buffer[0] = 0x01;
-buffer.writeBigInt64LE()*/
+//buffer.writeBigInt64LE()
+
+const buff = convertNumberToBufferLE(2000, 5);
+console.log(buff);*/
+
 
 (async()=>{
     console.log(process.memoryUsage());
@@ -51,7 +55,8 @@ async function createComTileArchive(fileName: string, metadata: Metadata, index:
     const stream = fs.createWriteStream(fileName, { encoding: 'binary' });
 
     const metadataJson = JSON.stringify(metadata);
-    const indexLengthInBytes = index.length * (4 + metadata.tileOffsetBytes);
+    const defaultTileSize = 4;
+    const indexLengthInBytes = index.length * (defaultTileSize + metadata.tileOffsetBytes);
     writeHeader(stream, metadataJson.length, indexLengthInBytes);
     writeMetadata(stream, metadataJson);
     console.info("Metadata created.");
@@ -71,11 +76,12 @@ function writeHeader(stream: fs.WriteStream, metadataLength: number, indexLength
     //stream.write(buffer);
     //TODO: the other stuff also has to be written in le byte order
     const metadataLengthBuffer = Buffer.alloc(4);
-    metadataLengthBuffer.writeUInt32LE(metadataLength)
+    metadataLengthBuffer.writeUInt32LE(metadataLength);
     stream.write(metadataLengthBuffer);
     //TODO: Index size can be variable -> 4 or 5 bytes -> 4 bytes only 4G max index size
-    const indexLengthBuffer = Buffer.alloc(4);
-    indexLengthBuffer.writeUInt32LE(indexLength)
+    //const indexLengthBuffer = Buffer.alloc(4);
+    //indexLengthBuffer.writeUInt32LE(indexLength)
+    const indexLengthBuffer = convertNumberToBufferLE(indexLength, 5);
     stream.write(indexLengthBuffer);
 }
 
@@ -87,8 +93,9 @@ function writeIndex(stream: fs.WriteStream, indexLengthInBytes: number, index: I
     const indexBuffer = Buffer.alloc(indexLengthInBytes);
     //Quick and dirty implementation -> data section can be max 4 GB and also tile size should be 3 bytes per default
     for(let i = 0; i< index.length; i++){
-        const offset = i * 8;
-        indexBuffer.writeUInt32LE(index[i].offset, offset);
+        const offset = i * 9;
+        //indexBuffer.writeUInt32LE(index[i].offset, offset);
+        convertNumberToBufferLE(index[i].offset, 5).copy(indexBuffer, offset);
         //TODO: set offsetSize in the metadata document
         //TODO: offset is count at beginning of the data section -> write in the specification
         //TODO: with 4 bytes only 4GB can be stored -> rename from tileOffsetBytes to tile data size in bytes?
@@ -96,7 +103,7 @@ function writeIndex(stream: fs.WriteStream, indexLengthInBytes: number, index: I
         * - Every fragment has a offset field
         * - Every index entry has a size
         * */
-        indexBuffer.writeUInt32LE(index[i].size, offset + 4);
+        indexBuffer.writeUInt32LE(index[i].size, offset + 5);
     }
 
     stream.write(indexBuffer);

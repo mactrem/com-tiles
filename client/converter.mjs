@@ -9,7 +9,7 @@ const SUPPORTED_ORDERING = "RowMajor";
 export function getFragmentRangesForTiles(tmsTiles) {
     return null;
 }
-export function getFragmentRangesForTils(tmsTile) {
+export function getFragmentRangesForTile(tmsTile) {
     return null;
 }
 /*
@@ -30,8 +30,7 @@ export function calculateIndexOffsetForTile(metadata, zoom, x, y) {
     if (tileMatrixSet.tileMatrixCRS !== undefined && (tileMatrixSet === null || tileMatrixSet === void 0 ? void 0 : tileMatrixSet.tileMatrixCRS.trim().toLowerCase()) !== Supported_TILE_MATRIX_CRS.toLowerCase()) {
         throw new Error(`The only supported TileMatrixCRS is ${Supported_TILE_MATRIX_CRS}.`);
     }
-    //TODO: use 5 as default?
-    const numBytesForTileOffset = (_a = metadata.tileOffsetBytes) !== null && _a !== void 0 ? _a : 4;
+    const numBytesForTileOffset = (_a = metadata.tileOffsetBytes) !== null && _a !== void 0 ? _a : 5;
     const indexEntrySize = numBytesForTileOffset + NUM_BYTES_TILE_SIZE;
     let offset = 0;
     const filteredSet = tileMatrixSet.tileMatrixSet.filter(t => t.zoom <= zoom);

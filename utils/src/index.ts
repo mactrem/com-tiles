@@ -41,8 +41,7 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
         throw new Error(`The only supported TileMatrixCRS is ${Supported_TILE_MATRIX_CRS}.`);
     }
 
-    //TODO: use 5 as default?
-    const numBytesForTileOffset = metadata.tileOffsetBytes ?? 4;
+    const numBytesForTileOffset = metadata.tileOffsetBytes ?? 5;
     const indexEntrySize = numBytesForTileOffset + NUM_BYTES_TILE_SIZE;
     let offset = 0;
     const filteredSet = tileMatrixSet.tileMatrixSet.filter(t => t.zoom <= zoom);

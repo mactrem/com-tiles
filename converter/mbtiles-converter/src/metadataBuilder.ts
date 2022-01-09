@@ -9,7 +9,7 @@ export class WebMercatorQuadMetadataBuilder {
     private name: string;
     private description = "";
     private attribution = "";
-    private tileOffsetBytes = 4;
+    private tileOffsetBytes = 5;
     private tileFormat: Metadata["tileFormat"] = "pbf";
     private bbox: BoundingBox;
     private minZoom =  0;

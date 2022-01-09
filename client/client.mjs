@@ -2,7 +2,7 @@ import {calculateIndexOffsetForTile} from "./converter.mjs";
 import pako from "./node_modules/pako/dist/pako.esm.mjs"
 
 //const COMT_URL = "http://0.0.0.0:9000/comtiles/test.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=3718FS09AU0CV3T4OGWN%2F20220105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220105T183958Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiIzNzE4RlMwOUFVMENWM1Q0T0dXTiIsImV4cCI6MTY0MTQxMTU5MywicGFyZW50IjoibWluaW9hZG1pbiJ9.bQ1bU0FLKvws3WhiFYFri7nVdYe4aFbADy9aiPxC1x4Z1soWHCKmfcSfy6083e6eIrMaIqzj-_TlB2NTuKvvJg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=7ed22d6a8f1be00b7fb99e19137e04a9197b5323299cbef7e9a8e0280fc300ac";
-const COMT_URL = "http://0.0.0.0:9000/comtiles/austria-new.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=2Q1PPZGQR5G3QFJXWV4R%2F20220108%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220108T204132Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiIyUTFQUFpHUVI1RzNRRkpYV1Y0UiIsImV4cCI6MTY0MTY3Nzk3MSwicGFyZW50IjoibWluaW9hZG1pbiJ9.v__SAlODrJaZ3m1AV5AP2tsHyL99DA-3FydpO59Eh5vvc-NmdNalrIrmjx8TDvP_nUcNYaF50w-B2yvqx3IWrQ&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=179d28fbf57bb2f904c5c55050f0f59932b685b7f967bef3e0a328c2904e6a2c";
+const COMT_URL = "http://0.0.0.0:9000/comtiles/germany.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=FWBRTKC0SHK0LEVW36KD%2F20220109%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220109T151001Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJGV0JSVEtDMFNISzBMRVZXMzZLRCIsImV4cCI6MTY0MTc0NDE4NCwicGFyZW50IjoibWluaW9hZG1pbiJ9.76nGnE_qzJ-QeU7fYqfcyvuxS_D3zM1BDDuQ1WyvnPI9Ud5FuWUa_SJ2n47DQUjXDvCJ71FLvrE0pZwy9GKxag&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=6dbf3954acd1439f7c5aafdfd5338d59abda105a1b3867e1752d4b854f5da631";
 
 (async()=>{
     const {metadata, partialIndex, dataOffset} = await loadMetadataAndPartialIndex(COMT_URL);
@@ -34,8 +34,9 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
         }
 
         const indexView = new DataView(partialIndex);
-        const tileOffset = indexView.getUint32(offset, true);
-        const tileSize = indexView.getUint32(offset + 4, true);
+        //const tileOffset = indexView.getUint32(offset, true);
+        const tileOffset = convert5BytesLEToNumber(partialIndex, offset);
+        const tileSize = indexView.getUint32(offset + 5, true);
         console.log(`Current index: ${index}`);
         console.log(`Next tile offset: ${tileOffset+tileSize}`);
 
@@ -64,7 +65,7 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
         style: "http://localhost:8081/data/style.json",
         //center: [8.529727, 47.371622],
         center: [16.335668227571986, 48.18343081801389],
-        zoom: 5
+        zoom: 0
     });
 }
 
@@ -94,8 +95,9 @@ async function loadMetadataAndPartialIndex(url){
     /*if(metadataSize > MAX_METADATA_SIZE){
             throw Error(`Size of the metadata document is larger then ${MAX_METADATA_SIZE} bytes`);
     }*/
-    const indexSize = dataView.getUint32(8, true);
-    const metadataStartIndex = 12;
+    //const indexSize = dataView.getUint32(8, true);
+    const indexSize = convert5BytesLEToNumber(buffer, 8);
+    const metadataStartIndex = 13;
     const metadataBuffer = buffer.slice(metadataStartIndex, (metadataStartIndex + metadataSize));
     const textDecoder = new TextDecoder("utf-8");
     const metadataDocument = textDecoder.decode(metadataBuffer);
@@ -107,13 +109,21 @@ async function loadMetadataAndPartialIndex(url){
     //get first 500k of the index
     //build an index LRU cache where the initial 0-8 and the further requested tiles are stored
 
-    const indexOffset = 12 + metadataSize;
-    const indexEntrySize = 8;
+    const indexOffset = metadataStartIndex + metadataSize;
+    const indexEntrySize = 9;
     //get rid of a potential last incomplete index offset
     const endOffset = indexOffset + Math.floor((initialChunkSize - indexOffset) / indexEntrySize) * indexEntrySize;
     const partialIndex = buffer.slice(indexOffset, endOffset);
 
     const dataOffset = indexOffset + indexSize;
     return {metadata, partialIndex, dataOffset};
+}
+
+function convert5BytesLEToNumber(buffer,offset){
+    const slicedBuffer = new Uint8Array(buffer.slice(offset, offset + 5));
+    const convertedBuffer = new Uint8Array([slicedBuffer[0], slicedBuffer[1], slicedBuffer[2], slicedBuffer[3],
+        slicedBuffer[4], 0, 0, 0]).buffer;
+    const view = new DataView(convertedBuffer);
+    return Number(view.getBigUint64(0, true));
 }
 
