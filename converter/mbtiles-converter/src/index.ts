@@ -9,8 +9,8 @@ import {convertNumberToBufferLE} from "./utils";
 
 //const fileName = path.join(__dirname, "../europe.cot")
 //const mbTilesFile = path.resolve("data/europe.mbtiles");
-const fileName = path.join("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany.cot")
-const mbTilesFile = path.resolve("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany.mbtiles");
+const fileName = path.join("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/europe.cot")
+const mbTilesFile = path.resolve("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/europe.mbtiles");
 
 console.info(fileName);
 console.info(mbTilesFile);

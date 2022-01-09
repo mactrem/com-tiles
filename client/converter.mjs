@@ -6,11 +6,105 @@ const SUPPORTED_ORDERING = "RowMajor";
 * Tile coordinates has to be in TMS tiling scheme
 * @returns Fragment ranges
 * */
-export function getFragmentRangesForTiles(tmsTiles) {
+/*export function getFragmentRangesForTiles(tmsTiles: {z: number, x: number, y: number}[]): FragmentRange[]{
     return null;
-}
-export function getFragmentRangesForTile(tmsTile) {
-    return null;
+}*/
+export function getFragmentRangeForTile(metadata, zoom, x, y) {
+    var _a;
+    const tileMatrixSet = metadata.tileMatrixSet;
+    const supportedOrdering = [undefined, SUPPORTED_ORDERING];
+    if (![tileMatrixSet.fragmentOrdering, tileMatrixSet.tileOrdering].
+        every(ordering => supportedOrdering.some(o => o === ordering))) {
+        throw new Error(`The only supported fragment and tile ordering is ${SUPPORTED_ORDERING}`);
+    }
+    if (tileMatrixSet.tileMatrixCRS !== undefined && (tileMatrixSet === null || tileMatrixSet === void 0 ? void 0 : tileMatrixSet.tileMatrixCRS.trim().toLowerCase()) !== Supported_TILE_MATRIX_CRS.toLowerCase()) {
+        throw new Error(`The only supported TileMatrixCRS is ${Supported_TILE_MATRIX_CRS}.`);
+    }
+    const numBytesForTileOffset = (_a = metadata.tileOffsetBytes) !== null && _a !== void 0 ? _a : 5;
+    const indexEntrySize = numBytesForTileOffset + NUM_BYTES_TILE_SIZE;
+    let offset = 0;
+    const filteredSet = tileMatrixSet.tileMatrixSet.filter(t => t.zoom <= zoom);
+    for (const ts of filteredSet) {
+        const limit = ts.tileMatrixLimits;
+        if (ts.zoom === zoom && !inRange(x, y, limit)) {
+            throw new Error("Specified tile index not part of the TileSet.");
+        }
+        if (ts.zoom < zoom) {
+            const numTiles = (limit.maxTileCol - limit.minTileCol + 1) * (limit.maxTileRow - limit.minTileRow + 1);
+            offset += (numTiles * indexEntrySize);
+        }
+        else {
+            /*
+            * Calculates the index based on a space filling curve with row-major order with origin on the lower left side
+            * like specified in the MBTiles spec
+            * */
+            //TODO: refactor to use XYZ instead of TMS like specified the OGC WebMercatorQuad TileMatrixSet
+            if (ts.aggregationCoefficient === -1) {
+                throw new Error("A valid aggregationCoefficient has to be specified.");
+            }
+            //First calculate number of tiles based on the assumption that all fragments are dense
+            const numTilesPerFragmentSide = 2 ** ts.aggregationCoefficient;
+            const denseLimits = calculateDenseTileSetFragmentBounds(numTilesPerFragmentSide, ts.tileMatrixLimits);
+            //const fragmentsColIndex = Math.floor((x - denseLimits.minTileCol + 1) / numTilesPerFragmentSide);
+            //Position of the tile in the local fragment crs
+            const localFragmentCrsXIndexOfTile = Math.floor((x - denseLimits.minTileCol) / numTilesPerFragmentSide);
+            const localFragmentCrsYIndexOfTile = Math.floor((y - denseLimits.minTileRow) / numTilesPerFragmentSide);
+            const numFragmentsCol = Math.ceil((denseLimits.maxTileCol - denseLimits.minTileCol + 1) / numTilesPerFragmentSide);
+            //const fragmentIndex = (fragmentsRowIndex * numFragmentsCol) + fragmentsColIndex;
+            //const numSparseTilesBeforeFragment = fragmentIndex * 4 ** ts.aggregationCoefficient;
+            //TODO: check if only one tile because then the following approach doesn't work
+            let numTilesBeforeFragment = 0;
+            //TODO: check for zero index
+            if (localFragmentCrsXIndexOfTile > 0) {
+                //TODO: also calculate for the partial row the dense fragments and substract left, right and upper
+                // because then the specific fragment has not to be inspected
+                //Partial Row
+                //Only Left and upper delta has to be calculated
+                const numDenseTilesForPartialRow = localFragmentCrsXIndexOfTile * 4 ** ts.aggregationCoefficient;
+                const numPartialFragmentsCols = localFragmentCrsXIndexOfTile;
+                //TODO: only calculate if its the most upper fragment
+                let deltaUpperRow = 0;
+                if (y > (denseLimits.maxTileRow - (2 ** ts.aggregationCoefficient))) {
+                    deltaUpperRow = (denseLimits.maxTileRow - limit.maxTileRow) * numPartialFragmentsCols * 2 ** ts.aggregationCoefficient;
+                }
+                //subtract -1 for upper row when the upper row is dense
+                const numRows = deltaUpperRow > 0 ? (2 ** ts.aggregationCoefficient - 1) : (2 ** ts.aggregationCoefficient);
+                const deltaLeftCol = (limit.minTileCol - denseLimits.minTileCol) * numRows;
+                const deltaTilePartialRows = deltaLeftCol + deltaUpperRow;
+                numTilesBeforeFragment = numDenseTilesForPartialRow - deltaTilePartialRows;
+            }
+            //TODO: refactor redundant calculation
+            const numDenseCols = denseLimits.maxTileCol - denseLimits.minTileCol + 1;
+            const currentDenseFragmentMaxRowIndex = Math.floor(y / (2 ** ts.aggregationCoefficient)) * (2 ** ts.aggregationCoefficient);
+            const numDenseRowsToCurrentMaxFragment = currentDenseFragmentMaxRowIndex - denseLimits.minTileRow;
+            //Full Lines Fragments ->  Calculate the diff to subtract from the dense tiles for the sparse tiles
+            //Only Left, right and lower delta has to be calculated
+            if (numDenseRowsToCurrentMaxFragment > 1) {
+                const numDenseTilesForFullRows = (localFragmentCrsYIndexOfTile * numFragmentsCol) * 4 ** ts.aggregationCoefficient;
+                //only the full row are calculated in the first step -> the partial rows follow in a separate step
+                const deltaLowerRow = (limit.minTileRow - denseLimits.minTileRow) * numDenseCols;
+                //check if row is sparse then -1 must not be subtracted from left and right column
+                const numDenseRowsCorrected = deltaLowerRow === 0 ? numDenseRowsToCurrentMaxFragment : (numDenseRowsToCurrentMaxFragment - 1);
+                const deltaLeftCol = (limit.minTileCol - denseLimits.minTileCol) * numDenseRowsCorrected;
+                const deltaRightCol = (denseLimits.maxTileCol - limit.maxTileCol) * numDenseRowsCorrected;
+                //const deltaUpperRow = (denseLimits.maxTileRow - limit.maxTileRow) * numDenseRows;
+                const deltaTilesFullRows = deltaLeftCol + deltaRightCol + deltaLowerRow;
+                numTilesBeforeFragment += (numDenseTilesForFullRows - deltaTilesFullRows);
+            }
+            offset += (numTilesBeforeFragment * indexEntrySize);
+        }
+    }
+    //TODO: calculation only works for sparse not for dense fragments
+    const ts = filteredSet[zoom];
+    const minTileCol = Math.floor(x / (2 ** ts.aggregationCoefficient)) * (2 ** ts.aggregationCoefficient);
+    const minTileRow = Math.floor(y / (2 ** ts.aggregationCoefficient)) * (2 ** ts.aggregationCoefficient);
+    const maxTileCol = minTileCol * (2 ** ts.aggregationCoefficient);
+    const maxTileRow = minTileRow * (2 ** ts.aggregationCoefficient);
+    const fragmentTileBounds = calculateFragmentBounds(ts.tileMatrixLimits, { minTileCol, minTileRow, maxTileRow, maxTileCol });
+    const numTiles = (fragmentTileBounds.maxTileCol - fragmentTileBounds.minTileCol + 1) * (fragmentTileBounds.maxTileRow - fragmentTileBounds.minTileRow + 1);
+    const endOffset = offset + (numTiles * indexEntrySize);
+    const index = offset / indexEntrySize;
+    return { index, startOffset: offset, endOffset };
 }
 /*
 *

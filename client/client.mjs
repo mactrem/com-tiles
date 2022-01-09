@@ -2,7 +2,7 @@ import {calculateIndexOffsetForTile} from "./converter.mjs";
 import pako from "./node_modules/pako/dist/pako.esm.mjs"
 
 //const COMT_URL = "http://0.0.0.0:9000/comtiles/test.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=3718FS09AU0CV3T4OGWN%2F20220105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220105T183958Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiIzNzE4RlMwOUFVMENWM1Q0T0dXTiIsImV4cCI6MTY0MTQxMTU5MywicGFyZW50IjoibWluaW9hZG1pbiJ9.bQ1bU0FLKvws3WhiFYFri7nVdYe4aFbADy9aiPxC1x4Z1soWHCKmfcSfy6083e6eIrMaIqzj-_TlB2NTuKvvJg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=7ed22d6a8f1be00b7fb99e19137e04a9197b5323299cbef7e9a8e0280fc300ac";
-const COMT_URL = "http://0.0.0.0:9000/comtiles/germany.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=FWBRTKC0SHK0LEVW36KD%2F20220109%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220109T151001Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJGV0JSVEtDMFNISzBMRVZXMzZLRCIsImV4cCI6MTY0MTc0NDE4NCwicGFyZW50IjoibWluaW9hZG1pbiJ9.76nGnE_qzJ-QeU7fYqfcyvuxS_D3zM1BDDuQ1WyvnPI9Ud5FuWUa_SJ2n47DQUjXDvCJ71FLvrE0pZwy9GKxag&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=6dbf3954acd1439f7c5aafdfd5338d59abda105a1b3867e1752d4b854f5da631";
+const COMT_URL = "http://0.0.0.0:9000/comtiles/europe.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=5OKQ4SRH5I3Y2ERSZHO3%2F20220109%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220109T195615Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiI1T0tRNFNSSDVJM1kyRVJTWkhPMyIsImV4cCI6MTY0MTc2MDUyMCwicGFyZW50IjoibWluaW9hZG1pbiJ9.2HY5geuwQWA5mgvs1fSfVffkkP7S63yM5M7bKhHU1tNyWmmCxaHGHD0nylCSm7OQUm2hahkdMEBk7uIWtU2YFg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=039c3ba98ce3f93329496549eaa5e8072b7b365def455ed24302ec7b79887d55";
 
 (async()=>{
     const {metadata, partialIndex, dataOffset} = await loadMetadataAndPartialIndex(COMT_URL);
@@ -11,9 +11,11 @@ const COMT_URL = "http://0.0.0.0:9000/comtiles/germany.cot?X-Amz-Algorithm=AWS4-
 })();
 
 
+const fragmentCache = new Map();
+
 async function createMap(metadata, partialIndex, dataOffset, comtUrl){
     //TODO: attribute that idea with github snippet
-    maplibregl.addProtocol('comt', (params, callback) => {
+    maplibregl.addProtocol('comt', async (params, callback) => {
         let result = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
         const [tileUrl, url, z, x, y] = result;
         console.info(`${z}/${x}/${y}`);
@@ -23,23 +25,50 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
         const limit = metadata.tileMatrixSet.tileMatrixSet[z].tileMatrixLimits;
         if(x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow){
             console.info("Requested tile not within the boundary ot the TileSet.");
-            callback(null, new Uint8Array(), null, null);
+            callback(null, new Uint8Array(0), null, null);
             return;
         }
 
+        let tileOffset;
+        let tileSize;
+        /*
+        * -> Get tile from LRU Cache -> start with simple growing cache
+        * -> If tile not in index request the fragment
+        * */
         const [offset, index] = calculateIndexOffsetForTile(metadata, parseInt(z), parseInt(x), tmsY);
-
         if(offset >= partialIndex.byteLength){
-            throw Error("Fetching index fragments not implemented yet.");
-        }
+            const fragmentRange = getFragmentRangeForTile(metadata, parseInt(z), parseInt(x), tmsY);
 
-        const indexView = new DataView(partialIndex);
-        //const tileOffset = indexView.getUint32(offset, true);
-        const tileOffset = convert5BytesLEToNumber(partialIndex, offset);
-        const tileSize = indexView.getUint32(offset + 5, true);
+            let indexFragmentBuffer;
+            if(fragmentCache.has(fragmentRange.index)){
+                indexFragmentBuffer = fragmentCache.get(fragmentRange.index);
+            }
+            else{
+                indexFragmentBuffer = await fetch(comtUrl, {
+                    headers: {
+                        'range': `bytes=${fragmentRange.startOffset}-${fragmentRange.endOffset}`,
+                    },
+                }).then(response => {
+                    if (response.ok) {
+                        return response.arrayBuffer();
+                    }
+                });
+            }
+
+            fragmentCache.set(fragmentRange.index, indexFragmentBuffer);
+
+            const indexEntrySize = 9;
+            const relativeFragmentOffset = (index - fragmentRange.index) * indexEntrySize;
+            tileOffset = convert5BytesLEToNumber(indexFragmentBuffer, relativeFragmentOffset);
+            tileSize = new DataView(indexFragmentBuffer).getUint32(relativeFragmentOffset + 5, true);
+        }
+        else{
+            //const tileOffset = indexView.getUint32(offset, true);
+            tileOffset = convert5BytesLEToNumber(partialIndex, offset);
+            tileSize = new DataView(partialIndex).getUint32(offset + 5, true);
+        }
         console.log(`Current index: ${index}`);
         console.log(`Next tile offset: ${tileOffset+tileSize}`);
-
 
         const absoluteTileOffset = dataOffset + tileOffset;
         fetch(comtUrl, {
@@ -55,7 +84,6 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
             const uncompressedBuffer = pako.ungzip(arr);
             callback(null, uncompressedBuffer, null, null);
         });
-
 
         return { cancel: () => console.log("Canceling the tile request is not implemented (yet).")  };
     });
@@ -97,6 +125,8 @@ async function loadMetadataAndPartialIndex(url){
     }*/
     //const indexSize = dataView.getUint32(8, true);
     const indexSize = convert5BytesLEToNumber(buffer, 8);
+    console.info(`Index size: ${indexSize/1024/1924} mb`);
+
     const metadataStartIndex = 13;
     const metadataBuffer = buffer.slice(metadataStartIndex, (metadataStartIndex + metadataSize));
     const textDecoder = new TextDecoder("utf-8");
