@@ -9,6 +9,9 @@ const SUPPORTED_ORDERING = "RowMajor";
 export function getFragmentRangesForTiles(tmsTiles) {
     return null;
 }
+export function getFragmentRangesForTils(tmsTile) {
+    return null;
+}
 /*
 *
 * Calculates the offset in the index (IndexEntry) for the specified tile based on the metadata.
@@ -48,10 +51,10 @@ export function calculateIndexOffsetForTile(metadata, zoom, x, y) {
             * */
             //TODO: refactor to use XYZ instead of TMS like specified the OGC WebMercatorQuad TileMatrixSet
             if (ts.aggregationCoefficient === -1) {
-                const numRows = y - limit.minTileRow + 1;
+                const numRows = y - limit.minTileRow;
                 const numCols = limit.maxTileCol - limit.minTileCol + 1;
                 const deltaCol = x - limit.minTileCol;
-                offset += ((numRows > 1 ? (numRows * numCols + deltaCol) : deltaCol) * indexEntrySize);
+                offset += ((numRows > 0 ? (numRows * numCols + deltaCol) : deltaCol) * indexEntrySize);
             }
             else {
                 //First calculate number of tiles based on the assumption that all fragments are dense
@@ -153,4 +156,4 @@ function calculateDenseTileSetFragmentBounds(numTilePerFramgentSide, tileSetLimi
 function inRange(x, y, tileSetLimits) {
     return x >= tileSetLimits.minTileCol && x <= tileSetLimits.maxTileCol && y >= tileSetLimits.minTileRow && y <= tileSetLimits.maxTileRow;
 }
-//# sourceMappingURL=converter.mjs.map
+//# sourceMappingURL=index.js.map

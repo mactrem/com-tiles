@@ -18,7 +18,7 @@ export function getFragmentRangesForTiles(tmsTiles: {z: number, x: number, y: nu
     return null;
 }
 
-export function getFragmentRangesForTils(tmsTile: {z: number, x: number, y: number}[]): FragmentRange{
+export function getFragmentRangesForTile(tmsTile: {z: number, x: number, y: number}[]): FragmentRange{
     return null;
 }
 
@@ -63,10 +63,10 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
                 * */
                 //TODO: refactor to use XYZ instead of TMS like specified the OGC WebMercatorQuad TileMatrixSet
                 if(ts.aggregationCoefficient === -1){
-                    const numRows = y - limit.minTileRow + 1;
+                    const numRows = y - limit.minTileRow;
                     const numCols = limit.maxTileCol - limit.minTileCol + 1;
                     const deltaCol = x - limit.minTileCol;
-                    offset += ((numRows > 1 ? (numRows * numCols + deltaCol) : deltaCol) * indexEntrySize);
+                    offset += ((numRows > 0 ? (numRows * numCols + deltaCol) : deltaCol) * indexEntrySize);
                 }
                 else{
                     //First calculate number of tiles based on the assumption that all fragments are dense

@@ -1,7 +1,8 @@
 import {calculateIndexOffsetForTile} from "./converter.mjs";
 import pako from "./node_modules/pako/dist/pako.esm.mjs"
 
-const COMT_URL = "http://0.0.0.0:9000/comtiles/test.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=3718FS09AU0CV3T4OGWN%2F20220105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220105T183958Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiIzNzE4RlMwOUFVMENWM1Q0T0dXTiIsImV4cCI6MTY0MTQxMTU5MywicGFyZW50IjoibWluaW9hZG1pbiJ9.bQ1bU0FLKvws3WhiFYFri7nVdYe4aFbADy9aiPxC1x4Z1soWHCKmfcSfy6083e6eIrMaIqzj-_TlB2NTuKvvJg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=7ed22d6a8f1be00b7fb99e19137e04a9197b5323299cbef7e9a8e0280fc300ac";
+//const COMT_URL = "http://0.0.0.0:9000/comtiles/test.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=3718FS09AU0CV3T4OGWN%2F20220105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220105T183958Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiIzNzE4RlMwOUFVMENWM1Q0T0dXTiIsImV4cCI6MTY0MTQxMTU5MywicGFyZW50IjoibWluaW9hZG1pbiJ9.bQ1bU0FLKvws3WhiFYFri7nVdYe4aFbADy9aiPxC1x4Z1soWHCKmfcSfy6083e6eIrMaIqzj-_TlB2NTuKvvJg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=7ed22d6a8f1be00b7fb99e19137e04a9197b5323299cbef7e9a8e0280fc300ac";
+const COMT_URL = "http://0.0.0.0:9000/comtiles/austria-new.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=2Q1PPZGQR5G3QFJXWV4R%2F20220108%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220108T204132Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiIyUTFQUFpHUVI1RzNRRkpYV1Y0UiIsImV4cCI6MTY0MTY3Nzk3MSwicGFyZW50IjoibWluaW9hZG1pbiJ9.v__SAlODrJaZ3m1AV5AP2tsHyL99DA-3FydpO59Eh5vvc-NmdNalrIrmjx8TDvP_nUcNYaF50w-B2yvqx3IWrQ&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=179d28fbf57bb2f904c5c55050f0f59932b685b7f967bef3e0a328c2904e6a2c";
 
 (async()=>{
     const {metadata, partialIndex, dataOffset} = await loadMetadataAndPartialIndex(COMT_URL);
@@ -15,9 +16,17 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
     maplibregl.addProtocol('comt', (params, callback) => {
         let result = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
         const [tileUrl, url, z, x, y] = result;
+        console.info(`${z}/${x}/${y}`);
 
         //get data offset from partial index -> use utils lib -> convert to tms from xyz for using the utils lib
         const tmsY = 2** parseInt(z) - parseInt(y) -1;
+        const limit = metadata.tileMatrixSet.tileMatrixSet[z].tileMatrixLimits;
+        if(x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow){
+            console.info("Requested tile not within the boundary ot the TileSet.");
+            callback(null, new Uint8Array(), null, null);
+            return;
+        }
+
         const [offset, index] = calculateIndexOffsetForTile(metadata, parseInt(z), parseInt(x), tmsY);
 
         if(offset >= partialIndex.byteLength){
@@ -27,6 +36,9 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
         const indexView = new DataView(partialIndex);
         const tileOffset = indexView.getUint32(offset, true);
         const tileSize = indexView.getUint32(offset + 4, true);
+        console.log(`Current index: ${index}`);
+        console.log(`Next tile offset: ${tileOffset+tileSize}`);
+
 
         const absoluteTileOffset = dataOffset + tileOffset;
         fetch(comtUrl, {
@@ -50,16 +62,17 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
     const map = new maplibregl.Map({
         container: "map",
         style: "http://localhost:8081/data/style.json",
-        center: [8.529727, 47.371622],
-        //zoom: 10
-        zoom: 0
+        //center: [8.529727, 47.371622],
+        center: [16.335668227571986, 48.18343081801389],
+        zoom: 5
     });
 }
 
 async function loadMetadataAndPartialIndex(url){
     //TODO: size to small when vector layers are included
     const maxMetadataSize = 1<<15; //32768;
-    const initialChunkSize = 2 ** 19; //512k
+    //const initialChunkSize = 2 ** 19; //512k
+    const initialChunkSize = 2 ** 22; //4mb
 
     const buffer = await fetch(url, {
         headers: {

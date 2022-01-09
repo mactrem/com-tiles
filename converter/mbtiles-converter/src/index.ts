@@ -6,8 +6,13 @@ import {Metadata} from "@com-tiles/spec";
 import {createIndexInRowMajorOrder, IndexEntry} from "./indexFactory";
 import {MBTilesRepository} from "./mbTilesRepository";
 
-const fileName = path.join(__dirname, "../austria.cot")
-const mbTilesFile = path.resolve("data/austria.mbtiles");
+//const fileName = path.join(__dirname, "../europe.cot")
+//const mbTilesFile = path.resolve("data/europe.mbtiles");
+const fileName = path.join("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/europe.cot")
+const mbTilesFile = path.resolve("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/europe.mbtiles");
+
+console.info(fileName);
+console.info(mbTilesFile);
 
 const MAGIC = "COMT";
 //const VERSION = 1;
@@ -25,6 +30,7 @@ buffer[0] = 0x01;
 buffer.writeBigInt64LE()*/
 
 (async()=>{
+    console.log(process.memoryUsage());
     console.log("Start converting tiles.");
 
     const db = new sqlite3.Database(mbTilesFile)
@@ -48,7 +54,12 @@ async function createComTileArchive(fileName: string, metadata: Metadata, index:
     const indexLengthInBytes = index.length * (4 + metadata.tileOffsetBytes);
     writeHeader(stream, metadataJson.length, indexLengthInBytes);
     writeMetadata(stream, metadataJson);
+    console.info("Metadata created.");
+
     writeIndex(stream, indexLengthInBytes, index);
+    console.info("Index created.");
+
+
     await writeTiles(stream, index, repo);
 }
 
@@ -92,20 +103,23 @@ function writeIndex(stream: fs.WriteStream, indexLengthInBytes: number, index: I
 }
 
 async function writeTiles(stream: fs.WriteStream, index: IndexEntry[], tileRepository: MBTilesRepository){
-    const lastTile = index[index.length-1];
-    const dataBufferSize = lastTile.offset + lastTile.size;
+    //const lastTile = index[index.length-1];
+    //const dataBufferSize = lastTile.offset + lastTile.size;
     //TODO: doesn't scale
-    const dataBuffer = Buffer.alloc(dataBufferSize);
+    //const dataBuffer = Buffer.alloc(dataBufferSize);
 
-    let offset = 0;
+    //let offset = 0;
     for(const {zoom, row, column} of index){
         const {data} = await tileRepository.getTile(zoom, row, column);
         const tileBuffer = Buffer.from(data);
-        tileBuffer.copy(dataBuffer, offset);
-        offset += tileBuffer.length;
+        //tileBuffer.copy(dataBuffer, offset);
+        //offset += tileBuffer.length;
+
+        //TODO: batch query and batch write
+        stream.write(tileBuffer);
     }
 
-    stream.write(dataBuffer);
+    //stream.write(dataBuffer);
 }
 
 /*

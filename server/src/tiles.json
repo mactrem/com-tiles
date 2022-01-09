@@ -11,7 +11,7 @@
   ],
   "format": "pbf",
   "legend": "",
-  "maxzoom": 6,
+  "maxzoom": 14,
   "minzoom": 0,
   "profile": "mercator",
   "version": "1",
@@ -68,6 +68,46 @@
       "maxzoom": 14,
       "minzoom": 0,
       "description": "water"
+    },
+    {
+      "id": "transportation",
+      "fields": {
+        "fid": "Number",
+        "NAME": "String"
+      },
+      "maxzoom": 14,
+      "minzoom": 0,
+      "description": "transportation"
+    },
+    {
+      "id": "building",
+      "fields": {
+        "fid": "Number",
+        "NAME": "String"
+      },
+      "maxzoom": 14,
+      "minzoom": 0,
+      "description": "building"
+    },
+    {
+      "id": "boundary",
+      "fields": {
+        "fid": "Number",
+        "NAME": "String"
+      },
+      "maxzoom": 14,
+      "minzoom": 0,
+      "description": "boundary"
+    },
+    {
+      "id": "place",
+      "fields": {
+        "fid": "Number",
+        "NAME": "String"
+      },
+      "maxzoom": 14,
+      "minzoom": 0,
+      "description": "place"
     }
   ],
   "crs": "EPSG:3857",

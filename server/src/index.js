@@ -10,7 +10,7 @@ import {calculateIndexOffsetForTile} from "@com-tiles/utils";
 import tilesJson from "./tiles.json";
 import * as zlib from "zlib";
 
-const fileName = path.resolve("../../converter/mbtiles-converter/dist/test.cot")
+const fileName = path.resolve("../../data/austria.cot")
 
 //const stream = fs.createReadStream(fileName);
 
