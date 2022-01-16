@@ -79,11 +79,14 @@ export function getFragmentRangeForTile(metadata: Metadata, zoom: number, x: num
                     const numPartialFragmentsCols = localFragmentCrsXIndexOfTile;
                     //TODO: only calculate if its the most upper fragment
                     let deltaUpperRow = 0;
+
+                    const numTileColsToCurrentFragment = localFragmentCrsXIndexOfTile *  2 ** ts.aggregationCoefficient;
+                    const numTileRowsToCurrentSparseFragment = denseLimits.maxTileRow - limit.maxTileRow;
                     if(y > (denseLimits.maxTileRow - (2 ** ts.aggregationCoefficient))){
                         deltaUpperRow = (denseLimits.maxTileRow - limit.maxTileRow) * numPartialFragmentsCols *  2 ** ts.aggregationCoefficient;
                     }
                     //subtract -1 for upper row when the upper row is dense
-                    const numRows = deltaUpperRow > 0 ? (2 ** ts.aggregationCoefficient -1) : (2 ** ts.aggregationCoefficient);
+                    const numRows = deltaUpperRow > 0 ? (2 ** ts.aggregationCoefficient - numTileRowsToCurrentSparseFragment) : (2 ** ts.aggregationCoefficient);
                     const deltaLeftCol = (limit.minTileCol - denseLimits.minTileCol) * numRows;
 
                     const deltaTilePartialRows = deltaLeftCol + deltaUpperRow;
@@ -104,7 +107,7 @@ export function getFragmentRangeForTile(metadata: Metadata, zoom: number, x: num
                     const deltaLowerRow = (limit.minTileRow - denseLimits.minTileRow) * numDenseCols;
 
                     //check if row is sparse then -1 must not be subtracted from left and right column
-                    const numDenseRowsCorrected = deltaLowerRow === 0 ? numDenseRowsToCurrentMaxFragment : (numDenseRowsToCurrentMaxFragment - 1);
+                    const numDenseRowsCorrected = deltaLowerRow === 0 ? numDenseRowsToCurrentMaxFragment : (numDenseRowsToCurrentMaxFragment - (limit.minTileRow - denseLimits.minTileRow));
                     const deltaLeftCol = ( limit.minTileCol - denseLimits.minTileCol) * numDenseRowsCorrected;
                     const deltaRightCol = (denseLimits.maxTileCol - limit.maxTileCol) * numDenseRowsCorrected;
                     //const deltaUpperRow = (denseLimits.maxTileRow - limit.maxTileRow) * numDenseRows;
@@ -160,7 +163,7 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
         }
 
         if(ts.zoom < zoom){
-            const numTiles = (limit.maxTileCol - limit.minTileCol + 1) * (limit.maxTileRow - limit.minTileRow +1);
+            const numTiles = (limit.maxTileCol - limit.minTileCol + 1) * (limit.maxTileRow - limit.minTileRow + 1);
             offset += (numTiles * indexEntrySize);
         }
         else{
@@ -176,7 +179,7 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
                     offset += ((numRows > 0 ? (numRows * numCols + deltaCol) : deltaCol) * indexEntrySize);
                 }
                 else{
-                    //First calculate number of tiles based on the assumption that all fragments are dense
+                    /*//First calculate number of tiles based on the assumption that all fragments are dense
                     const numTilesPerFragmentSide = 2 ** ts.aggregationCoefficient;
                     const denseLimits =  calculateDenseTileSetFragmentBounds(numTilesPerFragmentSide, ts.tileMatrixLimits);
                     //const fragmentsColIndex = Math.floor((x - denseLimits.minTileCol + 1) / numTilesPerFragmentSide);
@@ -199,11 +202,12 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
                         const numPartialFragmentsCols = localFragmentCrsXIndexOfTile;
                         //TODO: only calculate if its the most upper fragment
                         let deltaUpperRow = 0;
+                        const numTileRowsToCurrentSparseFragment = denseLimits.maxTileRow - limit.maxTileRow;
                         if(y > (denseLimits.maxTileRow - (2 ** ts.aggregationCoefficient))){
                             deltaUpperRow = (denseLimits.maxTileRow - limit.maxTileRow) * numPartialFragmentsCols *  2 ** ts.aggregationCoefficient;
                         }
                         //subtract -1 for upper row when the upper row is dense
-                        const numRows = deltaUpperRow > 0 ? (2 ** ts.aggregationCoefficient -1) : (2 ** ts.aggregationCoefficient);
+                        const numRows = deltaUpperRow > 0 ? (2 ** ts.aggregationCoefficient - numTileRowsToCurrentSparseFragment) : (2 ** ts.aggregationCoefficient);
                         const deltaLeftCol = (limit.minTileCol - denseLimits.minTileCol) * numRows;
 
                         const deltaTilePartialRows = deltaLeftCol + deltaUpperRow;
@@ -218,6 +222,7 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
 
                     //Full Lines Fragments ->  Calculate the diff to subtract from the dense tiles for the sparse tiles
                     //Only Left, right and lower delta has to be calculated
+                    //TODO: larger then fragment side size not 1?
                     if(numDenseRowsToCurrentMaxFragment > 1){
                         const numDenseTilesForFullRows = (localFragmentCrsYIndexOfTile * numFragmentsCol) * 4 ** ts.aggregationCoefficient;
 
@@ -225,7 +230,8 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
                         const deltaLowerRow = (limit.minTileRow - denseLimits.minTileRow) * numDenseCols;
 
                         //check if row is sparse then -1 must not be subtracted from left and right column
-                        const numDenseRowsCorrected = deltaLowerRow === 0 ? numDenseRowsToCurrentMaxFragment : (numDenseRowsToCurrentMaxFragment - 1);
+                        const numDenseRowsCorrected = deltaLowerRow === 0 ? numDenseRowsToCurrentMaxFragment : (numDenseRowsToCurrentMaxFragment - (limit.minTileRow - denseLimits.minTileRow));
+
                         const deltaLeftCol = ( limit.minTileCol - denseLimits.minTileCol) * numDenseRowsCorrected;
                         const deltaRightCol = (denseLimits.maxTileCol - limit.maxTileCol) * numDenseRowsCorrected;
                         //const deltaUpperRow = (denseLimits.maxTileRow - limit.maxTileRow) * numDenseRows;
@@ -252,6 +258,49 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
                     const tileIndex = (tileRowIndex * numTilesPerRow) + tileColIndex;
 
                     const numTiles = numTilesBeforeFragment + tileIndex;
+                    offset += (numTiles * indexEntrySize);
+                    */
+
+                    /*
+                    * First calculate the number of tiles before the fragment which contains the specified tile
+                    * 1. Calculate the number of tiles which are on the left side of the fragment
+                    * 2. Calculate the number of tiles which are below the the fragment of the specified tile
+                    * 3. Number of tiles for the full rows in the fragment which contains the specified tile
+                    * 4. Number of tiles before the specified tile in the partial row of the fragment
+                    *  ________________
+                    * |   |_4._|T|     |
+                    * |   |__3.__|_____|
+                    * |   |            |
+                    * | 1.|      2.    |
+                    * |___|____________|
+                    *
+                    * */
+                    const numTilesPerFragmentSide = 2 ** ts.aggregationCoefficient;
+                    const minTileColFragment =  Math.floor(x / numTilesPerFragmentSide) * numTilesPerFragmentSide;
+                    const minTileRowFragment = Math.floor(y / numTilesPerFragmentSide) * numTilesPerFragmentSide;
+                    const fragmentBoundsOfSpecifiedTileGlobalTilCrs = {
+                        minTileCol: minTileColFragment,
+                        minTileRow: minTileRowFragment,
+                        maxTileCol: minTileColFragment + numTilesPerFragmentSide - 1,
+                        maxTileRow: minTileRowFragment + numTilesPerFragmentSide - 1,
+                    };
+
+                    /* 1. */
+                    const leftNumTilesBeforeFragment = (fragmentBoundsOfSpecifiedTileGlobalTilCrs.minTileCol - limit.minTileCol + 1) *
+                        (fragmentBoundsOfSpecifiedTileGlobalTilCrs.maxTileRow - limit.minTileRow + 1);
+
+                    /* 2. */
+                    const lowerNumTilesBeforeFragment = (limit.maxTileCol - fragmentBoundsOfSpecifiedTileGlobalTilCrs.minTileCol + 1) *
+                                                        (fragmentBoundsOfSpecifiedTileGlobalTilCrs.minTileRow - limit.minTileRow)
+
+                    /* 3. full rows in fragment */
+                    const sparseFragmentsBounds = calculateFragmentBounds(limit, fragmentBoundsOfSpecifiedTileGlobalTilCrs);
+                    const numTilesFullRows = (y - sparseFragmentsBounds.minTileRow) * (sparseFragmentsBounds.maxTileCol - sparseFragmentsBounds.minTileCol + 1);
+
+                    /* 4. partial row in fragment */
+                    const partialTiles = x - sparseFragmentsBounds.minTileCol;
+
+                    const numTiles = leftNumTilesBeforeFragment + lowerNumTilesBeforeFragment + numTilesFullRows + partialTiles;
                     offset += (numTiles * indexEntrySize);
                 }
             }

@@ -7,10 +7,51 @@ import {createIndexInRowMajorOrder, IndexEntry} from "./indexFactory";
 import {MBTilesRepository} from "./mbTilesRepository";
 import {convertNumberToBufferLE} from "./utils";
 
+
+/*
+* austria.cot -> 2.9GB -> austria.cot compressed -> 2.8 -> no real impact when compressing vector tile
+* austria metadata -> 13 kb uncompressed -> 1kb compressed
+* austria index -> 762kb uncompressed -> 496kb compressed -> 1/3 reduced in size
+* europe index -> 147Mb uncompressed -> 56MB compressed -> 2/3 reduced in size
+*
+* 512kb -> 220 milliseconds to load in tests
+*
+* Header (compressed) -> magic, version, metadataLength, fragmentTableLength, indexLength, metadata, fragmentTable
+* -> compressed header without fragmentTable -> 1kb
+* -> fragmentTable without compression 390kb -> with compression 260kb?
+* Body -> index (fragments compressed), data
+*  -> index 0-8 -> 256kb uncompressed -> 170kb compressed
+*  -> store indexTable and index overview (0-8) in one file?
+*       -> one file to fetch from s3 -> all information to start
+*       -> data file then has only index with fragments
+*
+* -> Header File
+*   -> holds all initial information
+*   -> smaller then 500kb
+* -> Data File
+*   -> holds only fragments
+*   -> compressed index fragments
+*
+* -> Fragment
+*   -> 4^6 -> 4096
+*   -> 12kb -> compressed 8.2kb? -> does this really bring any advantage?
+*   -> 7kb -> 25 milliseconds to load in tests
+*   -> when ordered in row major four max 4 fragments only 2 http range requests needed
+*       -> 24kb -> 8-16kb compressed?
+*
+*  -> transfer rate
+*    -> Cdn more important then index fragments
+*    -> The real enemy of a web page's performance is not the number of bytes transferred; rather, it is network latency
+*    -> 5 Mb/s connection (the average connection speed in the US is a little over that) with a ping time to your server of 80ms
+*       -> 1x 20 kB files:  80ms latency + 31ms transfer time = 111ms
+*       -> 2x 4 kB files:  160ms latency + 13ms transfer time = 173ms
+*    -> the latency has decreased by around 30% (from 80ms to approx. 55ms) but the average download rate (mobile)
+*       has increased up to 23 MB/s for the lowest rated operator
+* */
 //const fileName = path.join(__dirname, "../europe.cot")
 //const mbTilesFile = path.resolve("data/europe.mbtiles");
-const fileName = path.join("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/europe.cot")
-const mbTilesFile = path.resolve("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/europe.mbtiles");
+const fileName = path.join("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany-new2.cot")
+const mbTilesFile = path.resolve("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/austria.mbtiles");
 
 console.info(fileName);
 console.info(mbTilesFile);
@@ -94,7 +135,6 @@ function writeIndex(stream: fs.WriteStream, indexLengthInBytes: number, index: I
     //Quick and dirty implementation -> data section can be max 4 GB and also tile size should be 3 bytes per default
     for(let i = 0; i< index.length; i++){
         const offset = i * 9;
-        //indexBuffer.writeUInt32LE(index[i].offset, offset);
         convertNumberToBufferLE(index[i].offset, 5).copy(indexBuffer, offset);
         //TODO: set offsetSize in the metadata document
         //TODO: offset is count at beginning of the data section -> write in the specification

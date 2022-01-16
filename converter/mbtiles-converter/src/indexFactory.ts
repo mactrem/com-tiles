@@ -88,53 +88,34 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
             let fragmentBounds = {
                 minTileCol: fragmentMinColIndex * numIndexEntriesPerFragmentSide,
                 minTileRow: fragmentMinRowIndex * numIndexEntriesPerFragmentSide,
-                maxTileCol: ((fragmentMinColIndex +1) * numIndexEntriesPerFragmentSide) - 1,
-                maxTileRow: ((fragmentMinRowIndex +1) * numIndexEntriesPerFragmentSide) - 1
+                maxTileCol: ((fragmentMinColIndex + 1) * numIndexEntriesPerFragmentSide) - 1,
+                maxTileRow: ((fragmentMinRowIndex + 1) * numIndexEntriesPerFragmentSide) - 1
             };
 
             for(let row = 0; row < numFragmentsRow; row++){
                 for(let col = 0; col < numFragmentsCol; col++){
-                    if(isDense(tileMatrix.tileMatrixLimits, fragmentBounds)){
-                        const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, fragmentBounds);
-                        for await (const tileBatch of tileBatches){
-                            for (const {data, row, column} of tileBatch){
-                                const size = data.length;
-                                let tileIndex = index.length - 1;
-                                //reference to the current tile in the final blob
-                                let offset = index.length ? (index[tileIndex].offset + index[tileIndex].size) : 0;
-                                index.push({offset, size, zoom, row, column});
+                    const sparseFragmentBounds = calculateSparseFragmentBounds(limits, fragmentBounds);
+                    const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, sparseFragmentBounds);
+                    for await (const tileBatch of tileBatches){
+                        for (const {column, row, data} of tileBatch){
+                            const size = data.length;
+                            let tileIndex = index.length - 1;
+                            let offset = index.length ? (index[tileIndex].offset + index[tileIndex].size): 0
+                            index.push({offset, size, zoom, row, column});
+
+                            if(zoom === 14 && column == 8705 && row == 10634){
+                                console.log("test");
                             }
-                        }
-                    }
-                    else{
-                        //sparse fragment
-                        //TODO: optimize -> only query the intersection between fragment and index
-                        const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, fragmentBounds);
-                        for await (const tileBatch of tileBatches){
-                            for (const {column, row, data} of tileBatch){
-                                //test for intersection of the IndexEntry of the index fragment with bounds of the TileSet -> can be optimized by calculating the area
-                                //TODO: get rid of this test by shifting it to the sql query
-                                if(column >= limits.minTileCol && row >= limits.minTileRow &&
-                                    column <= limits.maxTileCol && row <= limits.maxTileRow){
-                                    const size = data.length;
-                                    let tileIndex = index.length - 1;
-                                    let offset = index.length ? (index[tileIndex].offset + index[tileIndex].size): 0
-                                    index.push({offset, size, zoom, row, column});
-                                }
-                            }
+
                         }
                     }
 
-                    //add column
-                    fragmentBounds = {
-                        minTileCol: fragmentBounds.maxTileCol + 1,
-                        minTileRow: fragmentBounds.minTileRow,
-                        maxTileCol: fragmentBounds.maxTileCol + numIndexEntriesPerFragmentSide,
-                        maxTileRow: fragmentBounds.maxTileRow
-                    };
+                    //increment column
+                    Object.assign(fragmentBounds,
+                        {minTileCol: fragmentBounds.maxTileCol + 1, maxTileCol: fragmentBounds.maxTileCol + numIndexEntriesPerFragmentSide});
                 }
 
-                //reset column and add row
+                //reset column and increment row
                 fragmentBounds = {
                     minTileCol: fragmentMinColIndex * numIndexEntriesPerFragmentSide,
                     minTileRow: fragmentBounds.maxTileRow +1,
@@ -148,8 +129,27 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
     return index;
 }
 
+function calculateSparseFragmentBounds(tileSetLimits: {minTileRow: number, maxTileRow: number, minTileCol?: number, maxTileCol?: number},
+                                 denseFragmentLimits: {minTileCol: number, minTileRow: number, maxTileCol: number, maxTileRow}){
+    const intersectedLimits = {...denseFragmentLimits};
+    if(tileSetLimits.minTileCol > denseFragmentLimits.minTileCol){
+        intersectedLimits.minTileCol = tileSetLimits.minTileCol;
+    }
+    if(tileSetLimits.minTileRow > denseFragmentLimits.minTileRow){
+        intersectedLimits.minTileRow = tileSetLimits.minTileRow;
+    }
+    if(tileSetLimits.maxTileCol < denseFragmentLimits.maxTileCol){
+        intersectedLimits.maxTileCol = tileSetLimits.maxTileCol;
+    }
+    if(tileSetLimits.maxTileRow < denseFragmentLimits.maxTileRow){
+        intersectedLimits.maxTileRow = tileSetLimits.maxTileRow;
+    }
+    return intersectedLimits;
+}
+
+
 function isDense(limits: TileMatrix["tileMatrixLimits"], fragmentBounds: fragmentBounds){
-    return fragmentBounds.minTileCol >= limits.minTileCol && fragmentBounds.minTileRow >= limits.minTileCol
+    return fragmentBounds.minTileCol >= limits.minTileCol && fragmentBounds.minTileRow >= limits.minTileRow
         && fragmentBounds.maxTileCol <= limits.maxTileCol && fragmentBounds.maxTileRow <= limits.maxTileRow;
 }
 

@@ -1,5 +1,5 @@
 import {Metadata} from "@com-tiles/spec";
-import {calculateIndexOffsetForTile} from "../src/index";
+import {calculateIndexOffsetForTile, getFragmentRangeForTile} from "../src/index";
 
 describe("calculateIndexOffsetForTile", () => {
     const metadata: Metadata = {
@@ -54,6 +54,16 @@ describe("calculateIndexOffsetForTile", () => {
                     maxTileRow: 0,
                     maxTileCol: 1
                 }
+            },
+            {
+                zoom: 2,
+                aggregationCoefficient: -1,
+                tileMatrixLimits: {
+                    minTileRow: 0,
+                    minTileCol: 0,
+                    maxTileRow: 1,
+                    maxTileCol: 1
+                }
             }
         ];
 
@@ -64,9 +74,11 @@ describe("calculateIndexOffsetForTile", () => {
         * | 1 1
         * | _ _ >
         * */
-        const index = calculateIndexOffsetForTile(metadata, 1, 1,0);
+        const [offset, index] = calculateIndexOffsetForTile(metadata, 1, 1,0);
 
-        expect(index).toBe(2 * 8);
+        const expectIndex = 2;
+        expect(offset).toBe(expectIndex * 9);
+        expect(index).toBe(expectIndex);
     });
 
     it("should return valid offset when a aggregationCoefficient with only dense fragments is used", () => {
@@ -112,14 +124,127 @@ describe("calculateIndexOffsetForTile", () => {
         * |    1 -> 1 -> 1 -> 1
         * | _ _ >
         * */
-        const index = calculateIndexOffsetForTile(metadata, 2, 2,3);
-        expect(index).toBe((1 + 2 + 14) * 8);
+        const [offset, index] = calculateIndexOffsetForTile(metadata, 2, 2,3);
+        const expectedIndex = 1 + 2 + 14;
+        expect(index).toBe(expectedIndex);
+        expect(offset).toBe(expectedIndex * 9);
 
-        const index2 = calculateIndexOffsetForTile(metadata, 2, 3,3);
-        expect(index2).toBe((1 + 2 + 15) * 8);
+        const [offset2, index2] = calculateIndexOffsetForTile(metadata, 2, 3,3);
+        const expectedIndex2 = 1 + 2 + 15;
+        expect(index2).toBe(expectedIndex2);
+        expect(offset2).toBe(expectedIndex2 * 9);
 
-        const index3 = calculateIndexOffsetForTile(metadata, 2, 2,2);
-        expect(index3).toBe((1 + 2 + 12) * 8);
+        const [offset3, index3] = calculateIndexOffsetForTile(metadata, 2, 2,2);
+        const expectedIndex3 = 1 + 2 + 12;
+        expect(index3).toBe(expectedIndex3);
+        expect(offset3).toBe(expectedIndex3 * 9);
+    });
+
+    it("should return valid offset when a aggregationCoefficient with sparse fragments is used", () => {
+        metadata.tileMatrixSet.tileMatrixSet = [
+            {
+                zoom: 0,
+                aggregationCoefficient: -1,
+                tileMatrixLimits: {
+                    minTileRow: 0,
+                    minTileCol: 0,
+                    maxTileRow: 0,
+                    maxTileCol: 0
+                }
+            },
+            {
+                zoom: 1,
+                aggregationCoefficient: -1,
+                tileMatrixLimits: {
+                    minTileRow: 0,
+                    minTileCol: 0,
+                    maxTileRow: 0,
+                    maxTileCol: 1
+                }
+            },
+            {
+                zoom: 2,
+                aggregationCoefficient: 1,
+                tileMatrixLimits: {
+                    minTileRow: 1,
+                    minTileCol: 1,
+                    maxTileRow: 2,
+                    maxTileCol: 2
+                }
+            }
+        ];
+
+        /*
+        * TMS -> x=2, y=2
+        * ^
+        * | -> 0 -> 0 -> 0 -> 0
+        * | -> 0 -> 1 -> 1 -> 0
+        * | -> 0 -> 1 -> 1 -> 0
+        * |    0 -> 0 -> 0 -> 0
+        * | _ _ >
+        * */
+        const [offset, index] = calculateIndexOffsetForTile(metadata, 2, 2,2);
+        const expectedIndex = 1 + 2 + 3;
+        expect(index).toBe(expectedIndex);
+        expect(offset).toBe(expectedIndex * 9);
+
+
+        metadata.tileMatrixSet.tileMatrixSet[2].tileMatrixLimits = {
+            minTileRow: 0,
+            minTileCol: 1,
+            maxTileRow: 3,
+            maxTileCol: 2
+        };
+        /*
+        * TMS -> x=2, y=3
+        * ^
+        * | -> 0 -> 1 -> 1 -> 0
+        * | -> 0 -> 1 -> 1 -> 0
+        * | -> 0 -> 1 -> 1 -> 0
+        * |    0 -> 1 -> 1 -> 0
+        * | _ _ >
+        * */
+        const [offset2, index2] = calculateIndexOffsetForTile(metadata, 2, 2,3);
+        const expectedIndex2 = 1 + 2 + 7;
+        expect(index2).toBe(expectedIndex2)
+        expect(offset2).toBe(expectedIndex2 * 9);
+
+
+        metadata.tileMatrixSet.tileMatrixSet[2] = {
+            zoom: 2,
+            aggregationCoefficient: 1,
+            tileMatrixLimits: {
+                minTileRow: 0,
+                minTileCol: 0,
+                maxTileRow: 2,
+                maxTileCol: 2
+            }
+        };
+        /*metadata.tileMatrixSet.tileMatrixSet[3] = {
+            zoom: 3,
+            aggregationCoefficient: 1,
+            tileMatrixLimits: {
+                minTileRow: 7,
+                minTileCol: 3,
+                maxTileRow: 10,
+                maxTileCol: 6
+            }
+        };*/
+        //const index3 = calculateIndexOffsetForTile(metadata, 3, 5, 11);
+        metadata.tileMatrixSet.tileMatrixSet[3] = {
+            zoom: 3,
+            aggregationCoefficient: 1,
+            tileMatrixLimits: {
+                minTileRow: 1,
+                minTileCol: 3,
+                maxTileRow: 6,
+                maxTileCol: 6
+            }
+        };
+        const [offset3, index3] = calculateIndexOffsetForTile(metadata, 3, 5, 5);
+        const expectedIndex3 = 1 + 2 + 9 + 17;
+        expect(expectedIndex3).toBe(index3);
+        expect(offset3).toBe(expectedIndex3 * 9);
     });
 
     it("test", () => {
@@ -282,6 +407,225 @@ describe("calculateIndexOffsetForTile", () => {
         }
 
         /*
+        *  0-13 -> 15925 + 4048 + 1012 + 264 + 84 + 28 + 12 + 6 + 4 + 1 + 1 + 1 + 1 + 1 -> 21388
+        *  Limits:
+        *  Min Row 10579 -> Fragment Index 165
+        *  Max Row 10759 -> Fragment Index 168 -> 4 Frags Rows
+        *  Min Col 8625  -> Fragment Index 134
+        *  Max Col 8973  -> Fragment Index 140 -> 7 Frags Col
+        *
+        *  Tile:
+        *  7 full cols before
+        *  3 full row before
+        *  1 partial row
+        *
+        *  NumberOfFullRectangleTiles = 7 * 4**6 -> 28672 Tiles
+        *  -> DenseFragmentTileLimits -> minTileCol: 8576, minTileRow: 10560, maxTileCol: 9023, maxTileRow: 10815
+        *  -> TileSetLimits           -> minTileCol: 8625, minTileRow: 10579, maxTileCol: 8973, maxTileRow: 10759
+        *  -> Delta
+        *       -> lowerRowDelta -> 7 * 2 ** 6 * 19 -> 8512
+        *       -> leftColumnDelta (3 full columns) -> 49 * ((2**6 - 19) + (3 * 2**6)) -> 11613
+        *       -> rightColumnDelta -> 50 * ((2**6 - 19) + (3 * 2**6)) -> 11850
+        *  -> Full rows sum ->
+        *  Partial Tiles -> 136/166
+        *    -> Fragment Bounds -> Col:8704/Row:10624
+        *           -> NumFullTileRows -> 10634-10624 -> 10 Rows
+        *           -> NumFullCols -> 64 -> 640 full tiles
+        *           -> NumPartialTiles -> 8705-8704 -> 1 Tile
+        *           -------------
+        *           641 tiles
+        * ---------------
+        * z14 tiles -> 28672 + 8192 + 640 + 1 -> 37505
+        * z0-z14 -> 21388 + 37505 -> 58893
+        *
+        * */
+
+
+
+        const [offset, index] = calculateIndexOffsetForTile(metadata, 14, 8705,10634);
+        //0-13 -> indexFactory -> 21388
+        //utils -> 21388
+        //indexFactory z14 -> 21397
+        //utils z14 -> 21511
+        const expectedIndex = 42786; //written in the COMT archive
+        //expect(offset).toBe(expectedIndex * 9);
+        expect(index).toBe(expectedIndex);
+    });
+
+});
+
+describe("getFragmentRangeForTile", () => {
+    const metadata: Metadata = {
+        name: "test",
+        tileFormat: "pbf",
+        tileMatrixSet: {
+            fragmentOrdering: "RowMajor",
+            tileOrdering: "RowMajor",
+            tileMatrixSet: [
+            ]
+        }
+    }
+
+    it("test", () => {
+        metadata.tileMatrixSet = {
+            "tileMatrixCRS": "WebMercatorQuad ",
+            "fragmentOrdering": "RowMajor",
+            "tileOrdering": "RowMajor",
+            "tileMatrixSet": [
+                {
+                    "zoom": 0,
+                    "aggregationCoefficient": -1,
+                    "tileMatrixLimits": {
+                        "minTileCol": 0,
+                        "minTileRow": 0,
+                        "maxTileCol": 0,
+                        "maxTileRow": 0
+                    }
+                },
+                {
+                    "zoom": 1,
+                    "aggregationCoefficient": -1,
+                    "tileMatrixLimits": {
+                        "minTileCol": 1,
+                        "minTileRow": 1,
+                        "maxTileCol": 1,
+                        "maxTileRow": 1
+                    }
+                },
+                {
+                    "zoom": 2,
+                    "aggregationCoefficient": -1,
+                    "tileMatrixLimits": {
+                        "minTileCol": 2,
+                        "minTileRow": 2,
+                        "maxTileCol": 2,
+                        "maxTileRow": 2
+                    }
+                },
+                {
+                    "zoom": 3,
+                    "aggregationCoefficient": -1,
+                    "tileMatrixLimits": {
+                        "minTileCol": 4,
+                        "minTileRow": 5,
+                        "maxTileCol": 4,
+                        "maxTileRow": 5
+                    }
+                },
+                {
+                    "zoom": 4,
+                    "aggregationCoefficient": -1,
+                    "tileMatrixLimits": {
+                        "minTileCol": 8,
+                        "minTileRow": 10,
+                        "maxTileCol": 8,
+                        "maxTileRow": 10
+                    }
+                },
+                {
+                    "zoom": 5,
+                    "aggregationCoefficient": -1,
+                    "tileMatrixLimits": {
+                        "minTileCol": 16,
+                        "minTileRow": 20,
+                        "maxTileCol": 17,
+                        "maxTileRow": 21
+                    }
+                },
+                {
+                    "zoom": 6,
+                    "aggregationCoefficient": -1,
+                    "tileMatrixLimits": {
+                        "minTileCol": 33,
+                        "minTileRow": 41,
+                        "maxTileCol": 34,
+                        "maxTileRow": 43
+                    }
+                },
+                {
+                    "zoom": 7,
+                    "aggregationCoefficient": -1,
+                    "tileMatrixLimits": {
+                        "minTileCol": 66,
+                        "minTileRow": 83,
+                        "maxTileCol": 69,
+                        "maxTileRow": 87
+                    }
+                },
+                {
+                    "zoom": 8,
+                    "aggregationCoefficient": -1,
+                    "tileMatrixLimits": {
+                        "minTileCol": 132,
+                        "minTileRow": 166,
+                        "maxTileCol": 138,
+                        "maxTileRow": 175
+                    }
+                },
+                {
+                    "zoom": 9,
+                    "aggregationCoefficient": 6,
+                    "tileMatrixLimits": {
+                        "minTileCol": 264,
+                        "minTileRow": 332,
+                        "maxTileCol": 277,
+                        "maxTileRow": 350
+                    }
+                },
+                {
+                    "zoom": 10,
+                    "aggregationCoefficient": 6,
+                    "tileMatrixLimits": {
+                        "minTileCol": 528,
+                        "minTileRow": 664,
+                        "maxTileCol": 554,
+                        "maxTileRow": 700
+                    }
+                },
+                {
+                    "zoom": 11,
+                    "aggregationCoefficient": 6,
+                    "tileMatrixLimits": {
+                        "minTileCol": 1057,
+                        "minTileRow": 1329,
+                        "maxTileCol": 1109,
+                        "maxTileRow": 1401
+                    }
+                },
+                {
+                    "zoom": 12,
+                    "aggregationCoefficient": 6,
+                    "tileMatrixLimits": {
+                        "minTileCol": 2114,
+                        "minTileRow": 2659,
+                        "maxTileCol": 2219,
+                        "maxTileRow": 2803
+                    }
+                },
+                {
+                    "zoom": 13,
+                    "aggregationCoefficient": 6,
+                    "tileMatrixLimits": {
+                        "minTileCol": 4229,
+                        "minTileRow": 5319,
+                        "maxTileCol": 4438,
+                        "maxTileRow": 5606
+                    }
+                },
+                {
+                    "zoom": 14,
+                    "aggregationCoefficient": 6,
+                    "tileMatrixLimits": {
+                        "minTileCol": 8458,
+                        "minTileRow": 10639,
+                        "maxTileCol": 8876,
+                        "maxTileRow": 11213
+                    }
+                }
+            ]
+        };
+
+        /*
         *  0-13 -> 21388 number of tiles
         *  Limits:
         *  Min Row 10579 -> Fragment Index 165
@@ -307,11 +651,11 @@ describe("calculateIndexOffsetForTile", () => {
         *
         * */
 
-        const [byteOffset, index] = calculateIndexOffsetForTile(metadata, 14, 8705,10634);
-        console.log(index);
-        expect(index).toBe(58893);
-        //expect(index).toBe((1 + 2 + 3) * 8);
+        const fragmentRange = getFragmentRangeForTile(metadata, 13, 4325, 5397)
+        console.log(fragmentRange);
+        expect(fragmentRange).toBe(0);
     });
+
 
     /*it("should return O as index for first tile in zoom level 2", () => {
         const bounds = [-180,-90,180,90];
