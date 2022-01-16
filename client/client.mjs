@@ -2,23 +2,23 @@ import {calculateIndexOffsetForTile, getFragmentRangeForTile} from "./converter.
 import pako from "./node_modules/pako/dist/pako.esm.mjs"
 
 //const COMT_URL = "http://0.0.0.0:9000/comtiles/test.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=3718FS09AU0CV3T4OGWN%2F20220105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220105T183958Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiIzNzE4RlMwOUFVMENWM1Q0T0dXTiIsImV4cCI6MTY0MTQxMTU5MywicGFyZW50IjoibWluaW9hZG1pbiJ9.bQ1bU0FLKvws3WhiFYFri7nVdYe4aFbADy9aiPxC1x4Z1soWHCKmfcSfy6083e6eIrMaIqzj-_TlB2NTuKvvJg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=7ed22d6a8f1be00b7fb99e19137e04a9197b5323299cbef7e9a8e0280fc300ac";
-const COMT_URL = "http://0.0.0.0:9000/comtiles/germany-new4.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=JNU84TRW1XP64OY2OFDM%2F20220116%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220116T190059Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJKTlU4NFRSVzFYUDY0T1kyT0ZETSIsImV4cCI6MTY0MjM2MzI1NSwicGFyZW50IjoibWluaW9hZG1pbiJ9.CTK-pQCvlwziBre3Lr4IX6Cir9NPtccTIMLlxepuaHBCSYjCmu4teLeCBQ2nmklEc528yAg_KAYrJ7llA-Zxlg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=5ea8e6c76c8a444bfc54553f0f7efaafa72aed94b40d9c76342af98e67bfa98c";
+const COMT_URL = "http://0.0.0.0:9000/comtiles/germany-new4.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=VN75FE10SWZO07AJE923%2F20220116%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220116T201126Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJWTjc1RkUxMFNXWk8wN0FKRTkyMyIsImV4cCI6MTY0MjM2NzQ4MiwicGFyZW50IjoibWluaW9hZG1pbiJ9.PXHO-wyz83aa-BHH2lB15oJSuKlIxCmyfmuPiBV4vGJKKDpLOGRwmTVfkdkPJ9hKW3qxrHW0XC4SIENxFcuFnA&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=511b7c69b8040b140b0c6a5db0ea3b03771d75c9e2981edeff2cd0ea1ee48051";
 
 (async()=>{
-    const {metadata, partialIndex, dataOffset} = await loadMetadataAndPartialIndex(COMT_URL);
+    const {metadata, partialIndex, indexOffset, dataOffset} = await loadMetadataAndPartialIndex(COMT_URL);
 
-    createMap(metadata, partialIndex, dataOffset, COMT_URL);
+    createMap(metadata, partialIndex, indexOffset, dataOffset, COMT_URL);
 })();
 
 
 const fragmentCache = new Map();
 
-async function createMap(metadata, partialIndex, dataOffset, comtUrl){
+async function createMap(metadata, partialIndex, indexOffset, dataOffset, comtUrl){
     //TODO: attribute that idea with github snippet
     maplibregl.addProtocol('comt', async (params, callback) => {
         let result = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
         const [tileUrl, url, z, x, y] = result;
-        console.info(`${z}/${x}/${y}`);
+        //console.info(`${z}/${x}/${y}`);
 
         //get data offset from partial index -> use utils lib -> convert to tms from xyz for using the utils lib
         const tmsY = (1 << parseInt(z)) - parseInt(y) - 1;
@@ -45,10 +45,13 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
             }
             else{
                 console.info("Query index fragment");
-                console.time("indexFragmentQuery" + x + y + z);
+                //console.time("indexFragmentQuery" + x + y + z);
+
+                const startOffset = indexOffset + fragmentRange.startOffset;
+                const endOffset = indexOffset + fragmentRange.endOffset;
                 indexFragmentBuffer = await fetch(comtUrl, {
                     headers: {
-                        'range': `bytes=${fragmentRange.startOffset}-${fragmentRange.endOffset}`,
+                        'range': `bytes=${startOffset}-${endOffset}`,
                     },
                 }).then(response => {
                     if (response.ok) {
@@ -57,7 +60,7 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
                 });
 
                 fragmentCache.set(fragmentRange.index, indexFragmentBuffer);
-                console.timeEnd("indexFragmentQuery" + x + y + z);
+                //console.timeEnd("indexFragmentQuery" + x + y + z);
             }
 
             const indexEntrySize = 9;
@@ -70,8 +73,8 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
             tileOffset = convert5BytesLEToNumber(partialIndex, offset);
             tileSize = new DataView(partialIndex).getUint32(offset + 5, true);
         }
-        console.log(`Current index: ${index}`);
-        console.log(`Next tile offset: ${tileOffset+tileSize}`);
+        //console.log(`Current index: ${index}`);
+        //console.log(`Next tile offset: ${tileOffset+tileSize}`);
 
         const absoluteTileOffset = dataOffset + tileOffset;
         fetch(comtUrl, {
@@ -102,10 +105,11 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
 
 async function loadMetadataAndPartialIndex(url){
     //TODO: size to small when vector layers are included
-    const maxMetadataSize = 1<<15; //32768;
+    //const maxMetadataSize = 1<<15; //32768;
     //const initialChunkSize = 2 ** 19; //512k
     //const initialChunkSize = 2 ** 22; //4mb
     const initialChunkSize = 2 ** 16;
+    //const initialChunkSize = 2 ** 25;
 
     const buffer = await fetch(url, {
         headers: {
@@ -129,7 +133,7 @@ async function loadMetadataAndPartialIndex(url){
     }*/
     //const indexSize = dataView.getUint32(8, true);
     const indexSize = convert5BytesLEToNumber(buffer, 8);
-    console.info(`Index size: ${indexSize/1024/1924} mb`);
+    //console.info(`Index size: ${indexSize/1024/1924} mb`);
 
     const metadataStartIndex = 13;
     const metadataBuffer = buffer.slice(metadataStartIndex, (metadataStartIndex + metadataSize));
@@ -150,7 +154,7 @@ async function loadMetadataAndPartialIndex(url){
     const partialIndex = buffer.slice(indexOffset, endOffset);
 
     const dataOffset = indexOffset + indexSize;
-    return {metadata, partialIndex, dataOffset};
+    return {metadata, partialIndex, indexOffset, dataOffset};
 }
 
 function convert5BytesLEToNumber(buffer,offset){

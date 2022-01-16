@@ -20,7 +20,7 @@ export interface FragmentRange{
     return null;
 }*/
 
-export function getFragmentRangeForTile(metadata: Metadata, zoom: number, x: number, y: number): FragmentRange{
+export function getFragmentRangeForTile2(metadata: Metadata, zoom: number, x: number, y: number): FragmentRange{
     const tileMatrixSet = metadata.tileMatrixSet;
     const supportedOrdering = [undefined, SUPPORTED_ORDERING];
 
@@ -133,6 +133,86 @@ export function getFragmentRangeForTile(metadata: Metadata, zoom: number, x: num
     return {index, startOffset: offset, endOffset};
 }
 
+export function getFragmentRangeForTile(metadata: Metadata, zoom: number, x: number, y: number): FragmentRange {
+    const tileMatrixSet = metadata.tileMatrixSet;
+    const supportedOrdering = [undefined, SUPPORTED_ORDERING];
+
+    if(![tileMatrixSet.fragmentOrdering, tileMatrixSet.tileOrdering].
+    every(ordering => supportedOrdering.some(o => o === ordering))){
+        throw new Error(`The only supported fragment and tile ordering is ${SUPPORTED_ORDERING}`);
+    }
+    if(tileMatrixSet.tileMatrixCRS !== undefined && tileMatrixSet?.tileMatrixCRS.trim().toLowerCase() !== Supported_TILE_MATRIX_CRS.toLowerCase()){
+        throw new Error(`The only supported TileMatrixCRS is ${Supported_TILE_MATRIX_CRS}.`);
+    }
+
+    const numBytesForTileOffset = metadata.tileOffsetBytes ?? 5;
+    const indexEntrySize = numBytesForTileOffset + NUM_BYTES_TILE_SIZE;
+    const filteredSet = tileMatrixSet.tileMatrixSet.filter(t => t.zoom <= zoom);
+    let startIndex = 0;
+    let endIndex = 0;
+    for(const ts of filteredSet){
+        const limit = ts.tileMatrixLimits;
+        if(ts.zoom === zoom && !inRange(x, y, limit)){
+            throw new Error("Specified tile index not part of the TileSet.")
+        }
+
+        if(ts.zoom < zoom){
+            const numTiles = (limit.maxTileCol - limit.minTileCol + 1) * (limit.maxTileRow - limit.minTileRow + 1);
+            startIndex += numTiles;
+        }
+        else{
+            /*
+            * Calculates the index based on a space filling curve with row-major order with origin on the lower left side
+            * like specified in the MBTiles spec
+            * */
+            //TODO: refactor to use XYZ instead of TMS like specified the OGC WebMercatorQuad TileMatrixSet
+
+            /*
+                * First calculate the number of tiles before the fragment which contains the specified tile
+                * 1. Calculate the number of tiles which are on the left side of the fragment
+                * 2. Calculate the number of tiles which are below the the fragment of the specified tile
+                *  ________________
+                * |   |_4._|T|     |
+                * |   |__3.__|_____|
+                * |   |            |
+                * | 1.|      2.    |
+                * |___|____________|
+                *
+              * */
+            const numTilesPerFragmentSide = 2 ** ts.aggregationCoefficient;
+            const minTileColFragment =  Math.floor(x / numTilesPerFragmentSide) * numTilesPerFragmentSide;
+            const minTileRowFragment = Math.floor(y / numTilesPerFragmentSide) * numTilesPerFragmentSide;
+            const fragmentBoundsOfSpecifiedTileGlobalTilCrs = {
+                    minTileCol: minTileColFragment,
+                    minTileRow: minTileRowFragment,
+                    maxTileCol: minTileColFragment + numTilesPerFragmentSide - 1,
+                    maxTileRow: minTileRowFragment + numTilesPerFragmentSide - 1,
+            };
+            const sparseFragmentsBounds = calculateFragmentBounds(limit, fragmentBoundsOfSpecifiedTileGlobalTilCrs);
+
+            // 1.
+            const leftNumTilesBeforeFragment = (sparseFragmentsBounds.minTileCol - limit.minTileCol ) *
+                    (sparseFragmentsBounds.maxTileRow - limit.minTileRow + 1);
+
+            // 2.
+            const lowerNumTilesBeforeFragment = (limit.maxTileCol - sparseFragmentsBounds.minTileCol + 1) *
+                    (sparseFragmentsBounds.minTileRow - limit.minTileRow)
+
+            // 3. number of tiles in fragment
+            const numTilesInFragment = (sparseFragmentsBounds.maxTileCol - sparseFragmentsBounds.minTileCol + 1) *
+                (sparseFragmentsBounds.maxTileRow - sparseFragmentsBounds.minTileRow +1);
+
+            const numTiles = leftNumTilesBeforeFragment + lowerNumTilesBeforeFragment;
+            startIndex += numTiles;
+            endIndex = startIndex + numTilesInFragment - 1;
+        }
+    }
+
+    const offset = startIndex * indexEntrySize;
+    const endOffset = (endIndex + 1) * indexEntrySize;
+    return {index: startIndex, startOffset: offset, endOffset};
+}
+
 /*
 *
 * Calculates the offset in the index (IndexEntry) for the specified tile based on the metadata.
@@ -222,13 +302,13 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
                     const numTiles = leftNumTilesBeforeFragment + lowerNumTilesBeforeFragment + numTilesFullRows + partialTiles;
                     offset += (numTiles * indexEntrySize);
 
-                    //Test
-                    const lowerNumTilesBeforeFragment2 = (limit.maxTileCol - limit.minTileCol + 1) *
+                    //Test -> 5 tiles in the lower rows to much compared to the result of the IndexFactory
+                    /*const lowerNumTilesBeforeFragment2 = (limit.maxTileCol - limit.minTileCol + 1) *
                         (sparseFragmentsBounds.minTileRow - limit.minTileRow);
                     const leftUpperNumTilesBeforeFragment = (sparseFragmentsBounds.minTileCol - limit.minTileCol) *
                         (sparseFragmentsBounds.maxTileRow - sparseFragmentsBounds.minTileRow + 1);
                     const numTiles2 = lowerNumTilesBeforeFragment2 + leftUpperNumTilesBeforeFragment + numTilesFullRows + partialTiles;
-                    console.log(numTiles2);
+                    console.log(numTiles2);*/
                 }
             }
     }
