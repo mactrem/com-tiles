@@ -50,8 +50,8 @@ import {convertNumberToBufferLE} from "./utils";
 * */
 //const fileName = path.join(__dirname, "../europe.cot")
 //const mbTilesFile = path.resolve("data/europe.mbtiles");
-const fileName = path.join("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany-new2.cot")
-const mbTilesFile = path.resolve("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/austria.mbtiles");
+const fileName = path.join("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany-new4.cot")
+const mbTilesFile = path.resolve("/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany.mbtiles");
 
 console.info(fileName);
 console.info(mbTilesFile);

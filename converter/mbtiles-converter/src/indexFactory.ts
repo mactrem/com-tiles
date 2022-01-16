@@ -93,10 +93,28 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
             };
 
             for(let row = 0; row < numFragmentsRow; row++){
+                /*if(zoom ===14){
+                    const sparseFragmentBoundsTest = calculateSparseFragmentBounds(limits, fragmentBounds);
+                    const t = (sparseFragmentBoundsTest.maxTileRow-sparseFragmentBoundsTest.minTileRow+1) * (sparseFragmentBoundsTest.maxTileCol-sparseFragmentBoundsTest.minTileCol +1);
+                    console.log(t);
+                }*/
+
                 for(let col = 0; col < numFragmentsCol; col++){
                     const sparseFragmentBounds = calculateSparseFragmentBounds(limits, fragmentBounds);
                     const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(zoom, sparseFragmentBounds);
+
+                    if(zoom === 14 &&  sparseFragmentBounds.minTileRow >= 10624){
+                        debugger;
+                        if(!isDense(limits, fragmentBounds)){
+                            //console.info("Sparse fragment");
+                        }
+                    }
+
                     for await (const tileBatch of tileBatches){
+                        if(tileBatch.some(b => b.column == 8705 && b.row == 10634)){
+                            //console.log("test");
+                        }
+
                         for (const {column, row, data} of tileBatch){
                             const size = data.length;
                             let tileIndex = index.length - 1;
@@ -104,9 +122,8 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
                             index.push({offset, size, zoom, row, column});
 
                             if(zoom === 14 && column == 8705 && row == 10634){
-                                console.log("test");
+                                //console.log("test");
                             }
-
                         }
                     }
 
@@ -118,8 +135,8 @@ export async function createIndexInRowMajorOrder(tileRepository: MBTilesReposito
                 //reset column and increment row
                 fragmentBounds = {
                     minTileCol: fragmentMinColIndex * numIndexEntriesPerFragmentSide,
-                    minTileRow: fragmentBounds.maxTileRow +1,
-                    maxTileCol: ((fragmentMinColIndex +1) * numIndexEntriesPerFragmentSide) - 1,
+                    minTileRow: fragmentBounds.maxTileRow + 1,
+                    maxTileCol: ((fragmentMinColIndex + 1) * numIndexEntriesPerFragmentSide) - 1,
                     maxTileRow: fragmentBounds.maxTileRow + numIndexEntriesPerFragmentSide
                 };
             }

@@ -258,8 +258,7 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
                     const tileIndex = (tileRowIndex * numTilesPerRow) + tileColIndex;
 
                     const numTiles = numTilesBeforeFragment + tileIndex;
-                    offset += (numTiles * indexEntrySize);
-                    */
+                    offset += (numTiles * indexEntrySize);*/
 
                     /*
                     * First calculate the number of tiles before the fragment which contains the specified tile
@@ -284,24 +283,33 @@ export function calculateIndexOffsetForTile(metadata: Metadata, zoom: number, x:
                         maxTileCol: minTileColFragment + numTilesPerFragmentSide - 1,
                         maxTileRow: minTileRowFragment + numTilesPerFragmentSide - 1,
                     };
-
-                    /* 1. */
-                    const leftNumTilesBeforeFragment = (fragmentBoundsOfSpecifiedTileGlobalTilCrs.minTileCol - limit.minTileCol + 1) *
-                        (fragmentBoundsOfSpecifiedTileGlobalTilCrs.maxTileRow - limit.minTileRow + 1);
-
-                    /* 2. */
-                    const lowerNumTilesBeforeFragment = (limit.maxTileCol - fragmentBoundsOfSpecifiedTileGlobalTilCrs.minTileCol + 1) *
-                                                        (fragmentBoundsOfSpecifiedTileGlobalTilCrs.minTileRow - limit.minTileRow)
-
-                    /* 3. full rows in fragment */
                     const sparseFragmentsBounds = calculateFragmentBounds(limit, fragmentBoundsOfSpecifiedTileGlobalTilCrs);
-                    const numTilesFullRows = (y - sparseFragmentsBounds.minTileRow) * (sparseFragmentsBounds.maxTileCol - sparseFragmentsBounds.minTileCol + 1);
 
-                    /* 4. partial row in fragment */
+                    // 1.
+                    const leftNumTilesBeforeFragment = (sparseFragmentsBounds.minTileCol - limit.minTileCol ) *
+                        (sparseFragmentsBounds.maxTileRow - limit.minTileRow + 1);
+
+                    // 2.
+                    const lowerNumTilesBeforeFragment = (limit.maxTileCol - sparseFragmentsBounds.minTileCol + 1) *
+                        (sparseFragmentsBounds.minTileRow - limit.minTileRow)
+
+                    // 3. full rows in fragment
+                    const numTilesFullRows = (y - sparseFragmentsBounds.minTileRow) *
+                        (sparseFragmentsBounds.maxTileCol - sparseFragmentsBounds.minTileCol + 1);
+
+                    // 4. partial row in fragment
                     const partialTiles = x - sparseFragmentsBounds.minTileCol;
 
                     const numTiles = leftNumTilesBeforeFragment + lowerNumTilesBeforeFragment + numTilesFullRows + partialTiles;
                     offset += (numTiles * indexEntrySize);
+
+                    //Test
+                    const lowerNumTilesBeforeFragment2 = (limit.maxTileCol - limit.minTileCol + 1) *
+                        (sparseFragmentsBounds.minTileRow - limit.minTileRow);
+                    const leftUpperNumTilesBeforeFragment = (sparseFragmentsBounds.minTileCol - limit.minTileCol) *
+                        (sparseFragmentsBounds.maxTileRow - sparseFragmentsBounds.minTileRow + 1);
+                    const numTiles2 = lowerNumTilesBeforeFragment2 + leftUpperNumTilesBeforeFragment + numTilesFullRows + partialTiles;
+                    console.log(numTiles2);
                 }
             }
     }

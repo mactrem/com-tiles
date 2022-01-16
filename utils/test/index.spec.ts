@@ -447,9 +447,18 @@ describe("calculateIndexOffsetForTile", () => {
         //utils -> 21388
         //indexFactory z14 -> 21397
         //utils z14 -> 21511
-        const expectedIndex = 42786; //written in the COMT archive
+        //indexFactory beforeTileFragments -> 42144
+        //utils -> 42149
+        /*
+        * Calculate lower Bound
+        * -> index full rows rectangle -> 37088
+        * -> utils index -> 37093
+        * */
+        const expectedIndex = 42785; //written in the COMT archive
         //expect(offset).toBe(expectedIndex * 9);
+        console.info(`Index diff: ${index - expectedIndex}`)
         expect(index).toBe(expectedIndex);
+        expect(offset).toBe(expectedIndex * 9);
     });
 
 });

@@ -2,7 +2,7 @@ import {calculateIndexOffsetForTile, getFragmentRangeForTile} from "./converter.
 import pako from "./node_modules/pako/dist/pako.esm.mjs"
 
 //const COMT_URL = "http://0.0.0.0:9000/comtiles/test.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=3718FS09AU0CV3T4OGWN%2F20220105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220105T183958Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiIzNzE4RlMwOUFVMENWM1Q0T0dXTiIsImV4cCI6MTY0MTQxMTU5MywicGFyZW50IjoibWluaW9hZG1pbiJ9.bQ1bU0FLKvws3WhiFYFri7nVdYe4aFbADy9aiPxC1x4Z1soWHCKmfcSfy6083e6eIrMaIqzj-_TlB2NTuKvvJg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=7ed22d6a8f1be00b7fb99e19137e04a9197b5323299cbef7e9a8e0280fc300ac";
-const COMT_URL = "http://0.0.0.0:9000/comtiles/germany-new2.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=EWAQ797ZPZU78UFSPHI4%2F20220114%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220114T223323Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJFV0FRNzk3WlBaVTc4VUZTUEhJNCIsImV4cCI6MTY0MjIwMzAzOCwicGFyZW50IjoibWluaW9hZG1pbiJ9.5Q07ZRJ8HVU5RGk0-_Qo7mGFLjMvlW46YCstX_mZmHKcgGAmGxmGIjIl31AJ78vX-XaGvQx-XptmdB3gFC8YNQ&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=1416c219e79e5e03806b544cca4e3453c9d16520ac001731fc9844b4bea76b13";
+const COMT_URL = "http://0.0.0.0:9000/comtiles/germany-new4.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=JNU84TRW1XP64OY2OFDM%2F20220116%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220116T190059Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJKTlU4NFRSVzFYUDY0T1kyT0ZETSIsImV4cCI6MTY0MjM2MzI1NSwicGFyZW50IjoibWluaW9hZG1pbiJ9.CTK-pQCvlwziBre3Lr4IX6Cir9NPtccTIMLlxepuaHBCSYjCmu4teLeCBQ2nmklEc528yAg_KAYrJ7llA-Zxlg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=5ea8e6c76c8a444bfc54553f0f7efaafa72aed94b40d9c76342af98e67bfa98c";
 
 (async()=>{
     const {metadata, partialIndex, dataOffset} = await loadMetadataAndPartialIndex(COMT_URL);
@@ -21,7 +21,7 @@ async function createMap(metadata, partialIndex, dataOffset, comtUrl){
         console.info(`${z}/${x}/${y}`);
 
         //get data offset from partial index -> use utils lib -> convert to tms from xyz for using the utils lib
-        const tmsY = 1 << parseInt(z) - parseInt(y) - 1;
+        const tmsY = (1 << parseInt(z)) - parseInt(y) - 1;
         const limit = metadata.tileMatrixSet.tileMatrixSet[z].tileMatrixLimits;
         if(x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow){
             console.info("Requested tile not within the boundary ot the TileSet.");
@@ -104,7 +104,8 @@ async function loadMetadataAndPartialIndex(url){
     //TODO: size to small when vector layers are included
     const maxMetadataSize = 1<<15; //32768;
     //const initialChunkSize = 2 ** 19; //512k
-    const initialChunkSize = 2 ** 22; //4mb
+    //const initialChunkSize = 2 ** 22; //4mb
+    const initialChunkSize = 2 ** 16;
 
     const buffer = await fetch(url, {
         headers: {
