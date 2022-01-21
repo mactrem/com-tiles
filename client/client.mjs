@@ -2,14 +2,15 @@ import {calculateIndexOffsetForTile, getFragmentRangeForTile} from "./converter.
 import pako from "./node_modules/pako/dist/pako.esm.mjs"
 
 //const COMT_URL = "http://0.0.0.0:9000/comtiles/test.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=3718FS09AU0CV3T4OGWN%2F20220105%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220105T183958Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiIzNzE4RlMwOUFVMENWM1Q0T0dXTiIsImV4cCI6MTY0MTQxMTU5MywicGFyZW50IjoibWluaW9hZG1pbiJ9.bQ1bU0FLKvws3WhiFYFri7nVdYe4aFbADy9aiPxC1x4Z1soWHCKmfcSfy6083e6eIrMaIqzj-_TlB2NTuKvvJg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=7ed22d6a8f1be00b7fb99e19137e04a9197b5323299cbef7e9a8e0280fc300ac";
-const COMT_URL = "http://0.0.0.0:9000/comtiles/germany-new4.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=VN75FE10SWZO07AJE923%2F20220116%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220116T201126Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJWTjc1RkUxMFNXWk8wN0FKRTkyMyIsImV4cCI6MTY0MjM2NzQ4MiwicGFyZW50IjoibWluaW9hZG1pbiJ9.PXHO-wyz83aa-BHH2lB15oJSuKlIxCmyfmuPiBV4vGJKKDpLOGRwmTVfkdkPJ9hKW3qxrHW0XC4SIENxFcuFnA&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=511b7c69b8040b140b0c6a5db0ea3b03771d75c9e2981edeff2cd0ea1ee48051";
+//const COMT_URL = "http://0.0.0.0:9000/comtiles/germany-new4.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=OMT9P4J9V60F416O9J46%2F20220117%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220117T191026Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJPTVQ5UDRKOVY2MEY0MTZPOUo0NiIsImV4cCI6MTY0MjQ1MDIxMiwicGFyZW50IjoibWluaW9hZG1pbiJ9.hMpJ4kbXlnnzQqs8xhNQl5pJjSgghZY7PeBIuaQQmnQEHGp7pKHH07iHIhQIq7cZz673_ATjmPkC5Llmi3-rjg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=cf4a89b23d7541a25ed3145d2e7a21b16a3465686984e7207ae2e9991ba191e3";
+//const COMT_URL = "http://0.0.0.0:9000/comtiles/europe-new5.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=E4MUFH2RLPK2J12QCBW0%2F20220119%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220119T192424Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJFNE1VRkgyUkxQSzJKMTJRQ0JXMCIsImV4cCI6MTY0MjYyMTE3MSwicGFyZW50IjoibWluaW9hZG1pbiJ9.hP19DjZ6kesHndtm94GCJhc2UUnT7e5e5nkvo8OQB9Aamq-_axGh84o67LTUG3vD5sdaIz98vnzkMwZe-7_40Q&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=39ddaf67fe299bd4a4080cc0e4e65ff452f108c75dc62999b752e7506a06d901";
+const COMT_URL = "http://0.0.0.0:9000/comtiles/germany-new4.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=D1VYDA8F0U350XVJGQAX%2F20220121%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220121T103420Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJEMVZZREE4RjBVMzUwWFZKR1FBWCIsImV4cCI6MTY0Mjc2NDg1NiwicGFyZW50IjoibWluaW9hZG1pbiJ9.jFn6TWfmpbOcSSHkWkTxoQubuM3pSdYbShNUayDPdxyQ1UBGQltES2v97Q8qB0-I4sn4MHGmJmqUZuBwK0rMIg&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=75b1b7eefc1c57bcea1e3e7a2db045c96ec589e9c9afb20dd594c259367758b8";
 
 (async()=>{
     const {metadata, partialIndex, indexOffset, dataOffset} = await loadMetadataAndPartialIndex(COMT_URL);
 
     createMap(metadata, partialIndex, indexOffset, dataOffset, COMT_URL);
 })();
-
 
 const fragmentCache = new Map();
 
@@ -47,8 +48,12 @@ async function createMap(metadata, partialIndex, indexOffset, dataOffset, comtUr
                 console.info("Query index fragment");
                 //console.time("indexFragmentQuery" + x + y + z);
 
-                const startOffset = indexOffset + fragmentRange.startOffset;
-                const endOffset = indexOffset + fragmentRange.endOffset;
+                //TODO: now the index fragment is queried for every tile -> cache ongoing request
+                //requestCache.set()
+
+                //TODO: europe calculates a  float
+                const startOffset = parseInt(indexOffset + fragmentRange.startOffset);
+                const endOffset = parseInt(indexOffset + fragmentRange.endOffset);
                 indexFragmentBuffer = await fetch(comtUrl, {
                     headers: {
                         'range': `bytes=${startOffset}-${endOffset}`,
@@ -108,8 +113,7 @@ async function loadMetadataAndPartialIndex(url){
     //const maxMetadataSize = 1<<15; //32768;
     //const initialChunkSize = 2 ** 19; //512k
     //const initialChunkSize = 2 ** 22; //4mb
-    const initialChunkSize = 2 ** 16;
-    //const initialChunkSize = 2 ** 25;
+    const initialChunkSize = 2 ** 14;
 
     const buffer = await fetch(url, {
         headers: {
