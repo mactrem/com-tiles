@@ -1,5 +1,5 @@
 ### MinIO setup
-For local tests MinIO can be used as a object storage.  
+For local tests MinIO can be used as an object storage.  
 The API of MinIO is compatible with the Amazon S3 cloud storage service.
 
 To start a MinIO docker container run

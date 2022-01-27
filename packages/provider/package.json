@@ -1,0 +1,40 @@
+{
+  "name": "@comt/provider",
+  "version": "0.0.1",
+  "description": "Utility functions for working with COMTiles",
+  "main": "dist/src/comtCache.js",
+  "engines": {
+    "node": ">=15"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node src/index.ts",
+    "test": "jest",
+    "lint": "eslint --max-warnings=0 --fix --ext .ts src",
+    "format": "prettier --write \"**/*.ts\" \"**./*.json\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mactrem/com-tiles.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mactrem/com-tiles/issues"
+  },
+  "homepage": "https://github.com/mactrem/com-tiles#readme",
+  "dependencies": {
+    "@comt/spec": "*"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.3",
+    "@types/pako": "^1.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.8.1",
+    "@typescript-eslint/parser": "^5.8.1",
+    "eslint": "^7.30.0",
+    "jest": "^27.4.5",
+    "prettier": "^2.5.1",
+    "ts-jest": "^27.1.2",
+    "typescript": "^4.5.4"
+  }
+}

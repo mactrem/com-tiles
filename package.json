@@ -1,10 +1,7 @@
 {
-  "name": "com-tiles",
+  "name": "comt",
   "workspaces": [
-    "spec",
-    "converter/mbtiles-converter",
-    "server",
-    "utils"
+    "./packages/*"
   ],
   "devDependencies": {
     "@types/sqlite3": "^3.1.7"

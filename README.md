@@ -1,6 +1,11 @@
 ### Cloud Optimized Map Tiles (COMTiles)
 
-Inspired by [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of general raster and vector map tiles.  
+Based on the ideas of [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of raster and especially vector map tiles.  
+The main focus of COMTiles is the kostengösntif visualization of large amount of vector tiles at global scale.
+
+Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.
+
+For storing large amount of d
 
 What are COMTiles
 - Most geospatial data formats were developed only with the POSIX filesystem access in mind
@@ -11,6 +16,16 @@ What are COMTiles
 - Use an object store like Amazon S3 as a spatial database -> basically there is no backend and database server needed
   - Using S3 as a spatial database can significantly reduce coasts compared to storing the large geospatial datasets in a dedicated database
 - Client holds the logic for accessing the tiles
+
+
+### Repository structure
+- @comt/spec
+- @comt/provider
+- @comt/server
+- @comt/mbtiles-converter
+- @comt/tilelive-comtiles
+
+
 
 General
 - This projects evaluates a cloud native (serverless) architecture for MapServer to reduce coasts for large amount of geospatial data
@@ -49,37 +64,7 @@ Problems
 - How to request effectively parts of the index?
 - Performance of large file vs SQLite database with indices?
 
-Design
-- Magic -> COMT -> 4 char
-- MetadataBuilder Size -> int
-- Index Size -> int
-- MetadataBuilder -> UTF-8 encoded JSON
-    - Version
-    - TileMatrixBuilder -> there can be different bounds for each zoom level e.g. 1-8 overview and 9-14 only extracts
-      -  TileMatrixCRS -> OSMTile, WGS84
-      -  IndexCurveType
-      -  DataCurveType
-      -  TileMatrix
-- Index -> Clustered per zoom
-  - Cluster size of the index -> current zoom - 6 e.g. current zoom 9, index cluster size zoom 3
-  - 4^6 index entries -> 4096 -> 32Kb size for a index cluster ordered as hilbert curve
-  - offset to tile -> 4 bytes
-  - size -> 4 bytes
-  - Within the index cluster the data could be compressed e.g. via protobuf and delta encoding -> no becuase then 
-    the index offset could not be calculated
-- Map data
-- Number of tiles
-  - Zoom 14 -> 268 million
-  - Zoom 15 -> 1.1 billion
-  - Zoom 16 -> 4.3 billion
-  - Zoom 17 -> 17.2 billion
-  - Zoom 18 -> 68.7 billion
-  -> uint -> 4.3 billion 
-  -> 5 bytes -> 1099.5 billion 
-  -> 3 bytes -> 16.8 MB
--> varying index record size -> for z0-z15 4 bytes -> for >= z16 5 bytes -> better when uint max reached
-    
-    
+
 This repo contains the following components: 
 - Specification
 - Generator: 
