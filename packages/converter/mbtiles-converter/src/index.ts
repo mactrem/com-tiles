@@ -50,7 +50,7 @@ import { convertNumberToBufferLE } from "./utils";
 //const fileName = path.join(__dirname, "../europe.cot")
 //const mbTilesFile = path.resolve("data/europe.mbtiles");
 const fileName = path.join(
-  "/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany5.cot"
+  "/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany8.cot"
 );
 const mbTilesFile = path.resolve(
   "/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany.mbtiles"
@@ -74,6 +74,14 @@ buffer[0] = 0x01;
 
 const buff = convertNumberToBufferLE(2000, 5);
 console.log(buff);*/
+
+/*
+*
+* Test
+*    1093140
+    index: 117364
+   startOffset: 1056276
+* */
 
 (async () => {
   console.log(process.memoryUsage());
@@ -152,6 +160,7 @@ function writeIndex(
   for (let i = 0; i < index.length; i++) {
     const offset = i * 9;
     convertNumberToBufferLE(index[i].offset, 5).copy(indexBuffer, offset);
+
     //TODO: set offsetSize in the metadata document
     //TODO: offset is count at beginning of the data section -> write in the specification
     //TODO: with 4 bytes only 4GB can be stored -> rename from tileOffsetBytes to tile data size in bytes?
@@ -181,7 +190,6 @@ async function writeTiles(
     const tileBuffer = Buffer.from(data);
     //tileBuffer.copy(dataBuffer, offset);
     //offset += tileBuffer.length;
-
     //TODO: batch query and batch write
     stream.write(tileBuffer);
   }

@@ -123,5 +123,5 @@
     2.5444437451708134e-14,
     1
   ],
-  "tiles": ["comt://http://0.0.0.0:9000/comtiles/germany5.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=9C1PJJRV3Q4O3JV86WLU%2F20220127%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220127T190358Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiI5QzFQSkpSVjNRNE8zSlY4NldMVSIsImV4cCI6MTY0MzMxMjU3NywicGFyZW50IjoibWluaW9hZG1pbiJ9.5ZF45b_bjtJ_1UTgiy9OdEFaRKR3F4IPtCGJGT9t4LgNyUjYronBNfBcoxpu5yKbOOSRwPjS2uVv4sOwPsRxkw&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=941e7b68267739c2fc44bc49f088921569bbecdca33881b65dbcac91ac3ba02b/{z}/{x}/{y}"]
+  "tiles": ["comt://http://0.0.0.0:9000/comtiles/germany5.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=P131V2JTCMEZUT0AQI3D%2F20220129%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220129T191503Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJQMTMxVjJKVENNRVpVVDBBUUkzRCIsImV4cCI6MTY0MzQ4NzE4NCwicGFyZW50IjoibWluaW9hZG1pbiJ9.siImq4kX_6tAIoiVBQq4Fqau2ViOjQX2uEG1LYTALi9gVGwm9xgYczXm7WlYJaB_lv89Fl3JrIJb6mHZeuB4UQ&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=95780488a190564c9d2ef6b2f0bfff0af0b1adf6248182422646da29f15f387e/{z}/{x}/{y}"]
 }

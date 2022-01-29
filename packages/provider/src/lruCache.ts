@@ -1,4 +1,4 @@
-class LruCache<K, V> {
+export default class LruCache<K, V> {
     private values = new Map<K, V>();
 
     constructor(private readonly maxEntries = 20) {}

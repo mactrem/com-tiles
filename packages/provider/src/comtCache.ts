@@ -1,6 +1,7 @@
 import pako from "pako";
 import { Metadata } from "@comt/spec";
 import ComtIndex, { FragmentRange } from "./comtIndex";
+import LruCache from "./lruCache";
 
 interface Header {
     indexOffset: number;
@@ -15,7 +16,7 @@ interface IndexEntry {
 }
 
 //TODO: refactor
-function convertUInt40LEToNumber(buffer, offset) {
+/*function convertUInt40LEToNumber(buffer, offset) {
     const slicedBuffer = new Uint8Array(buffer.slice(offset, offset + 5));
     const convertedBuffer = new Uint8Array([
         slicedBuffer[0],
@@ -29,6 +30,16 @@ function convertUInt40LEToNumber(buffer, offset) {
     ]).buffer;
     const view = new DataView(convertedBuffer);
     return Number(view.getBigUint64(0, true));
+}*/
+
+//TODO: attribute
+const shift = (number, shift) => {
+    return number * Math.pow(2, shift);
+};
+
+function convertUInt40LEToNumber(buffer: ArrayBuffer, offset: number) {
+    const dataView = new DataView(buffer);
+    return shift(dataView.getUint32(offset + 1, true), 8) + dataView.getUint8(offset);
 }
 
 class IndexCache {
@@ -42,7 +53,9 @@ class IndexCache {
     private static readonly INDEX_ENTRY_NUM_BYTES = 9;
     /* 7 zoom levels (8-14) * 4 fragments per zoom */
     private static readonly MAX_ENTRIES_LRU_CACHE = 28;
-    private readonly fragmentedIndex: LruCache<number, { fragmentRange: FragmentRange; indexEntries: Uint8Array }>;
+    private readonly fragmentedIndex = new LruCache<number, { fragmentRange: FragmentRange; indexEntries: Uint8Array }>(
+        IndexCache.MAX_ENTRIES_LRU_CACHE,
+    );
     private readonly comtIndex: ComtIndex;
 
     constructor(
@@ -85,8 +98,9 @@ class IndexCache {
     }
 
     private createIndexEntry(indexOffset: number, indexEntries: Uint8Array): IndexEntry {
-        const offset = convertUInt40LEToNumber(indexEntries, indexOffset);
-        const size = new DataView(this.partialIndex.buffer).getUint32(indexOffset + 5, true);
+        const indexBuffer = indexEntries.buffer;
+        const offset = convertUInt40LEToNumber(indexBuffer, indexOffset);
+        const size = new DataView(indexBuffer).getUint32(indexOffset + 5, true);
         return { offset, size };
     }
 
@@ -119,7 +133,10 @@ export class CancellationToken {
 }
 
 export default class ComtCache {
-    private static readonly INITIAL_CHUNK_SIZE = 2 ** 19; //512k
+    private static readonly SUPPORTED_VERSION = 1;
+    //TODO: only test
+    private static readonly INITIAL_CHUNK_SIZE = 50_000;
+    //private static readonly INITIAL_CHUNK_SIZE = 2 ** 19; //512k
     private static readonly METADATA_OFFSET_INDEX = 17; //TODO: reference spec
     private static readonly SUPPORTED_TILE_MATRIX_CRS = "WebMercatorQuad";
     private static readonly SUPPORTED_ORDERING = "RowMajor";
@@ -186,10 +203,16 @@ export default class ComtCache {
         let indexFragment: ArrayBuffer;
         /* avoid redundant requests to the same index fragment */
         if (!this.requestCache.has(fragmentRange.startOffset)) {
+            console.trace(
+                `Fetch IndexFragment with offset ${fragmentRange.startOffset / 1024 / 1024} MB for zoom ${zoom}`,
+            );
+
+            const startOffset = this.header.indexOffset + fragmentRange.startOffset;
+            const endOffset = this.header.indexOffset + fragmentRange.endOffset;
             const indexEntryRequest = ComtCache.fetchBinaryData(
                 this.comtUrl,
-                fragmentRange.startOffset,
-                fragmentRange.endOffset,
+                startOffset,
+                endOffset,
                 cancellationToken,
             );
             this.requestCache.set(fragmentRange.startOffset, indexEntryRequest);
@@ -252,7 +275,12 @@ export default class ComtCache {
         const buffer = await ComtCache.fetchHeader(comtUrl);
 
         const view = new DataView(buffer);
+
         const version = view.getUint32(4, true);
+        if (version !== ComtCache.SUPPORTED_VERSION) {
+            throw new Error("The specified version of the COMT archive is not supported.");
+        }
+
         const metadataSize = view.getUint32(8, true);
         const indexSize = convertUInt40LEToNumber(buffer, 12);
 

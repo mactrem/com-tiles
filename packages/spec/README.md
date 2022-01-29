@@ -7,6 +7,7 @@ the tiles or tile batches via http range requests.
 
 ### Layout
 Little endian encoding is used.  
+TODO: index length is uint40
 ![layout](assets/layout.png)
 
 - Magic  

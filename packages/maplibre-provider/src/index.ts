@@ -19,7 +19,7 @@ export default function registerComtProtocolHandler() {
             queryTile(z, x, y, callback, cancellationToken);
         }
 
-        return { cancel: cancellationToken.cancel };
+        return { cancel: () => cancellationToken.cancel() };
     });
 }
 
@@ -44,9 +44,13 @@ maplibregl.addProtocol("comt", (params, callback) => {
 });*/
 
 function queryTile(z, x, y, callback, cancellationToken) {
-    comtCache
+    /*comtCache
         .getTile(parseInt(z), parseInt(x), parseInt(y), cancellationToken)
-        .then((tile) => callback(null, tile, null, null));
+        .then((tile) => callback(null, tile, null, null));*/
+
+    comtCache.getTile(parseInt(z), parseInt(x), parseInt(y), cancellationToken).then((tile) => {
+        callback(null, tile, null, null);
+    });
 }
 
 /*maplibregl.addProtocol("comt", async (params, callback) => {

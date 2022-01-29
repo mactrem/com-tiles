@@ -125,12 +125,6 @@ export async function createIndexInRowMajorOrder(
       };
 
       for (let row = 0; row < numFragmentsRow; row++) {
-        /*if(zoom ===14){
-                    const sparseFragmentBoundsTest = calculateSparseFragmentBounds(limits, fragmentBounds);
-                    const t = (sparseFragmentBoundsTest.maxTileRow-sparseFragmentBoundsTest.minTileRow+1) * (sparseFragmentBoundsTest.maxTileCol-sparseFragmentBoundsTest.minTileCol +1);
-                    console.log(t);
-                }*/
-
         for (let col = 0; col < numFragmentsCol; col++) {
           const sparseFragmentBounds = calculateSparseFragmentBounds(
             limits,
@@ -141,18 +135,7 @@ export async function createIndexInRowMajorOrder(
             sparseFragmentBounds
           );
 
-          /*if (zoom === 14 && sparseFragmentBounds.minTileRow >= 10624) {
-            debugger;
-            if (!isDense(limits, fragmentBounds)) {
-              //console.info("Sparse fragment");
-            }
-          }*/
-
           for await (const tileBatch of tileBatches) {
-            /*if (tileBatch.some((b) => b.column == 8705 && b.row == 10634)) {
-              //console.log("test");
-            }*/
-
             for (const { column, row, data } of tileBatch) {
               const size = data.length;
               const tileIndex = index.length - 1;
