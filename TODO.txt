@@ -9,3 +9,5 @@ mbtiles-converter
 - index module
   -> return index and tile via generator and write batches at once in a file
   -> not all tiles in the lower zoom levels are queried because the bounds are calculated
+- Check if cmd is working
+- remove src folder within the dist folder

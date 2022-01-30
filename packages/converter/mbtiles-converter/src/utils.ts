@@ -1,4 +1,4 @@
-export function convertNumberToBufferLE(num: number, numBytes = 5): Buffer {
+export function toBytesLE(num: number, numBytes = 5): Buffer {
   const buffer = Buffer.alloc(numBytes);
   if (numBytes <= 4) {
     for (let i = 0; i < numBytes; i++) {
