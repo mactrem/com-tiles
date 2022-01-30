@@ -9,14 +9,14 @@ Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were
 COMTiles in contrast is designed to be hosted only on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or server.  
 Via COMTiles an object storage can be used as a spatial database.  
 The client can access the map tiles via HTTP range requests.  
-A COMT archive consist of a header, index and body:
+A COMT archive consists of the following parts:
 - Header  
-  Contains the metadata which describes the TileSet.  
-  The metadata contains a TileMatrixSet definition which describes the extend to the TileSet.  
-  The concept and structure of the TileMatrixSet is inspired by the 'OGC Two Dimensional Tile Matrix Set' OGC draft.  
+  Contains in particular the metadata which describes the TileSet.  
+  The metadata has a TileMatrixSet definition which describes the extend of the TileSet.  
+  The concept and structure of the TileMatrixSet is inspired by the OGC draft 'OGC Two Dimensional Tile Matrix Set' .  
 - Index  
   The index references the map tiles in the data section in a compact way and consists of a collection of index entries.  
-  A index entry consist of a TileOffset (default 5 bytes) and TileSize (4 bytes).  
+  A index entry consist of a offset to the tile (default 5 bytes) and a size of a tile (4 bytes) in the data section.  
   One important concept of COMTiles is that the index is also streamable which means that only parts of the index (fragments) can be requested
   via http range requests.
   The index is structured in a way that the index entries of the index which are intersecting the current
