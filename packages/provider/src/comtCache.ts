@@ -134,9 +134,7 @@ export class CancellationToken {
 
 export default class ComtCache {
     private static readonly SUPPORTED_VERSION = 1;
-    //TODO: only test
-    private static readonly INITIAL_CHUNK_SIZE = 50_000;
-    //private static readonly INITIAL_CHUNK_SIZE = 2 ** 19; //512k
+    private static readonly INITIAL_CHUNK_SIZE = 2 ** 19; //512k
     private static readonly METADATA_OFFSET_INDEX = 17; //TODO: reference spec
     private static readonly SUPPORTED_TILE_MATRIX_CRS = "WebMercatorQuad";
     private static readonly SUPPORTED_ORDERING = "RowMajor";

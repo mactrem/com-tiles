@@ -1,0 +1,11 @@
+mbtiles-converter
+- row major means XYZ schema not TMS -> refactor the createIndexInRowMajorOrder method in the indexFactory module
+  to use XYZ scheme which is also specified in the OGC WebMercatorQuad
+- Use prepared statements in the getTilesByRowMajorOrderBatched method of the MbTilesRepository class
+- Use a worker pool to parallelize the conversion -> replace sqlite3 with better-sqlite3 for worker support
+- TileMatrixSetBuilder -> define name of the supported crs in the JSON schema
+- MetadataBuilder -> Add additional attributes of a mbtiles database e.g. pxel_scale, name, description, id, json with the vector layers
+- IndexFactory doesn't scale because the index is stored in memory
+- index module
+  -> return index and tile via generator and write batches at once in a file
+  -> not all tiles in the lower zoom levels are queried because the bounds are calculated

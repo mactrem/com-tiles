@@ -64,7 +64,6 @@ export class WebMercatorQuadMetadataBuilder {
 
   /*
    * The boundary is in all TileMatrix (zoom levels) instances of the TileMatrixBuilder the same.
-   * TODO: Add additional attributes of a mbtiles database e.g. pxel_scale, name, description, id, json with the vector layers
    * A distinction must be made between:
    * - COMTiles metadata
    * - Tile data metdadata like MVT because additional metadata are needed -> separate version, json with vector layers

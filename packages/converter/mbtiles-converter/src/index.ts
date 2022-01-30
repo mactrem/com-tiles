@@ -7,48 +7,6 @@ import { createIndexInRowMajorOrder, IndexEntry } from "./indexFactory";
 import { MBTilesRepository } from "./mbTilesRepository";
 import { convertNumberToBufferLE } from "./utils";
 
-/*
- * austria.cot -> 2.9GB -> austria.cot compressed -> 2.8 -> no real impact when compressing vector tile
- * austria metadata -> 13 kb uncompressed -> 1kb compressed
- * austria index -> 762kb uncompressed -> 496kb compressed -> 1/3 reduced in size
- * europe index -> 147Mb uncompressed -> 56MB compressed -> 2/3 reduced in size
- *
- * 512kb -> 220 milliseconds to load in tests
- *
- * Header (compressed) -> magic, version, metadataLength, fragmentTableLength, indexLength, metadata, fragmentTable
- * -> compressed header without fragmentTable -> 1kb
- * -> fragmentTable without compression 390kb -> with compression 260kb?
- * Body -> index (fragments compressed), data
- *  -> index 0-8 -> 256kb uncompressed -> 170kb compressed
- *  -> store indexTable and index overview (0-8) in one file?
- *       -> one file to fetch from s3 -> all information to start
- *       -> data file then has only index with fragments
- *
- * -> Header File
- *   -> holds all initial information
- *   -> smaller then 500kb
- * -> Data File
- *   -> holds only fragments
- *   -> compressed index fragments
- *
- * -> Fragment
- *   -> 4^6 -> 4096
- *   -> 12kb -> compressed 8.2kb? -> does this really bring any advantage?
- *   -> 7kb -> 25 milliseconds to load in tests
- *   -> when ordered in row major four max 4 fragments only 2 http range requests needed
- *       -> 24kb -> 8-16kb compressed?
- *
- *  -> transfer rate
- *    -> Cdn more important then index fragments
- *    -> The real enemy of a web page's performance is not the number of bytes transferred; rather, it is network latency
- *    -> 5 Mb/s connection (the average connection speed in the US is a little over that) with a ping time to your server of 80ms
- *       -> 1x 20 kB files:  80ms latency + 31ms transfer time = 111ms
- *       -> 2x 4 kB files:  160ms latency + 13ms transfer time = 173ms
- *    -> the latency has decreased by around 30% (from 80ms to approx. 55ms) but the average download rate (mobile)
- *       has increased up to 23 MB/s for the lowest rated operator
- * */
-//const fileName = path.join(__dirname, "../europe.cot")
-//const mbTilesFile = path.resolve("data/europe.mbtiles");
 const fileName = path.join(
   "/Users/tremmelmarkus/Documents/GitHub/com-tiles/data/germany8.cot"
 );
@@ -62,38 +20,14 @@ console.info(mbTilesFile);
 const MAGIC = "COMT";
 const VERSION = 1;
 
-/*
-//convert number to le bytes e.g. 290
-const buffer = Buffer.alloc(5);
-//buffer.writeUInt8()
-//buffer[0] = 10;
-const num = 290;
-const hex = num.toString(16);
-buffer[0] = 0x01;
-//buffer.writeBigInt64LE()
-
-const buff = convertNumberToBufferLE(2000, 5);
-console.log(buff);*/
-
-/*
-*
-* Test
-*    1093140
-    index: 117364
-   startOffset: 1056276
-* */
-
 (async () => {
   console.log(process.memoryUsage());
   console.log("Start converting tiles.");
 
   const db = new sqlite3.Database(mbTilesFile);
   const metadata = await createMetadata(db);
-  //const tiles = await getTilesByRowMajorOrder(db);
   const repo = new MBTilesRepository(mbTilesFile);
 
-  //TODO: return index and tile via generator and write batches at once in a file
-  //TODO: not all tiles in the lower zoom levels are queried because the bounds are calculated
   const index = await createIndexInRowMajorOrder(
     repo,
     metadata.tileMatrixSet.tileMatrix

@@ -10,8 +10,7 @@ export type BoundingBox = [
   maxLat: number
 ];
 
-//TODO: define name of the crs in the JSON schema
-const tileMatrixCRS = "WebMercatorQuad ";
+const tileMatrixCRS = "WebMercatorQuad";
 export default function createWMQTileMatrixSet(
   tileMatrices: TileMatrix[],
   fragmentOrdering: SpaceFillingCurveOrdering = "RowMajor",
@@ -47,9 +46,7 @@ export class TileMatrixFactory {
     const minTileRow = TileMatrixFactory.lat2tile(bounds[1], zoom);
     const maxTileCol = TileMatrixFactory.lon2tile(bounds[2], zoom);
     const maxTileRow = TileMatrixFactory.lat2tile(bounds[3], zoom);
-    //const matrixWidth = maxTileCol - minTileCol + 1;
     /* Y-axis goes downwards in the XYZ tiling scheme */
-    //const matrixHeight = minTileRow -maxTileRow + 1;
 
     return {
       zoom,
@@ -74,7 +71,7 @@ export class TileMatrixFactory {
     return Math.floor(((lon + 180) / 360) * 2 ** zoom);
   }
 
-  //MBtiles uses tms global-mercator profile
+  /* MBTiles uses tms global-mercator profile */
   private static lat2tile(lat, zoom): number {
     const xyz = Math.floor(
       ((1 -
@@ -88,37 +85,3 @@ export class TileMatrixFactory {
     return 2 ** zoom - xyz - 1;
   }
 }
-
-/*
-In a TCRS (Tile matrix CRS), for each resolution, a tilematrix coordinate system groups underlying TCRS pixels into square tiles and
-counts tiles with the origin at the upper left corner of the tiled space and increasing right (column axis, horizontal)
-and downwards (row axis, vertical) respectively
- */
-/*
- * TODO: extracts e.g. zurich can be smaller then the 1024 index cluster size even in high zoom levels -> how to handle?
- * -> always write 1024 as default or the real size of the only cluster
- * */
-/*export class TileMatrix{
-
-    constructor(private readonly _zoom: number, private readonly _topLeft: LngLat,
-                        private readonly _matrixWidth, private readonly _matrixHeight,
-                        private readonly _indexClusterWidth = 1024, private readonly _indexClusterHeight = 1024 ) {
-    }
-
-
-    get zoom(): number{
-        return this._zoom;
-    }
-
-    get topLeft(): LngLat{
-        return this._topLeft;
-    }
-
-    get matrixWidth(): number{
-        return this._matrixWidth;
-    }
-
-    get maxtrixHeight(): number{
-        return this._matrixHeight;
-    }
-}*/

@@ -146,6 +146,7 @@ export default class ComtIndex {
                      * First calculate the number of tiles before the fragment which contains the specified tile
                      * 1. Calculate the number of tiles which are on the left side of the fragment
                      * 2. Calculate the number of tiles which are below the the fragment of the specified tile
+                     * Then calculate the number of tiles before the specified tile in the fragment
                      * 3. Number of tiles for the full rows in the fragment which contains the specified tile
                      * 4. Number of tiles before the specified tile in the partial row of the fragment
                      *  ________________

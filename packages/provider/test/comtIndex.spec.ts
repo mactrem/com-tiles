@@ -454,6 +454,13 @@ describe("calculateIndexOffsetForTile", () => {
          * -> index full rows rectangle -> 37088
          * -> utils index -> 37093
          * */
+
+        /*
+         *
+         * -> TileSetLimit         -> minTileCol: 8625, minTileRow: 10579, maxTileCol: 8973, maxTileRow: 10759
+         * -> sparseFragmentBounds -> minTileCol: 8704, minTileRow: 10624, maxTileCol: 8767, maxTileRow: 10687
+         *
+         * */
         const expectedIndex = 42785; //written in the COMT archive
         //expect(offset).toBe(expectedIndex * 9);
         console.info(`Index diff: ${index - expectedIndex}`);
