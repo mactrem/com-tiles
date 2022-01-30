@@ -1,87 +1,41 @@
-### Cloud Optimized Map Tiles (COMTiles)
+## Cloud Optimized Map Tiles (COMTiles)
 
 Based on the ideas of [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of raster and especially vector map tiles.  
-The main focus of COMTiles is the kostengösntif visualization of large amount of vector tiles at global scale.
+The main focus of COMTiles is to significantly reduce coasts for the hosting of large raster and vector tilesets at global scale 
+in the cloud.
 
-Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.
+###Concept
+Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.  
+COMTiles in contrast is designed to be hosted only on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or server.  
+Via COMTiles an object storage can be used as a spatial database.  
+The client can access the map tiles via HTTP range requests.  
+A COMT archive consist of a header, index and body:
+- Header  
+  Contains the metadata which describes the TileSet.  
+  The metadata contains a TileMatrixSet definition which describes the extend to the TileSet.  
+  The concept and structure of the TileMatrixSet is inspired by the 'OGC Two Dimensional Tile Matrix Set' OGC draft.  
+- Index  
+  The index references the map tiles in the data section in a compact way and consists of a collection of index entries.  
+  A index entry consist of a TileOffset (default 5 bytes) and TileSize (4 bytes).  
+  One important concept of COMTiles is that the index is also streamable which means that only parts of the index (fragments) can be requested
+  via http range requests.
+  The index is structured in a way that the index entries of the index which are intersecting the current
+  viewport of the map (and also with a additional buffer) can be requested with a minimal number of HTTP requests.  
+- Body  
+  Contains the actual raster or vector tiles.  
 
-For storing large amount of d
-
-What are COMTiles
-- Most geospatial data formats were developed only with the POSIX filesystem access in mind
-- In cloud native applications large datasets are often stored in object stores (AWS S3, Azure Blob Storage, ...)
-- The geo/map services run in separated environment e.g. in a docker container
-- current geospatial formats are build to be used on a classic server where the services have direct access to the files
-  e.g. via posix calls (fopen)
-- Use an object store like Amazon S3 as a spatial database -> basically there is no backend and database server needed
-  - Using S3 as a spatial database can significantly reduce coasts compared to storing the large geospatial datasets in a dedicated database
-- Client holds the logic for accessing the tiles
-
+### Use Cases
+- Displaying map tile in the browser via a web mapping framework like MapLibreGL JS
+- Downloading map extracts for the offline usage in apps
+- Downloading map extracts for the hosting in dedicated on-premise infrastructure
 
 ### Repository structure
-- @comt/spec
-- @comt/provider
-- @comt/server
-- @comt/mbtiles-converter
-- @comt/tilelive-comtiles
+- @comt/spec -> COMT file format specification
+- @comt/provider -> Utility functions for working with COMTiles
+- @comt/maplibre-provider -> COMTiles provider for MapLibre GL JS  
+- @comt/server -> MapServer for serving tiles, can be hosted in a cloud native (serverless) environment
+- @comt/mbtiles-converter -> Converting map tiles stored in a MBTiles database to a COM Tiles archive
+- @comt/tilelive-comtiles -> Integration into tilelive for generating Mapbox Vector Tiles 
 
 
-
-General
-- This projects evaluates a cloud native (serverless) architecture for MapServer to reduce coasts for large amount of geospatial data
-- A MapServer provides map tiles for map client
- 
-    
-Concept
-- Http range requests
-- Preserve locality for index and data to reduce number of range requests
-- Index
-    - 0-8 download full index
-    - 9-14 only parts of the index
-    - Index is clustered -> the cluster are ordered as a hilbert curve
   
-Index Design
-- Client download full index for zoom 0-8 for the planet -> which size? (500k)
-- Clients can query parts of the index -> center of the map can be used starting point with a specific buffer
-- Every zoom level has to be requested with a separate http range request
-  - Batch zoom levels via multipart ranges (multipart/byteranges) -> Get Range: bytes=200-400,100-300,500-600 
-    -> not supported by the object store provider
-- Buffering -> 15 Tiles around the current center of the map?
-- The tile index can be  calculated because for every zoom level the number of tiles for rows and columns including the starting point
-  are specified in the metadata so only rectangular areas are supported
-
-    
-General
-- Limited to the Spherical Mercator tiling scheme?
-
-Use Cases
-- Browsing maps in the browser -> Also reduce number of tile request because of the space filling curve approach
-- Downloading extracts for offline usage in apps
-- Downloading extracts for hosting in dedicated on-premise infrastructure
-    
-Problems
-- No compression in range requests?
-- How to request effectively parts of the index?
-- Performance of large file vs SQLite database with indices?
-
-
-This repo contains the following components: 
-- Specification
-- Generator: 
-  - Convert tiles stored in a MBTiles database to a COM Tiles archive
-  - The generated COM Tiles can be deployed to an cloud object storage like Azure Blob Storage or AWS S3
-- Server: 
-  - Proxy for providing COM Tiles via the XYZ tiling scheme to (map) clients
-- Client: 
-  - For accessing COM Tiles from an object storage 
-  - Integration in MapLibre GL JS
-
-
-TODO:
-- Restricted to WebMercator?
-
-Tasks:
-- Create Website to switch between hilbert curve, z-order and row-major order and deploy to GitLab pages
-- Implement a converter for converting a MBTiles archive to a COM-Tiles archive
-- Host the COM-Tiles archive on S3 and implement a MapServer and deploy on AWS Lambda
-- Compare costs and performance
