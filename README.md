@@ -4,7 +4,7 @@ Based on the ideas of [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and exte
 The main focus of COMTiles is to significantly reduce coasts for the hosting of large raster and vector tilesets at global scale 
 in the cloud.
 
-###Concept
+###Concept  
 Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.  
 COMTiles in contrast is designed to be hosted only on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or server.  
 Via COMTiles an object storage can be used as a spatial database.  
