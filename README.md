@@ -37,5 +37,13 @@ A COMT archive consist of a header, index and body:
 - @comt/mbtiles-converter -> Converting map tiles stored in a MBTiles database to a COM Tiles archive
 - @comt/tilelive-comtiles -> Integration into tilelive for generating Mapbox Vector Tiles 
 
+### References
+- https://medium.com/planet-stories/cloud-native-geospatial-part-2-the-cloud-optimized-geotiff-6b3f15c696ed
+- https://towardsdatascience.com/turn-amazon-s3-into-a-spatio-temporal-database-40f1a210e943
+- https://github.com/flatgeobuf/flatgeobuf
+- https://medium.com/@mojodna/tapalcatl-cloud-optimized-tile-archives-1db8d4577d92
+- https://docs.tiledb.com/main/basic-concepts/terminology
+- https://github.com/protomaps/PMTiles
+
 
   
