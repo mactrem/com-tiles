@@ -13,6 +13,7 @@ module.exports = merge(common, {
     devtool: "inline-source-map",
     entry: {
         index: path.join(ROOT_DIRECTORY, "debug/index.ts"),
+        debug: path.join(ROOT_DIRECTORY, "debug/debug.ts"),
     },
     plugins: [
         new HtmlWebpackPlugin({
@@ -20,6 +21,12 @@ module.exports = merge(common, {
             filename: "index.html",
             template: HTML_TEMPLATE,
             chunks: ["index"],
+        }),
+        new HtmlWebpackPlugin({
+            title: "MapLibre GL COMTiles Debug",
+            filename: "debug.html",
+            template: HTML_TEMPLATE,
+            chunks: ["debug"],
         }),
         new CopyWebpackPlugin({
             patterns: [{ from: path.join(ROOT_DIRECTORY, "/debug/assets"), to: "assets" }],
