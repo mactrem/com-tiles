@@ -461,7 +461,7 @@ describe("calculateIndexOffsetForTile", () => {
          * -> sparseFragmentBounds -> minTileCol: 8704, minTileRow: 10624, maxTileCol: 8767, maxTileRow: 10687
          *
          * */
-        const expectedIndex = 42785; //written in the COMT archive
+        const expectedIndex = 42790; //written in the COMT archive
         //expect(offset).toBe(expectedIndex * 9);
         console.info(`Index diff: ${index - expectedIndex}`);
         expect(index).toBe(expectedIndex);

@@ -52,7 +52,7 @@ export class MBTilesRepository {
       (limit.maxTileCol - limit.minTileCol + 1) *
       (limit.maxTileRow - limit.minTileRow + 1);
     const actualNumTiles = tiles.length;
-    return expectedNumTiles === actualNumTiles;
+    return expectedNumTiles !== actualNumTiles;
   }
 
   //TODO: find proper solution with empty mvt tile -> when adding size 0
