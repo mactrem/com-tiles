@@ -31,14 +31,63 @@ export class MBTilesRepository {
     for (let offset = 0; ; offset += batchSize) {
       const limitQuery = ` ${query} LIMIT ${batchSize} OFFSET ${offset};`;
 
-      const rows = await util.promisify(db.all.bind(db))(limitQuery);
-      if (!rows.length) {
+      const tiles = await util.promisify(db.all.bind(db))(limitQuery);
+
+      if (!tiles.length) {
         db.close();
         return;
       }
 
-      yield rows;
+      yield this.hasMissingTiles(limit, tiles)
+        ? this.addMissingTiles(limit, tiles)
+        : tiles;
     }
+  }
+
+  private hasMissingTiles(
+    limit: TileMatrix["tileMatrixLimits"],
+    tiles: Tile[]
+  ): boolean {
+    const expectedNumTiles =
+      (limit.maxTileCol - limit.minTileCol + 1) *
+      (limit.maxTileRow - limit.minTileRow + 1);
+    const actualNumTiles = tiles.length;
+    return expectedNumTiles === actualNumTiles;
+  }
+
+  //TODO: find proper solution with empty mvt tile -> when adding size 0
+  private addMissingTiles(
+    limit: TileMatrix["tileMatrixLimits"],
+    tiles: Tile[]
+  ) {
+    const paddedTiles: Tile[] = [];
+
+    for (let row = limit.minTileRow; row <= limit.maxTileRow; row++) {
+      for (let col = limit.minTileCol; col <= limit.maxTileCol; col++) {
+        if (!tiles.some((tile) => tile.row === row && tile.column === col)) {
+          const emptyTile = new Uint8Array();
+          paddedTiles.push({ column: col, row, data: emptyTile });
+        } else {
+          paddedTiles.push(tiles.shift());
+        }
+      }
+    }
+
+    return paddedTiles;
+  }
+  private analyzeBatch(rows) {
+    let lastColumn = 0;
+    let lastRow = 0;
+    const res = [];
+    for (const row of rows) {
+      if (row.column !== lastColumn + 1 && row.row === lastRow) {
+        res.push({ column: row.column, row: row.row, lastColumn, lastRow });
+      }
+      lastColumn = row.column;
+      lastRow = row.row;
+    }
+
+    return res;
   }
 
   async getTile(zoom: number, row: number, column: number): Promise<Tile> {

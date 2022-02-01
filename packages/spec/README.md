@@ -49,6 +49,8 @@ TODO: index length is uint40
 -> TileMatrix
 
 ### Index Aggregation
+-> Explain Dense vs Sparse Fragments
+-> Explain Index Fragments
 One important concept of COMTiles is that the index is also streamable which means that only parts (Fragments) of the index can be requested
 via http range requests. This important because when deploying a vector tiles tileset for the full planet the index can get about 2.7 GB of size (zoom 0-14).
 One main goal of COMTiles is to structure the index in a way that the index records of the index which are intersecting the current
@@ -77,6 +79,10 @@ Example:
 ![sparseIndex](assets/sparseIndex.png)
 
 ### Loading the index
+
+### Improvements -> v2
+-> index fragment only one absolute offset per fragment and every index entries holds only the tile size
+-> index table as part of the header -> compress fragments
 
 
 ## Glossary

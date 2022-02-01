@@ -78,8 +78,12 @@ export async function createIndexInRowMajorOrder(
           (fragmentMinRowIndex + 1) * numIndexEntriesPerFragmentSide - 1,
       };
 
-      for (let row = 0; row < numFragmentsRow; row++) {
-        for (let col = 0; col < numFragmentsCol; col++) {
+      for (let fragmentRow = 0; fragmentRow < numFragmentsRow; fragmentRow++) {
+        for (
+          let fragmentCol = 0;
+          fragmentCol < numFragmentsCol;
+          fragmentCol++
+        ) {
           const sparseFragmentBounds = calculateSparseFragmentBounds(
             limits,
             denseFragmentBounds
@@ -96,10 +100,12 @@ export async function createIndexInRowMajorOrder(
               const offset = index.length
                 ? index[tileIndex].offset + index[tileIndex].size
                 : 0;
+              //TODO: set offset 0 when size=0?
               index.push({ offset, size, zoom, row, column });
             }
           }
 
+          //TODO: use only one assignment via index multiplication
           /* increment column and keep row */
           Object.assign(denseFragmentBounds, {
             minTileCol: denseFragmentBounds.maxTileCol + 1,

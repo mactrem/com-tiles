@@ -187,7 +187,8 @@ export default class ComtCache {
         const indexEntry =
             this.indexCache.get(zoom, x, tmsY) ?? (await this.fetchIndexEntry(zoom, x, tmsY, cancellationToken));
         const absoluteTileOffset = this.header.dataOffset + indexEntry.offset;
-        return this.fetchMVT(absoluteTileOffset, indexEntry.size);
+        /* Return an empty array if the tile is missing */
+        return indexEntry.size ? this.fetchMVT(absoluteTileOffset, indexEntry.size) : new Uint8Array(0);
     }
 
     private async fetchIndexEntry(
