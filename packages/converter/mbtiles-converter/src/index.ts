@@ -110,10 +110,12 @@ async function writeTiles(
   index: IndexEntry[],
   tileRepository: MBTilesRepository
 ) {
-  for (const { zoom, row, column } of index) {
-    const { data } = await tileRepository.getTile(zoom, row, column);
-    const tileBuffer = Buffer.from(data);
-    stream.write(tileBuffer);
+  for (const { zoom, row, column, size } of index) {
+    if (size > 0) {
+      const { data } = await tileRepository.getTile(zoom, row, column);
+      const tileBuffer = Buffer.from(data);
+      stream.write(tileBuffer);
+    }
   }
 }
 
