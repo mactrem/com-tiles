@@ -9,6 +9,7 @@ import { MBTilesRepository } from "./mbTilesRepository";
 import { toBytesLE } from "./utils";
 
 import { version } from "../package.json";
+import * as buffer from "buffer";
 
 program
   .version(version)
@@ -63,8 +64,10 @@ async function createComTileArchive(
 
   writeMetadata(stream, metadataJson);
 
+  console.info("Creating index.");
   writeIndex(stream, numBytesIndex, index);
 
+  console.info("Creating tiles.");
   await writeTiles(stream, index, repo);
 
   stream.end();
@@ -116,17 +119,25 @@ async function writeTiles(
   tileRepository: MBTilesRepository
 ) {
   let i = 0;
-  let partialBuffer = new Buffer(0);
   const lastTileIndex = index.length - 1;
   const batchSize = 5000;
+  let partialBuffer = preallocateBuffer(
+    index,
+    0,
+    index.length + 1 < batchSize ? index.length : batchSize
+  );
+  let tileOffset = 0;
+  //TODO: refactor -> not needed when calculated
   for (const { zoom, row, column, size } of index) {
     if (size > 0) {
       const { data } = await tileRepository.getTile(zoom, row, column);
       const tileBuffer = Buffer.from(data);
       //TODO: preallocate -> add total size to IndexEntry
-      partialBuffer = Buffer.concat([partialBuffer, tileBuffer]);
+      tileBuffer.copy(partialBuffer, tileOffset);
+      tileOffset += tileBuffer.length;
 
-      if (i % batchSize === 0 || i === lastTileIndex) {
+      //TODO: not working for 1 tile -> no problem but find proper solution
+      if ((i > 0 && i % batchSize === 0) || i === lastTileIndex) {
         const canContinue = stream.write(partialBuffer);
         if (!canContinue) {
           await new Promise((resolve) => {
@@ -134,12 +145,32 @@ async function writeTiles(
           });
         }
 
-        partialBuffer = new Buffer(0);
+        if (i !== lastTileIndex) {
+          const partialBufferEnd =
+            i +
+            (lastTileIndex - i + 1 >= batchSize
+              ? batchSize
+              : lastTileIndex - i);
+          partialBuffer = preallocateBuffer(index, i + 1, partialBufferEnd);
+          tileOffset = 0;
+        }
       }
     }
 
     i++;
   }
+}
+
+function preallocateBuffer(
+  index: IndexEntry[],
+  startIndex: number,
+  endIndex: number
+): Buffer {
+  let bufferSize = 0;
+  for (let i = startIndex; i <= endIndex; i++) {
+    bufferSize += index[i].size;
+  }
+  return Buffer.alloc(bufferSize);
 }
 
 function createMetadata(db: sqlite3.Database): Promise<Metadata> {

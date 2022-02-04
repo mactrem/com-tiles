@@ -75,20 +75,6 @@ export class MBTilesRepository {
 
     return paddedTiles;
   }
-  private analyzeBatch(rows) {
-    let lastColumn = 0;
-    let lastRow = 0;
-    const res = [];
-    for (const row of rows) {
-      if (row.column !== lastColumn + 1 && row.row === lastRow) {
-        res.push({ column: row.column, row: row.row, lastColumn, lastRow });
-      }
-      lastColumn = row.column;
-      lastRow = row.row;
-    }
-
-    return res;
-  }
 
   async getTile(zoom: number, row: number, column: number): Promise<Tile> {
     const db = await this.connect(this.fileName);
