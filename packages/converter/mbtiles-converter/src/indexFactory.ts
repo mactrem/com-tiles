@@ -49,6 +49,9 @@ export async function createIndexInRowMajorOrder(
         }
       }
     } else {
+      //TODO: test
+      const beforeSize = index.length;
+
       /* use index fragments and sparse fragments */
       const numIndexEntriesPerFragment = 4 ** tileMatrix.aggregationCoefficient;
       const numIndexEntriesPerFragmentSide = Math.sqrt(
@@ -123,6 +126,12 @@ export async function createIndexInRowMajorOrder(
           maxTileRow:
             denseFragmentBounds.maxTileRow + numIndexEntriesPerFragmentSide,
         };
+      }
+
+      //TODO: remove
+      if (zoom === 11) {
+        console.log(beforeSize);
+        debugger;
       }
     }
   }

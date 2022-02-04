@@ -11,3 +11,4 @@ mbtiles-converter
   -> not all tiles in the lower zoom levels are queried because the bounds are calculated
 - Check if cmd is working
 - remove src folder within the dist folder
+- getTilesByRowMajorOrderBatched does not work for fragment larger then 50k tiles -> use also iterator in the addMissingTiles method

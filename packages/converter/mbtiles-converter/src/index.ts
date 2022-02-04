@@ -51,7 +51,10 @@ async function createComTileArchive(
   index: IndexEntry[],
   repo: MBTilesRepository
 ) {
-  const stream = fs.createWriteStream(fileName, { encoding: "binary" });
+  const stream = fs.createWriteStream(fileName, {
+    encoding: "binary",
+    highWaterMark: 1_000_000,
+  });
 
   const metadataJson = JSON.stringify(metadata);
   const indexEntrySize = INDEX_ENTRY_TILE_SIZE + metadata.tileOffsetBytes;
@@ -63,6 +66,8 @@ async function createComTileArchive(
   writeIndex(stream, numBytesIndex, index);
 
   await writeTiles(stream, index, repo);
+
+  stream.end();
 }
 
 function writeHeader(
@@ -110,12 +115,30 @@ async function writeTiles(
   index: IndexEntry[],
   tileRepository: MBTilesRepository
 ) {
+  let i = 0;
+  let partialBuffer = new Buffer(0);
+  const lastTileIndex = index.length - 1;
+  const batchSize = 5000;
   for (const { zoom, row, column, size } of index) {
     if (size > 0) {
       const { data } = await tileRepository.getTile(zoom, row, column);
       const tileBuffer = Buffer.from(data);
-      stream.write(tileBuffer);
+      //TODO: preallocate -> add total size to IndexEntry
+      partialBuffer = Buffer.concat([partialBuffer, tileBuffer]);
+
+      if (i % batchSize === 0 || i === lastTileIndex) {
+        const canContinue = stream.write(partialBuffer);
+        if (!canContinue) {
+          await new Promise((resolve) => {
+            stream.once("drain", resolve);
+          });
+        }
+
+        partialBuffer = new Buffer(0);
+      }
     }
+
+    i++;
   }
 }
 
