@@ -88,12 +88,31 @@ export async function createIndexInRowMajorOrder(
             limits,
             denseFragmentBounds
           );
-          const tileBatches = tileRepository.getTilesByRowMajorOrderBatched(
+
+          const tiles = await tileRepository.getTilesByRowMajorOrder(
             zoom,
             sparseFragmentBounds
           );
 
-          for await (const tileBatch of tileBatches) {
+          for (const { column, row, data } of tiles) {
+            const size = data.length;
+            const tileIndex = index.length - 1;
+            const offset = index.length
+              ? index[tileIndex].offset + index[tileIndex].size
+              : 0;
+            //TODO: set offset 0 when size=0?
+            index.push({ offset, size, zoom, row, column });
+          }
+
+          /*for await (const tileBatch of tileBatches) {
+            if (
+              tileBatch.some(
+                (b) => zoom === 11 && b.column === 1158 && b.row == 1600
+              )
+            ) {
+              debugger;
+            }
+
             for (const { column, row, data } of tileBatch) {
               const size = data.length;
               const tileIndex = index.length - 1;
@@ -102,8 +121,12 @@ export async function createIndexInRowMajorOrder(
                 : 0;
               //TODO: set offset 0 when size=0?
               index.push({ offset, size, zoom, row, column });
+
+              if (zoom === 11 && column === 1158 && row == 1600) {
+                debugger;
+              }
             }
-          }
+          }*/
 
           //TODO: use only one assignment via index multiplication
           /* increment column and keep row */

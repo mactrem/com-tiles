@@ -16,11 +16,34 @@ export class MBTilesRepository {
   /**
    * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
    * */
+  async getTilesByRowMajorOrder(
+    zoom: number,
+    limit?: TileMatrix["tileMatrixLimits"]
+  ): Promise<Tile[]> {
+    //TODO: connect in ctor -> reduce overhead
+    const db = await this.connect(this.fileName);
+
+    let query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
+    if (limit) {
+      query += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
+      query += " ORDER BY tile_row, tile_column ASC";
+      const tiles = await util.promisify(db.all.bind(db))(query);
+
+      return this.hasMissingTiles(limit, tiles)
+        ? this.addMissingTiles(limit, tiles)
+        : tiles;
+    }
+  }
+
+  /**
+   * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
+   * */
   async *getTilesByRowMajorOrderBatched(
     zoom: number,
     limit?: TileMatrix["tileMatrixLimits"],
     batchSize = 50000
   ): AsyncIterable<Tile[]> {
+    //TODO: connect in ctor -> reduce overhead
     const db = await this.connect(this.fileName);
 
     let query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
@@ -28,16 +51,20 @@ export class MBTilesRepository {
       query += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
     }
     query += " ORDER BY tile_row, tile_column ASC";
+    //TODO: the addMissingTiles approach doesn't work with batching
+    //TODO: use while and evaluate the number of returned tiles for the return check
     for (let offset = 0; ; offset += batchSize) {
       const limitQuery = ` ${query} LIMIT ${batchSize} OFFSET ${offset};`;
 
       const tiles = await util.promisify(db.all.bind(db))(limitQuery);
+      const numTiles = tiles.length;
 
-      if (!tiles.length) {
+      if (numTiles === 0) {
         db.close();
         return;
       }
 
+      //TODO: not working for a fragment size larger then the batch size
       yield this.hasMissingTiles(limit, tiles)
         ? this.addMissingTiles(limit, tiles)
         : tiles;

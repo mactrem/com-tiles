@@ -820,4 +820,190 @@ describe("getFragmentRangeForTile", () => {
         const index3 = comtIndex.calculateIndexOffsetForTile(3, 5, 5);
         expect(index3).toBe((1 + 2 + 9 + 17) * 8);
     });
+
+    it("should calculate valid fragment range for a specific tile in the europe dataset", () => {
+        metadata.tileMatrixSet = {
+            tileMatrixCRS: "WebMercatorQuad",
+            fragmentOrdering: "RowMajor",
+            tileOrdering: "RowMajor",
+            tileMatrix: [
+                {
+                    zoom: 0,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileCol: 0,
+                        minTileRow: 0,
+                        maxTileCol: 0,
+                        maxTileRow: 0,
+                    },
+                },
+                {
+                    zoom: 1,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileCol: 0,
+                        minTileRow: 1,
+                        maxTileCol: 1,
+                        maxTileRow: 1,
+                    },
+                },
+                {
+                    zoom: 2,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileCol: 1,
+                        minTileRow: 2,
+                        maxTileCol: 2,
+                        maxTileRow: 3,
+                    },
+                },
+                {
+                    zoom: 3,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileCol: 3,
+                        minTileRow: 4,
+                        maxTileCol: 5,
+                        maxTileRow: 7,
+                    },
+                },
+                {
+                    zoom: 4,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileCol: 6,
+                        minTileRow: 9,
+                        maxTileCol: 10,
+                        maxTileRow: 14,
+                    },
+                },
+                {
+                    zoom: 5,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileCol: 12,
+                        minTileRow: 18,
+                        maxTileCol: 20,
+                        maxTileRow: 29,
+                    },
+                },
+                {
+                    zoom: 6,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileCol: 25,
+                        minTileRow: 37,
+                        maxTileCol: 40,
+                        maxTileRow: 58,
+                    },
+                },
+                {
+                    zoom: 7,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileCol: 51,
+                        minTileRow: 75,
+                        maxTileCol: 80,
+                        maxTileRow: 116,
+                    },
+                },
+                {
+                    zoom: 8,
+                    aggregationCoefficient: 6,
+                    tileMatrixLimits: {
+                        minTileCol: 103,
+                        minTileRow: 150,
+                        maxTileCol: 161,
+                        maxTileRow: 233,
+                    },
+                },
+                {
+                    zoom: 9,
+                    aggregationCoefficient: 6,
+                    tileMatrixLimits: {
+                        minTileCol: 206,
+                        minTileRow: 300,
+                        maxTileCol: 322,
+                        maxTileRow: 467,
+                    },
+                },
+                {
+                    zoom: 10,
+                    aggregationCoefficient: 6,
+                    tileMatrixLimits: {
+                        minTileCol: 413,
+                        minTileRow: 600,
+                        maxTileCol: 644,
+                        maxTileRow: 935,
+                    },
+                },
+                {
+                    zoom: 11,
+                    aggregationCoefficient: 6,
+                    tileMatrixLimits: {
+                        minTileCol: 827,
+                        minTileRow: 1201,
+                        maxTileCol: 1289,
+                        maxTileRow: 1870,
+                    },
+                },
+                {
+                    zoom: 12,
+                    aggregationCoefficient: 6,
+                    tileMatrixLimits: {
+                        minTileCol: 1655,
+                        minTileRow: 2402,
+                        maxTileCol: 2579,
+                        maxTileRow: 3740,
+                    },
+                },
+                {
+                    zoom: 13,
+                    aggregationCoefficient: 6,
+                    tileMatrixLimits: {
+                        minTileCol: 3311,
+                        minTileRow: 4805,
+                        maxTileCol: 5159,
+                        maxTileRow: 7481,
+                    },
+                },
+                {
+                    zoom: 14,
+                    aggregationCoefficient: 6,
+                    tileMatrixLimits: {
+                        minTileCol: 6622,
+                        minTileRow: 9610,
+                        maxTileCol: 10319,
+                        maxTileRow: 14962,
+                    },
+                },
+            ],
+        };
+        const comtIndex = new ComtIndex(metadata);
+        //const expectedFragmentRange = { index: 309550 };
+        const expectedIndex = 309870;
+
+        const actualFragmentRange = comtIndex.getFragmentRangeForTile(11, 1158, 1600);
+        //diff -> 320 -> 5 rows
+        //expect(actualFragmentRange.index).toEqual(expectedIndex);
+        console.log(actualFragmentRange);
+
+        //fragmentCol=2, fragmentRow=7
+        /*const actualFragmentRange2 = comtIndex.getFragmentRangeForTile(11, 901, 1600);
+        //diff -> 320
+        expect(actualFragmentRange2.index).toEqual(293166);
+        console.log(actualFragmentRange2);*/
+
+        //290131
+        /*const actualFragmentRange3 = comtIndex.getFragmentRangeForTile(11, 869, 1611);
+        //diff -> 320
+        //fragmentCol=1, fragmentRow=7
+        expect(actualFragmentRange3.index).toEqual(289070);
+        console.log(actualFragmentRange3);*/
+
+        const actualFragmentRange4 = comtIndex.getFragmentRangeForTile(11, 830, 1611);
+        //actualIndex = 289070
+        //expect(actualFragmentRange4.index).toEqual(289070);
+        console.log(actualFragmentRange4);
+    });
 });

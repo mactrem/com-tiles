@@ -68,7 +68,7 @@ export class WebMercatorQuadMetadataBuilder {
    * - COMTiles metadata
    * - Tile data metdadata like MVT because additional metadata are needed -> separate version, json with vector layers
    *   -> additional optional fields has to be possible like in the MBTiles format -> https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md
-   * - Zoom 0 - 8 have no aggregation factor, 9 - 14 an aggregation factor of 6
+   * - Zoom 0 - 7 have no aggregation factor, 8 - 14 an aggregation factor of 6
    * */
   build(): Metadata {
     if (!this.name || !this.bbox) {
@@ -79,7 +79,7 @@ export class WebMercatorQuadMetadataBuilder {
 
     const tileMatrices: TileMatrix[] = [];
     for (let zoom = this.minZoom; zoom <= this.maxZoom; zoom++) {
-      const aggregationCoefficient = zoom <= 8 ? -1 : 6;
+      const aggregationCoefficient = zoom <= 7 ? -1 : 6;
       const tileMatrix = TileMatrixFactory.createWebMercatorQuad(
         zoom,
         this.bbox,

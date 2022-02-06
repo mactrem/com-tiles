@@ -33,17 +33,23 @@ const VERSION = 1;
 const INDEX_ENTRY_TILE_SIZE = 4;
 
 (async () => {
+  console.info(new Date());
+
   const mbTilesFilename = options.inputFilePath;
   const db = new sqlite3.Database(mbTilesFilename);
   const metadata = await createMetadata(db);
 
+  console.time("createIndex");
   const repo = new MBTilesRepository(mbTilesFilename);
   const index = await createIndexInRowMajorOrder(
     repo,
     metadata.tileMatrixSet.tileMatrix
   );
+  console.timeEnd("createIndex");
 
   await createComTileArchive(program.outputFilePath, metadata, index, repo);
+
+  console.info(new Date());
 })();
 
 async function createComTileArchive(
@@ -57,20 +63,24 @@ async function createComTileArchive(
     highWaterMark: 1_000_000,
   });
 
+  console.time("header");
   const metadataJson = JSON.stringify(metadata);
   const indexEntrySize = INDEX_ENTRY_TILE_SIZE + metadata.tileOffsetBytes;
   const numBytesIndex = index.length * indexEntrySize;
   writeHeader(stream, metadataJson.length, numBytesIndex);
-
   writeMetadata(stream, metadataJson);
+  console.timeEnd("header");
 
+  console.time("index");
   console.info("Creating index.");
   writeIndex(stream, numBytesIndex, index);
+  console.timeEnd("index");
 
+  console.time("tiles");
   console.info("Creating tiles.");
   await writeTiles(stream, index, repo);
-
   stream.end();
+  console.timeEnd("tiles");
 }
 
 function writeHeader(
@@ -118,9 +128,30 @@ async function writeTiles(
   index: IndexEntry[],
   tileRepository: MBTilesRepository
 ) {
+  for (const { zoom, row, column, size } of index) {
+    if (size > 0) {
+      const { data } = await tileRepository.getTile(zoom, row, column);
+      const tileBuffer = Buffer.from(data);
+      const canContinue = stream.write(tileBuffer);
+      if (!canContinue) {
+        await new Promise((resolve) => {
+          stream.once("drain", resolve);
+        });
+      }
+    }
+  }
+}
+
+async function writeTilesTest(
+  stream: fs.WriteStream,
+  index: IndexEntry[],
+  tileRepository: MBTilesRepository
+) {
   let i = 0;
   const lastTileIndex = index.length - 1;
-  const batchSize = 5000;
+  //Test shows no performance gain with batching?
+  const batchSize = 200;
+  //const batchSize = 20;
   let partialBuffer = preallocateBuffer(
     index,
     0,
@@ -139,11 +170,11 @@ async function writeTiles(
       //TODO: not working for 1 tile -> no problem but find proper solution
       if ((i > 0 && i % batchSize === 0) || i === lastTileIndex) {
         const canContinue = stream.write(partialBuffer);
-        if (!canContinue) {
+        /*if (!canContinue) {
           await new Promise((resolve) => {
             stream.once("drain", resolve);
           });
-        }
+        }*/
 
         if (i !== lastTileIndex) {
           const partialBufferEnd =

@@ -4,7 +4,7 @@ mbtiles-converter
 - Use prepared statements in the getTilesByRowMajorOrderBatched method of the MbTilesRepository class
 - Use a worker pool to parallelize the conversion -> replace sqlite3 with better-sqlite3 for worker support
 - TileMatrixSetBuilder -> define name of the supported crs in the JSON schema
-- MetadataBuilder -> Add additional attributes of a mbtiles database e.g. pxel_scale, name, description, id, json with the vector layers
+- MetadataBuilder -> Add additional attributes of a mbtiles database e.g. pixel_scale, name, description, id, json with the vector layers
 - IndexFactory doesn't scale because the index is stored in memory
 - index module
   -> return index and tile via generator and write batches at once in a file

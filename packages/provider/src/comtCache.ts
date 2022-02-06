@@ -2,6 +2,7 @@ import pako from "pako";
 import { Metadata } from "@comt/spec";
 import ComtIndex, { FragmentRange } from "./comtIndex";
 import LruCache from "./lruCache";
+import { convertUInt40LEToNumber } from "./utils";
 
 interface Header {
     indexOffset: number;
@@ -31,16 +32,6 @@ interface IndexEntry {
     const view = new DataView(convertedBuffer);
     return Number(view.getBigUint64(0, true));
 }*/
-
-//TODO: attribute
-const shift = (number, shift) => {
-    return number * Math.pow(2, shift);
-};
-
-function convertUInt40LEToNumber(buffer: ArrayBuffer, offset: number) {
-    const dataView = new DataView(buffer);
-    return shift(dataView.getUint32(offset + 1, true), 8) + dataView.getUint8(offset);
-}
 
 class IndexCache {
     /*

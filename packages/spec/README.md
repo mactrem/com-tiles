@@ -42,11 +42,14 @@ TODO: index length is uint40
 
 ## Concepts
 
-### TileMatrixBuilder
-'OGC Two Dimensional Tile Matrix Set' OGC draft
+### TileMatrix
+Inspired by 'OGC Two Dimensional Tile Matrix Set' OGC draft
 -> TileSet
 -> TileMatrixLimits
 -> TileMatrix
+
+### Index Fragments
+Idea -> Minimal number of HTTP range requests because every requests slow down and has to be payed
 
 ### Index Aggregation
 -> Explain Dense vs Sparse Fragments
