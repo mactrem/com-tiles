@@ -12,3 +12,4 @@ mbtiles-converter
 - Check if cmd is working
 - remove src folder within the dist folder
 - getTilesByRowMajorOrderBatched does not work for fragment larger then 50k tiles -> use also iterator in the addMissingTiles method
+- refactor MbTilesRepository to get rid of the redundant code

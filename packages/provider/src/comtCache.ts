@@ -16,23 +16,6 @@ interface IndexEntry {
     size: number;
 }
 
-//TODO: refactor
-/*function convertUInt40LEToNumber(buffer, offset) {
-    const slicedBuffer = new Uint8Array(buffer.slice(offset, offset + 5));
-    const convertedBuffer = new Uint8Array([
-        slicedBuffer[0],
-        slicedBuffer[1],
-        slicedBuffer[2],
-        slicedBuffer[3],
-        slicedBuffer[4],
-        0,
-        0,
-        0,
-    ]).buffer;
-    const view = new DataView(convertedBuffer);
-    return Number(view.getBigUint64(0, true));
-}*/
-
 class IndexCache {
     /*
      * The partial index is always kept in memory and can be mixed up with fragmented and unfragmented tile matrices.
@@ -171,7 +154,7 @@ export default class ComtCache {
         const tmsY = (1 << zoom) - y - 1;
         const limit = metadata.tileMatrixSet.tileMatrix[zoom].tileMatrixLimits;
         if (x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow) {
-            console.trace("Requested tile not within the boundary ot the TileSet.");
+            //console.trace("Requested tile not within the boundary ot the TileSet.");
             return new Uint8Array(0);
         }
 
@@ -193,8 +176,10 @@ export default class ComtCache {
         let indexFragment: ArrayBuffer;
         /* avoid redundant requests to the same index fragment */
         if (!this.requestCache.has(fragmentRange.startOffset)) {
-            console.trace(
-                `Fetch IndexFragment with offset ${fragmentRange.startOffset / 1024 / 1024} MB for zoom ${zoom}`,
+            console.info(
+                `Fetch fragment with index offset ${(fragmentRange.startOffset / 1024 / 1024).toFixed(
+                    2,
+                )} MB for tile ${zoom}/${x}/${y}`,
             );
 
             const startOffset = this.header.indexOffset + fragmentRange.startOffset;

@@ -1,6 +1,6 @@
 # Cloud Optimized Map Tiles (COMT)
 COMTiles are a streamable, read optimized, single-file archive for storing raster and
-especially vector tilesets at a global scale in an cloud object storage and accessing 
+especially vector tilesets at a global scale in a cloud object storage and accessing 
 the tiles or tile batches via http range requests.  
 
 ## Specification
@@ -50,6 +50,12 @@ Inspired by 'OGC Two Dimensional Tile Matrix Set' OGC draft
 
 ### Index Fragments
 Idea -> Minimal number of HTTP range requests because every requests slow down and has to be payed
+There is an additional request or requests per zoom level for fetching the index fragment
+before accessing the tiles. This index request can be fetched later on and even
+if an index request is necessary tests showed that loading the tiles including the
+index fetch on only a classic AWS S3 storage happens under 500 milliseconds. -> standard speicherklasse
+mit cdn noch bessere ergbrenisse möglich -> aber dass gehört nicht in spec
+
 
 ### Index Aggregation
 -> Explain Dense vs Sparse Fragments

@@ -25,7 +25,7 @@ async function createMap(metadata, partialIndex, indexOffset, dataOffset, comtUr
         const tmsY = (1 << parseInt(z)) - parseInt(y) - 1;
         const limit = metadata.tileMatrixSet.tileMatrixSet[z].tileMatrixLimits;
         if(x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow){
-            console.info("Requested tile not within the boundary ot the TileSet.");
+            //console.info("Requested tile not within the boundary ot the TileSet.");
             callback(null, new Uint8Array(0), null, null);
             return;
         }

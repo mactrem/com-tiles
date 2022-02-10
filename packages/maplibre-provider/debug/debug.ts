@@ -3,6 +3,7 @@ import registerComtHandler from "../src/index";
 
 registerComtHandler();
 
+//TODO: attribute openmaptiles
 const map = new maplibregl.Map({
     container: "map",
     style: "http://localhost:4711/assets/style.json",
