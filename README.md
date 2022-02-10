@@ -1,6 +1,8 @@
 ## Cloud Optimized Map Tiles (COMTiles)
 
 Based on the ideas of [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of raster and in particular vector map tiles.  
+COMTiles are a streamable and read optimized file archive for hosting map tilesets at global scale in a cloud object storage and accessing
+the tiles or tile batches via http range requests.  
 The main focus of COMTiles is to significantly reduce coasts for the hosting of large raster and vector tilesets at global scale 
 in the cloud.  
 COMTiles aims to be a MBTiles database for the cloud.
@@ -34,17 +36,9 @@ A COMT archive consists of the following parts:
   Contains the actual raster or vector tiles.  
 
 ### Use Cases
-- Displaying map tile in the browser via a web mapping framework like MapLibreGL JS
+- Displaying map tiles in the browser via a web mapping framework like MapLibreGL JS
 - Downloading map extracts for the offline usage in apps
-- Downloading map extracts for the hosting in dedicated on-premise infrastructure
-
-In the following examples the map tiles are based on a MBTiles database from [MapTiler](https://www.maptiler.com/data/)  and converted to
-a COMTiles archive with the mbtiles-converter.  
-Example video with a europe tileset hosted on a local MinIO storage with a disabled browser cache:
-[![COMTiles YouTube video](./assets/MinIO.png)](https://www.youtube.com/watch?v=puaJVVxT_KA)
-
-Example video with a europe tileset hosted on a AWS S3 standard storage with a disabled browser cache:
-[![COMTiles YouTube video](./assets/AwsS3.png)](https://www.youtube.com/watch?v=5StxZbfvMUw)
+- Downloading map extracts for the hosting on a dedicated on-premise infrastructure
 
 ### Repository structure
 - @comt/spec -> COMT file format specification
@@ -53,6 +47,16 @@ Example video with a europe tileset hosted on a AWS S3 standard storage with a d
 - @comt/server -> MapServer for serving tiles, can be hosted in a cloud native (serverless) environment
 - @comt/mbtiles-converter -> Converting map tiles stored in a MBTiles database to a COM Tiles archive
 - @comt/tilelive-comtiles -> Integration into tilelive for generating Mapbox Vector Tiles 
+
+### Demo
+In the following examples the map tiles are based on a MBTiles database from [MapTiler](https://www.maptiler.com/data/)  and converted to
+a COMTiles archive with the mbtiles-converter.  
+Example video with a europe tileset hosted on a local MinIO storage with a disabled browser cache:
+[![COMTiles YouTube video](./assets/MinIO.png)](https://www.youtube.com/watch?v=puaJVVxT_KA)
+
+Example video with a europe tileset hosted on a AWS S3 standard storage with a disabled browser cache:
+[![COMTiles YouTube video](./assets/AwsS3.png)](https://www.youtube.com/watch?v=5StxZbfvMUw)
+
 
 ### References
 - https://medium.com/planet-stories/cloud-native-geospatial-part-2-the-cloud-optimized-geotiff-6b3f15c696ed

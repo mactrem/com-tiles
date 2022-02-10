@@ -1,119 +1,118 @@
 import fs from "fs";
 import express from "express";
 import cors from "cors";
-import calculateRangeIndex from "./comtIndex.js";
 import * as path from "path";
 import vt from "@mapbox/vector-tile";
-import Protobuf from 'pbf';
-import {calculateIndexOffsetForTile} from "@com-tiles/utils";
-//use --experimental-json-modules
+import Protobuf from "pbf";
+import { calculateIndexOffsetForTile } from "@comt/provider";
 import tilesJson from "./tiles.json";
 import * as zlib from "zlib";
 
-const fileName = path.resolve("./data/austria.cot")
-
-//const stream = fs.createReadStream(fileName);
-
-/*
-* - read the first 500k of the index
-* - load parts of the index in a specific area and cache
-* */
+const fileName = path.resolve("./data/austria.cot");
 
 const metadataStartIndex = 12;
-const metadata = await readMetadata();
-const bounds = metadata.metadata.bounds;
-const indexBuffer = readIndex(metadata.metadataLength);
+const metadata = await loadMetadata();
+const tileSize = 4;
+const indexEntrySize = tileSize + metadata.tileOffsetBytes;
+
+const indexBuffer = loadIndex(metadata.metadataLength);
 
 const app = express();
-app.use(cors())
+app.use(cors());
 
-//TODO: get size from metadata document
-const INDEX_ENTRY_SIZE = 8;
+app.get("/tiles/:z/:x/:y", (req, res) => {
+  const zoom = parseInt(req.params.z, 10);
+  const x = parseInt(req.params.x, 10);
+  const y = parseInt(req.params.y, 10);
 
-//Zurich -> 12/2144/1434 -> http://localhost:8080/tiles/12/2144/1434
-app.get('/tiles/:z/:x/:y', (req, res) => {
-    const zoom = parseInt(req.params.z, 10);
-    const x = parseInt(req.params.x, 10);
-    const y = parseInt(req.params.y, 10);
+  const tmsY = 2 ** zoom - y - 1;
+  const [byteOffset, indexOffset] = calculateIndexOffsetForTile(
+    metadata.metadata,
+    zoom,
+    x,
+    tmsY
+  );
+  const { offset, size } = indexBuffer[indexOffset];
 
-    //const index = calculateRangeIndex(bounds, zoom, x, y);
-    //TODO: refactor metadata
+  const tileOffset =
+    metadataStartIndex +
+    metadata.metadataLength +
+    indexBuffer.length * indexEntrySize +
+    offset;
+  const tile = readTile(tileOffset, size);
 
-    //convert xyz to tms
-    const tmsY = 2** zoom - y - 1;
-    const [byteOffset, indexOffset] = calculateIndexOffsetForTile(metadata.metadata, zoom, x, tmsY);
-    const {offset, size} = indexBuffer[indexOffset];
+  analyzeTile(tile);
 
-    const tileOffset = metadataStartIndex + metadata.metadataLength + (indexBuffer.length * INDEX_ENTRY_SIZE) + offset;
-    const tile = readTile(tileOffset, size)
+  res.writeHead(200, {
+    "Content-Type": "application/x-protobuf",
+    "Content-Length": tile.length,
+    "Content-Encoding": "gzip",
+  });
 
-    analyzeTile(tile);
+  res.end(tile);
+});
 
-    res.writeHead(200, {
-        "Content-Type": "application/x-protobuf",
-        "Content-Length": tile.length,
-        "Content-Encoding": "gzip"
-    });
-
-    res.end(tile);
-})
-
-app.get('/tiles/tiles.json', (req, res) => {
-    res.end(JSON.stringify(tilesJson));
-})
+app.get("/tiles/tiles.json", (req, res) => {
+  res.end(JSON.stringify(tilesJson));
+});
 
 app.listen(8080);
 
-function analyzeTile(data){
-    const result = zlib.unzipSync(data);
-    const proto = new Protobuf(result);
-    const tile = new vt.VectorTile(proto);
-
-    console.log(tile);
+function analyzeTile(data) {
+  const result = zlib.unzipSync(data);
+  const proto = new Protobuf(result);
+  const tile = new vt.VectorTile(proto);
+  console.info(tile);
 }
 
-function readMetadata(){
+function loadHeader() {}
+
+function loadMetadata() {
+  return new Promise((resolve) => {
     const stream = fs.createReadStream(fileName);
+    stream.on("data", (chunk) => {
+      const metadataLength = chunk.readInt32LE(4);
+      const metadata = JSON.parse(
+        chunk.toString(
+          "utf-8",
+          metadataStartIndex,
+          metadataStartIndex + metadataLength
+        )
+      );
 
-    return new Promise(((resolve, reject) => {
-        stream.on('data', chunk => {
-            const metadataLength = chunk.readInt32LE(4);
-            //TODO: check if metadata are lager then the 65k chunk size -> should be not possible
-            //chunk.toString(encoding, start, end);
-            const metadata = JSON.parse(chunk.toString("utf-8" , metadataStartIndex, metadataStartIndex + metadataLength));
-            resolve({metadataLength, metadata});
+      stream.destroy();
 
-            stream.destroy();
-        });
-    }));
+      resolve({ metadataLength, metadata });
+    });
+  });
 }
 
-function readIndex(metadataLength){
-    const fd = fs.openSync(fileName, "r");
-    const buffer = Buffer.alloc(4);
-    fs.readSync(fd, buffer, 0, 4, 8);
-    const indexLength = buffer.readUInt32LE(0);
+function loadIndex(metadataLength) {
+  const fd = fs.openSync(fileName, "r");
+  const buffer = Buffer.alloc(4);
+  fs.readSync(fd, buffer, 0, 4, 8);
+  const indexLength = buffer.readUInt32LE(0);
 
-    const indexBuffer = Buffer.alloc(indexLength);
-    const offset = metadataStartIndex + metadataLength;
-    fs.readSync(fd, indexBuffer, 0, indexLength, offset);
+  const indexBuffer = Buffer.alloc(indexLength);
+  const offset = metadataStartIndex + metadataLength;
+  fs.readSync(fd, indexBuffer, 0, indexLength, offset);
 
-    const indexEntries = [];
-    const numIndexEntries = indexBuffer.length / 8;
-    for(let i = 0; i  < numIndexEntries; i++){
-        const bufferOffset = i * 8;
-        const offset =  indexBuffer.readUInt32LE(bufferOffset);
-        const size = indexBuffer.readUInt32LE(bufferOffset + 4);
-        indexEntries.push({offset, size});
-    }
+  const indexEntries = [];
+  const numIndexEntries = indexBuffer.length / 8;
+  for (let i = 0; i < numIndexEntries; i++) {
+    const bufferOffset = i * 8;
+    const offset = indexBuffer.readUInt32LE(bufferOffset);
+    const size = indexBuffer.readUInt32LE(bufferOffset + 4);
+    indexEntries.push({ offset, size });
+  }
 
-    return indexEntries;
+  return indexEntries;
 }
 
-function readTile(offset, size){
-    const fd = fs.openSync(fileName, "r");
-    const buffer = Buffer.alloc(size);
-    fs.readSync(fd, buffer, 0, size, offset);
+function readTile(offset, size) {
+  const fd = fs.openSync(fileName, "r");
+  const buffer = Buffer.alloc(size);
+  fs.readSync(fd, buffer, 0, size, offset);
 
-    return buffer;
+  return buffer;
 }

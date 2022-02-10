@@ -38,7 +38,7 @@
 					"$ref": "spaceFillingCurveOrdering.json"
 				},
 				"tileOrdering": {
-					"description": "Specifies how the index records within an index fragment and the tiles within an tile fragment are ordered. Defaults to row-major order",
+					"description": "Specifies how the index entries within an index fragment and the tiles within an tile fragment are ordered. Defaults to row-major order",
 					"$ref": "spaceFillingCurveOrdering.json"
 				},
 				"tileMatrix": {

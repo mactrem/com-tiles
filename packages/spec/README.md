@@ -1,27 +1,64 @@
 # Cloud Optimized Map Tiles (COMT)
-COMTiles are a streamable, read optimized, single-file archive for storing raster and
-especially vector tilesets at a global scale in a cloud object storage and accessing 
+COMTiles are a streamable and read optimized file archive for storing raster and
+in particular vector tilesets at global scale in a cloud object storage and accessing 
 the tiles or tile batches via http range requests.  
 
 ## Specification
 
 ### Layout
+
 Little endian encoding is used.  
-
+A COMTiles file archive has the following layout:
 ![layout](assets/layout.png)
+**Magic**  
+4-byte ANSI string ("comt") 
 
-- Magic  
-  - 4-byte ANSI string ("comt")  
-- Version  
-  - The version of the COMTiles archive. It is currently 1.
-- MetadataBuilder Length
-  - Length of the metadata document (unit32)
-- Index Length  
-  - Length of the index (uint40)  
-- Metadata
-    - UTF-8 encoded JSON document which describes how to access the tileset
-    - See [JSON Schema definition](metadata-schema/metadata.json)
-- Index  
+**Version**    
+The version of the COMTiles archive. It is currently 1.
+
+**Metadata Length**  
+Length of the metadata document encoded as unit32 in little-endian order.
+
+**Index Length**    
+Length of the index encoded as uint40 in little-endian order.
+
+**Metadata**  
+UTF-8 encoded JSON document which describes how to access the tileset, see [JSON Schema definition](metadata-schema/metadata.json).
+
+**Index**    
+The index consists of a array of index entries (records).  
+A single index entry consists of a offset (default 5 bytes) and the size of the map tile (default 4 bytes)
+in the data section. Offset and size are encoded as unsigned integers in the little-endian order.
+With the defaults a map tile can have a maximum size of 4 GB and an offset of 1 TB.
+The number of bytes for the offset can be defined via the `tileOffsetBytes` property in the metadata document.
+For a planet scale vector tileset (zoom 0-14) the index is about 3 GB in size, which is to large to download the index as a whole.   
+To make the index streamable, so that only parts of the index can be fetched, the index is divided into `index fragments`.
+The number of index entries per fragment is defined via the `aggregationCoefficient` property in the metadata document.
+-> NumberOfIndexRecordsPerFragment =  4^aggregationCoefficient
+The aggregationCoefficient is defined for every zoom level and has a default value of 6 which means 4096 index entries are aggregated.
+The boundaries of a tileset are defined via a `TileMatrix` in the metadata document.  
+Depending on the tileset boundaries a index fragment can be a sparse or dense fragment.
+The order of how the index fragments are arranged the index can be defined with the `fragmentOrdering` property.
+The order of how the index entries within an index fragment are arranged can be defined with the `tileOrdering`.
+Tests showed that index entries and fragments arranged in the `RowMajor` (default) order produces the best results.
+In addition the index entries can also be ordered via the space filling curves `Z-order` and `Hilbert`.
+
+**Data**  
+Raster or vector tile Blobs. 
+The content is specified in the `tileFormat` property of the metadata document.
+The used order of the map tiles can be specified via the `tileOrdering` property in the metadata document.
+Besides the default value `RowMajor` there can be also the space filling curves `ZOrder` and `Hilbert`.
+  
+
+
+
+  - The Data are ordered in a space filling curve as specified in the metatdata ``dataOrdering`` property. By ordering the data in a space filling curve. the get requests can be batched to minimize http rang request in addition to minimize cache misses and page fault on the OS side in the cloud
+  - Reduce number of range request and therefore reduce the coast by batching tile request e.g. instead of 32 only 4 are needed when use row-major order for the data
+
+
+
+
+
   - The index is also streamable which means that only parts of the index can be requested
   - This is important because at planet scale the index can have size about 2.7 GB with 8 bytes per IndexEntry?
   - The index consists of a array of index entries and is clustered per zoom in cluster cells
@@ -33,12 +70,7 @@ Little endian encoding is used.
   - Layout IndexRecord
     - Offset -> size specified in the metadata document -> defaults to uint32 > 2 bytes for relative offset
     - TileSize -> unit32 or 3 bytes (16 MB)?
-- Data
-  - Raster or vector tile Blobs
-  - The content is specified in the MetadataBuilder ``tileFormat`` property
-  - The Data are ordered in a space filling curve as specified in the metatdata ``dataOrdering`` property. By ordering the data in a space filling curve. the get requests can be batched to minimize http rang request in addition to minimize cache misses and page fault on the OS side in the cloud
-  - Reduce number of range request and therefore reduce the coast by batching tile request e.g. instead of 32 only 4 are needed when use row-major order for the data
-  
+
 
 ## Concepts
 
