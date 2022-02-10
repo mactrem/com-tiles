@@ -11,16 +11,16 @@ Little endian encoding is used.
 ![layout](assets/layout.png)
 
 - Magic  
-  - 4-byte ANSI string -> "comt"  
+  - 4-byte ANSI string ("comt")  
 - Version  
   - The version of the COMTiles archive. It is currently 1.
 - MetadataBuilder Length
   - Length of the metadata document (unit32)
 - Index Length  
-  - Length of the index (uint64)  
-- MetadataBuilder
+  - Length of the index (uint40)  
+- Metadata
     - UTF-8 encoded JSON document which describes how to access the tileset
-    - [JSON Schema definition](metadata-schema/metadata.json)
+    - See [JSON Schema definition](metadata-schema/metadata.json)
 - Index  
   - The index is also streamable which means that only parts of the index can be requested
   - This is important because at planet scale the index can have size about 2.7 GB with 8 bytes per IndexEntry?
