@@ -16,15 +16,6 @@ The index
 The index is also streamable which means that only parts of the index can be requested
 
 
-In the following examples the map tiles are based on a MBTiles database from [MapTiler](https://www.maptiler.com/data/)  and converted to
-a COMTiles archive with the mbtiles-converter.  
-Example video with a europe tileset hosted on a local MinIO storage with a disabled browser cache:
-[![COMTiles YouTube video](./assets/MinIO.png)](https://www.youtube.com/watch?v=puaJVVxT_KA)
-
-Example video with a europe tileset hosted on a AWS S3 standard storage with a disabled browser cache:
-[![COMTiles YouTube video](./assets/AwsS3.png)](https://www.youtube.com/watch?v=5StxZbfvMUw)
-
-
 A COMT archive consists of the following parts:
 - Header  
   Contains in particular the metadata which describes the TileSet.  
@@ -46,6 +37,14 @@ A COMT archive consists of the following parts:
 - Displaying map tile in the browser via a web mapping framework like MapLibreGL JS
 - Downloading map extracts for the offline usage in apps
 - Downloading map extracts for the hosting in dedicated on-premise infrastructure
+
+In the following examples the map tiles are based on a MBTiles database from [MapTiler](https://www.maptiler.com/data/)  and converted to
+a COMTiles archive with the mbtiles-converter.  
+Example video with a europe tileset hosted on a local MinIO storage with a disabled browser cache:
+[![COMTiles YouTube video](./assets/MinIO.png)](https://www.youtube.com/watch?v=puaJVVxT_KA)
+
+Example video with a europe tileset hosted on a AWS S3 standard storage with a disabled browser cache:
+[![COMTiles YouTube video](./assets/AwsS3.png)](https://www.youtube.com/watch?v=5StxZbfvMUw)
 
 ### Repository structure
 - @comt/spec -> COMT file format specification
