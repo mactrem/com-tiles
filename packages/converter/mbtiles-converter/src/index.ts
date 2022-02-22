@@ -7,9 +7,7 @@ import { Metadata } from "@comt/spec";
 import { createIndexInRowMajorOrder, IndexEntry } from "./indexFactory";
 import { MBTilesRepository } from "./mbTilesRepository";
 import { toBytesLE } from "./utils";
-
 import { version } from "../package.json";
-import * as buffer from "buffer";
 
 program
   .version(version)

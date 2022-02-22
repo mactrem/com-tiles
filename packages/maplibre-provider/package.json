@@ -18,8 +18,7 @@
     "type": "git",
     "url": "git+https://github.com/mactrem/com-tiles.git"
   },
-  "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/mactrem/com-tiles/issues"
   },

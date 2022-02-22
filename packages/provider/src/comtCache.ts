@@ -87,7 +87,7 @@ class IndexCache {
     }*/
 }
 
-enum TileContent {
+export enum TileContent {
     MVT,
     PNG,
 }
