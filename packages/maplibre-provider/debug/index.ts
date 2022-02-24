@@ -1,7 +1,7 @@
 import maplibregl from "maplibre-gl";
-import registerComtHandler from "../src/index";
+import MapLibreComtProvider from "../src/index";
 
-registerComtHandler();
+MapLibreComtProvider.register();
 
 const map = new maplibregl.Map({
     container: "map",

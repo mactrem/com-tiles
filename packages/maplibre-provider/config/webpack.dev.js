@@ -28,6 +28,12 @@ module.exports = merge(common, {
             template: HTML_TEMPLATE,
             chunks: ["debug"],
         }),
+        new HtmlWebpackPlugin({
+            title: "MapLibre GL PMTiles Demo",
+            filename: "index-pmtiles.html",
+            template: path.join(ROOT_DIRECTORY, "debug/index-pmtiles.html"),
+            chunks: [],
+        }),
         new CopyWebpackPlugin({
             patterns: [{ from: path.join(ROOT_DIRECTORY, "/debug/assets"), to: "assets" }],
         }),

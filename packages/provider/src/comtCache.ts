@@ -77,14 +77,6 @@ class IndexCache {
         const size = new DataView(indexBuffer).getUint32(indexOffset + 5, true);
         return { offset, size };
     }
-
-    /**
-     *
-     * @param index Index of a specific {@lin IndexEntry}.
-     */
-    /*has(index: number): boolean {
-        return true;
-    }*/
 }
 
 export enum TileContent {
@@ -113,7 +105,6 @@ export default class ComtCache {
     private static readonly SUPPORTED_TILE_MATRIX_CRS = "WebMercatorQuad";
     private static readonly SUPPORTED_ORDERING = "RowMajor";
     private static readonly INDEX_ENTRY_NUM_BYTES = 9;
-    //private static readonly MAX_ENTRIES_PARTIAL_INDEX = 21845;
     private indexCache: IndexCache;
     private comtIndex: ComtIndex;
     private readonly requestCache = new Map<number, Promise<ArrayBuffer>>();
@@ -154,7 +145,7 @@ export default class ComtCache {
         const tmsY = (1 << zoom) - y - 1;
         const limit = metadata.tileMatrixSet.tileMatrix[zoom].tileMatrixLimits;
         if (x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow) {
-            //console.trace("Requested tile not within the boundary ot the TileSet.");
+            console.trace("Requested tile not within the boundary ot the TileSet.");
             return new Uint8Array(0);
         }
 
@@ -225,7 +216,7 @@ export default class ComtCache {
         const signal = controller.signal;
 
         if (cancellationToken) {
-            //TODO: use promise insteae -> memory leak
+            //TODO: use promise insteaed-> memory leak
             cancellationToken.register(() => {
                 controller.abort();
             });
@@ -242,7 +233,7 @@ export default class ComtCache {
             throw new Error(response.statusText);
         }
 
-        //unsubscribe from cancellationToken
+        //TODO: unsubscribe from cancellationToken
         return response.arrayBuffer();
     }
 

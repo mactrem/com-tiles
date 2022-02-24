@@ -1,67 +1,46 @@
 import maplibregl from "maplibre-gl";
-import ComtCache, { CancellationToken } from "@comt/provider";
+import * as provider from "@comt/provider";
 
-let comtCache: ComtCache;
-export default function registerComtProtocolHandler() {
-    maplibregl.addProtocol("comt", (params, callback) => {
-        const result = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
-        const [tileUrl, url, z, x, y] = result;
-
-        const cancellationToken = new CancellationToken();
-
-        //TODO: extract comtUrl from url
-        if (!comtCache) {
-            ComtCache.create(url).then((c) => {
-                comtCache = c;
-                queryTile(z, x, y, callback, cancellationToken);
-            });
-        } else {
-            queryTile(z, x, y, callback, cancellationToken);
-        }
-
-        return { cancel: () => cancellationToken.cancel() };
-    });
+interface XyzIndex {
+    x: number;
+    y: number;
+    z: number;
 }
 
-/*let comtCache: ComtCache;
-maplibregl.addProtocol("comt", (params, callback) => {
-    const result = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
-    const [tileUrl, url, z, x, y] = result;
+export default class MapLibreComtProvider {
+    /**
+     * Adds a COMT provider to MapLibre.
+     * The COMT provider will be used when a source with a comt:// schema is used in a Mapbox style.
+     */
+    static register(): void {
+        let comtCache: provider.ComtCache;
 
-    const cancellationToken = new CancellationToken();
+        maplibregl.addProtocol("comt", (params, tileHandler) => {
+            const [tileUrl, url, z, x, y] = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
+            const cancellationToken = new provider.CancellationToken();
+            //TODO: extract comtUrl from url
+            const xyzIndex = {
+                x: parseInt(x, 10),
+                y: parseInt(y, 10),
+                z: parseInt(z, 10),
+            };
 
-    //TODO: extract comtUrl from url
-    if (!comtCache) {
-        ComtCache.create(url).then((c) => {
-            comtCache = c;
-            queryTile(z, x, y, callback, cancellationToken);
+            if (!comtCache) {
+                provider.ComtCache.create(url).then((cache) => {
+                    comtCache = cache;
+                    MapLibreComtProvider.fetchTile(comtCache, xyzIndex, tileHandler, cancellationToken);
+                });
+            } else {
+                MapLibreComtProvider.fetchTile(comtCache, xyzIndex, tileHandler, cancellationToken);
+            }
+
+            return { cancel: () => cancellationToken.cancel() };
         });
-    } else {
-        queryTile(z, x, y, callback, cancellationToken);
     }
 
-    return { cancel: cancellationToken.cancel };
-});*/
-
-function queryTile(z, x, y, callback, cancellationToken) {
-    /*comtCache
-        .getTile(parseInt(z), parseInt(x), parseInt(y), cancellationToken)
-        .then((tile) => callback(null, tile, null, null));*/
-
-    comtCache.getTile(parseInt(z), parseInt(x), parseInt(y), cancellationToken).then((tile) => {
-        callback(null, tile, null, null);
-    });
+    static fetchTile(comtCache: provider.ComtCache, xyzIndex: XyzIndex, tileHandler, cancellationToken): void {
+        comtCache
+            .getTile(xyzIndex.z, xyzIndex.x, xyzIndex.y, cancellationToken)
+            .then((tile) => tileHandler(null, tile, null, null));
+    }
 }
-
-/*maplibregl.addProtocol("comt", async (params, callback) => {
-    const result = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
-    const [tileUrl, url, z, x, y] = result;
-
-    //TODO: extract comtUrl from url
-    comtCache ??= await ComtCache.create(url);
-    const cancellationToken = new CancellationToken();
-    const tile = await comtCache.getTile(parseInt(z), parseInt(x), parseInt(y), cancellationToken);
-    callback(null, tile, null, null);
-
-    return { cancel: cancellationToken.cancel };
-});*/

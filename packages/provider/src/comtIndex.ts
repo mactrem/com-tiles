@@ -34,6 +34,12 @@ export default class ComtIndex {
         }
     }
 
+    /**
+     *
+     * @param zoom
+     * @param x
+     * @param y
+     */
     getFragmentRangeForTile(zoom: number, x: number, y: number): FragmentRange {
         const numBytesForTileOffset = this.metadata.tileOffsetBytes ?? 5;
         const indexEntrySize = numBytesForTileOffset + ComtIndex.NUM_BYTES_TILE_SIZE;
@@ -109,12 +115,15 @@ export default class ComtIndex {
         return { index: startIndex, startOffset: offset, endOffset };
     }
 
-    /*
-     *
+    /**
      * Calculates the offset in the index (IndexEntry) for the specified tile based on the metadata.
      * This method can be used when the full index is kept in memory.
      * If this not the case use index fragments to query parts of the index.
-     * */
+     *
+     * @param zoom
+     * @param x
+     * @param y
+     */
     //TODO: refactor to only support RowMajor order and WebMercator TileMatrixCRS
     calculateIndexOffsetForTile(zoom: number, x: number, y: number): [offset: number, index: number] {
         const numBytesForTileOffset = this.metadata.tileOffsetBytes ?? 5;

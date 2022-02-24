@@ -1,3 +1,6 @@
+general
+- use a base tsconfig.json and extend in the packages
+
 mbtiles-converter
 - row major means XYZ schema not TMS -> refactor the createIndexInRowMajorOrder method in the indexFactory module
   to use XYZ scheme which is also specified in the OGC WebMercatorQuad
