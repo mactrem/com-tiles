@@ -17,13 +17,6 @@ interface IndexEntry {
 }
 
 class IndexCache {
-    /*
-     * The partial index is always kept in memory and can be mixed up with fragmented and unfragmented tile matrices.
-     * For the index fragments which are added to the cache a LRU cache is used.
-     * Through this procedure there can be redundant index entries in the partial index and the LRU cache
-     * when the last fragment of the partial index is incomplete, but in general this doesn't matter.
-     * */
-
     private static readonly INDEX_ENTRY_NUM_BYTES = 9;
     /* 7 zoom levels (8-14) * 4 fragments per zoom */
     private static readonly MAX_ENTRIES_LRU_CACHE = 28;
@@ -32,6 +25,12 @@ class IndexCache {
     );
     private readonly comtIndex: ComtIndex;
 
+    /*
+     * The partial index is always kept in memory and can be mixed up with fragmented and unfragmented tile matrices.
+     * For the index fragments which are added to the cache a LRU cache is used.
+     * Through this procedure there can be redundant index entries in the partial index and the LRU cache
+     * when the last fragment of the partial index is incomplete, but in general this doesn't matter.
+     * */
     constructor(
         private readonly metadata: Metadata, //Metadata["tileMatrixSet"],
         private readonly partialIndex = new Uint8Array(0),
@@ -121,16 +120,23 @@ export default class ComtCache {
         }
     }
 
+    /**
+     * @param comtUrl Url to object storage where the COMTiles archive is hosted.
+     * @param tileContent Content type of the map tiles.
+     * @param prefetchHeader Specifies if the header should be prefetched or lazy loaded.
+     */
     static async create(comtUrl: string, tileContent = TileContent.MVT, prefetchHeader = true): Promise<ComtCache> {
         const header = prefetchHeader ? await ComtCache.loadHeader(comtUrl) : null;
         return new ComtCache(comtUrl, header);
     }
 
     /**
+     * Fetches a map tile with the given XYZ index from the specified COMTiles archive.
      *
-     * @param zoom Zoom level
-     * @param x
-     * @param y Y axis goes down
+     * @param zoom Zoom level for the specific tile.
+     * @param x X index for the specific tile.
+     * @param y Y index for the specific, axis goes down (XYZ tiling scheme)
+     * @param cancellationToken For aborting the tile request.
      */
     async getTile(zoom: number, x: number, y: number, cancellationToken?: CancellationToken): Promise<ArrayBuffer> {
         /* Lazy load the header on the first tile request */
@@ -216,7 +222,7 @@ export default class ComtCache {
         const signal = controller.signal;
 
         if (cancellationToken) {
-            //TODO: use promise insteaed-> memory leak
+            //TODO: use promise instead-> memory leak
             cancellationToken.register(() => {
                 controller.abort();
             });
@@ -255,21 +261,20 @@ export default class ComtCache {
         const metadataDocument = new TextDecoder().decode(metadataBuffer);
         const metadata = JSON.parse(metadataDocument);
 
-        this.validateMetadata(metadata);
-
-        /* truncate last potential incomplete IndexEntry */
         const numCompleteIndexEntries = Math.floor(
             (ComtCache.INITIAL_CHUNK_SIZE - indexOffset) / ComtCache.INDEX_ENTRY_NUM_BYTES,
         );
+        this.validateMetadata(metadata, numCompleteIndexEntries);
+
+        /* truncate last potential incomplete IndexEntry */
         const endOffset = indexOffset + numCompleteIndexEntries * ComtCache.INDEX_ENTRY_NUM_BYTES;
         const partialIndex = buffer.slice(indexOffset, endOffset);
-        //const indexCache = new IndexCache(metadata.tileMatrixSet, partialIndex);
 
         const dataOffset = indexOffset + indexSize;
         return { indexOffset, dataOffset, metadata, partialIndex };
     }
 
-    private static validateMetadata(metadata: Metadata): void {
+    private static validateMetadata(metadata: Metadata, downloadedUnfragmentedIndexEntries: number): void {
         if (metadata.tileFormat !== "pbf") {
             throw new Error("Currently pbf (MapboxVectorTiles) is the only supported tileFormat.");
         }
@@ -291,8 +296,7 @@ export default class ComtCache {
             throw new Error(`The only supported TileMatrixCRS is ${ComtCache.SUPPORTED_TILE_MATRIX_CRS}.`);
         }
 
-        //TODO: add a warning if unfragmented index is not fully downloaded
-        /*const numIndexEntriesPartialIndex = tileMatrixSet.tileMatrix
+        const unfragmentedIndexEntries = tileMatrixSet.tileMatrix
             .filter((tm) => tm.aggregationCoefficient === -1)
             .reduce((numIndexEntries, tm) => {
                 const limits = tm.tileMatrixLimits;
@@ -301,11 +305,12 @@ export default class ComtCache {
                     (limits.maxTileCol - limits.minTileCol + 1) * (limits.maxTileRow - limits.minTileRow + 1)
                 );
             }, 0);
-        if (numIndexEntriesPartialIndex > ComtCache.MAX_ENTRIES_PARTIAL_INDEX) {
+        /* Currently only index fragments can be loaded after the initial fetch */
+        if (unfragmentedIndexEntries > downloadedUnfragmentedIndexEntries) {
             throw new Error(
-                `Only max ${ComtCache.METADATA_OFFSET_INDEX} index entries without using index fragments are allowed.`,
+                "The unfragmented part (aggregationCoefficient=-1) of the index has to be part of the initial fetch. Only index fragments can be reloaded",
             );
-        }*/
+        }
     }
 
     private async fetchMVT(tileOffset: number, tileSize): Promise<Uint8Array> {

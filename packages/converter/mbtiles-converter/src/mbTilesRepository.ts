@@ -1,4 +1,5 @@
-import { Database, OPEN_READONLY } from "sqlite3";
+//import { Database, OPEN_READONLY } from "sqlite3";
+import * as sqlite from "sqlite3";
 import * as util from "util";
 import { TileMatrix } from "@comt/spec/types/tileMatrix";
 
@@ -112,9 +113,9 @@ export class MBTilesRepository {
     return rows[0];
   }
 
-  private connect(dbPath: string): Promise<Database> {
-    return new Promise<Database>((resolve, reject) => {
-      const db = new Database(dbPath, OPEN_READONLY, (err) => {
+  private connect(dbPath: string): Promise<sqlite.Database> {
+    return new Promise<sqlite.Database>((resolve, reject) => {
+      const db = new sqlite.Database(dbPath, sqlite.OPEN_READONLY, (err) => {
         if (err) {
           reject(err.message);
           return;

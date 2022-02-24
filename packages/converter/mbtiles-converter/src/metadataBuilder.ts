@@ -1,9 +1,8 @@
-import { BoundingBox, TileMatrixFactory } from "./tileMatrixSetBuilder";
-import createWMQTileMatrixSet from "./tileMatrixSetBuilder";
 import { Metadata } from "@comt/spec";
 import { TileMatrix } from "@comt/spec/types/tileMatrix";
+import createWMQTileMatrixSet, { BoundingBox, TileMatrixFactory } from "./tileMatrixSetBuilder.js";
 
-export class WebMercatorQuadMetadataBuilder {
+export default class WebMercatorQuadMetadataBuilder {
   private name: string;
   private description = "";
   private attribution = "";

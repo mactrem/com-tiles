@@ -3,15 +3,15 @@
   "version": "1.0.0-beta.0",
   "description": "Converts a MBTiles database to a COMTiles archive.",
   "main": "dist/src/index.js",
+  "type": "module",
   "bin": {
     "mbtiles-converter": "./dist/src/index.js"
   },
   "engines": {
-    "node": ">=15"
+    "node": ">=16"
   },
   "scripts": {
     "build": "tsc",
-    "start": "node dist/src/index.js",
     "test": "jest",
     "lint": "eslint --max-warnings=0 --fix --ext .ts src",
     "format": "prettier --write \"**/*.ts\""

@@ -35,10 +35,7 @@ export default class ComtIndex {
     }
 
     /**
-     *
-     * @param zoom
-     * @param x
-     * @param y
+     * Calculates the offset of the index fragment that contains the specified tile.
      */
     getFragmentRangeForTile(zoom: number, x: number, y: number): FragmentRange {
         const numBytesForTileOffset = this.metadata.tileOffsetBytes ?? 5;
@@ -58,19 +55,12 @@ export default class ComtIndex {
                 startIndex += numTiles;
             } else {
                 /*
-                 * Calculates the index based on a space filling curve with row-major order with origin on the lower left side
-                 * like specified in the MBTiles spec
-                 * */
-                //TODO: refactor to use XYZ instead of TMS like specified the OGC WebMercatorQuad TileMatrixSet
-
-                /*
-                 * First calculate the number of tiles before the fragment which contains the specified tile
                  * 1. Calculate the number of tiles which are on the left side of the fragment
                  * 2. Calculate the number of tiles which are below the the fragment of the specified tile
+                 * 3. Calculate the number of tiles in the fragment for the end offset
                  *  ________________
-                 * |   |_4._|T|     |
-                 * |   |__3.__|_____|
-                 * |   |            |
+                 * |   |    T|      |
+                 * |   |_____|______|
                  * | 1.|      2.    |
                  * |___|____________|
                  *
@@ -89,17 +79,17 @@ export default class ComtIndex {
                     fragmentBoundsOfSpecifiedTileGlobalTilCrs,
                 );
 
-                // 1.
+                /* Calculate the number of tiles which are on the left side of the fragment */
                 const leftNumTilesBeforeFragment =
                     (sparseFragmentsBounds.minTileCol - limit.minTileCol) *
                     (sparseFragmentsBounds.maxTileRow - limit.minTileRow + 1);
 
-                // 2.
+                /* Calculate the number of tiles which are below the the fragment of the specified tile */
                 const lowerNumTilesBeforeFragment =
                     (limit.maxTileCol - sparseFragmentsBounds.minTileCol + 1) *
                     (sparseFragmentsBounds.minTileRow - limit.minTileRow);
 
-                // 3. number of tiles in fragment
+                /* Calculate the number of tiles in the fragment for the end offset */
                 const numTilesInFragment =
                     (sparseFragmentsBounds.maxTileCol - sparseFragmentsBounds.minTileCol + 1) *
                     (sparseFragmentsBounds.maxTileRow - sparseFragmentsBounds.minTileRow + 1);
@@ -116,20 +106,16 @@ export default class ComtIndex {
     }
 
     /**
-     * Calculates the offset in the index (IndexEntry) for the specified tile based on the metadata.
+     * Calculates the offset within the index (IndexEntry) for the specified tile based on the metadata.
      * This method can be used when the full index is kept in memory.
      * If this not the case use index fragments to query parts of the index.
-     *
-     * @param zoom
-     * @param x
-     * @param y
      */
-    //TODO: refactor to only support RowMajor order and WebMercator TileMatrixCRS
     calculateIndexOffsetForTile(zoom: number, x: number, y: number): [offset: number, index: number] {
         const numBytesForTileOffset = this.metadata.tileOffsetBytes ?? 5;
         const indexEntrySize = numBytesForTileOffset + ComtIndex.NUM_BYTES_TILE_SIZE;
-        let offset = 0;
         const filteredSet = this.tileMatrixSet.tileMatrix.filter((t) => t.zoom <= zoom);
+
+        let offset = 0;
         for (const ts of filteredSet) {
             const limit = ts.tileMatrixLimits;
             if (ts.zoom === zoom && !this.inRange(x, y, limit)) {
@@ -142,9 +128,8 @@ export default class ComtIndex {
             } else {
                 /*
                  * Calculates the index based on a space filling curve with row-major order with origin on the lower left side
-                 * like specified in the MBTiles spec
+                 * (TMS tiling scheme) like specified in the MBTiles spec
                  * */
-                //TODO: refactor to use XYZ instead of TMS like specified the OGC WebMercatorQuad TileMatrixSet
                 if (ts.aggregationCoefficient === -1) {
                     const numRows = y - limit.minTileRow;
                     const numCols = limit.maxTileCol - limit.minTileCol + 1;
@@ -152,16 +137,15 @@ export default class ComtIndex {
                     offset += (numRows > 0 ? numRows * numCols + deltaCol : deltaCol) * indexEntrySize;
                 } else {
                     /*
-                     * First calculate the number of tiles before the fragment which contains the specified tile
+                     * Calculate the number of tiles before the fragment which contains the specified tile
                      * 1. Calculate the number of tiles which are on the left side of the fragment
                      * 2. Calculate the number of tiles which are below the the fragment of the specified tile
-                     * Then calculate the number of tiles before the specified tile in the fragment
-                     * 3. Number of tiles for the full rows in the fragment which contains the specified tile
-                     * 4. Number of tiles before the specified tile in the partial row of the fragment
+                     * Calculate the number of tiles before the specified tile in the fragment
+                     * 3. Calculate the number of tiles for the full rows in the fragment which contains the specified tile
+                     * 4. Calculate the number of tiles before the specified tile in the partial row of the fragment
                      *  ________________
                      * |   |_4._|T|     |
                      * |   |__3.__|_____|
-                     * |   |            |
                      * | 1.|      2.    |
                      * |___|____________|
                      *
@@ -180,22 +164,22 @@ export default class ComtIndex {
                         fragmentBoundsOfSpecifiedTileGlobalTilCrs,
                     );
 
-                    // 1.
+                    /* Calculate the number of tiles which are on the left side of the fragment */
                     const leftNumTilesBeforeFragment =
                         (sparseFragmentsBounds.minTileCol - limit.minTileCol) *
                         (sparseFragmentsBounds.maxTileRow - limit.minTileRow + 1);
 
-                    // 2.
+                    /* Calculate the number of tiles which are below the the fragment of the specified tile */
                     const lowerNumTilesBeforeFragment =
                         (limit.maxTileCol - sparseFragmentsBounds.minTileCol + 1) *
                         (sparseFragmentsBounds.minTileRow - limit.minTileRow);
 
-                    // 3. full rows in fragment
+                    /* Calculate number of tiles for the full rows in the fragment which contains the specified tile */
                     const numTilesFullRows =
                         (y - sparseFragmentsBounds.minTileRow) *
                         (sparseFragmentsBounds.maxTileCol - sparseFragmentsBounds.minTileCol + 1);
 
-                    // 4. partial row in fragment
+                    /* Calculate the number of tiles before the specified tile in the partial row of the fragment */
                     const partialTiles = x - sparseFragmentsBounds.minTileCol;
 
                     const numTiles =

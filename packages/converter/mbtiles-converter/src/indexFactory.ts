@@ -1,5 +1,5 @@
 import { TileMatrix } from "@comt/spec/types/tileMatrix";
-import { MBTilesRepository } from "./mbTilesRepository";
+import { MBTilesRepository } from "./mbTilesRepository.js";
 
 /* 5 bytes offset and 4 bytes size as default */
 export type IndexEntry = {

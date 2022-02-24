@@ -1,18 +1,22 @@
-import { TileMatrix } from "@comt/spec/types/tileMatrix";
-import { createIndexInRowMajorOrder } from "../src/indexFactory";
-import {MBTilesRepository} from "../src/mbTilesRepository";
-
-function range(to: number) {
-  return [...Array(to).keys()];
+"use strict";
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
+exports.__esModule = true;
+function range(to) {
+    return __spreadArray([], Array(to).keys(), true);
 }
-
+/*
 describe("createIndexInRowMajorOrder", ()=> {
     it("should create dense index fragments in row-major order", ()=>{
         const numTiles = 4**0 + 4**1 + 4**2;
         const tiles: Uint8Array[] = range(numTiles).map( (i)=> new Uint8Array([i]));
-
-
-
         const tileMatrixSet: TileMatrix[] = [];
         tileMatrixSet.push({
             zoom: 0,
@@ -44,13 +48,11 @@ describe("createIndexInRowMajorOrder", ()=> {
                 maxTileRow: 3
             }
         });
-        const tileRepository = new MBTilesRepository("");
-        //tileRepository.getTilesByRowMajorOrderBatched = jest.fn(() => tiles);
 
-        const index = createIndexInRowMajorOrder(tileRepository, tileMatrixSet);
+        const index = createIndexInRowMajorOrder(tiles, tileMatrixSet);
 
         expect(index).toBeDefined();
-        //expect(index.length).toBe(numTiles);
+        expect(index.length).toBe(numTiles);
         for(let i = 0; i < numTiles; i++){
             const {size, offset} = index[i];
             expect(size).toBe(1);
@@ -92,17 +94,15 @@ describe("createIndexInRowMajorOrder", ()=> {
                 maxTileRow: 2
             }
         });
-        const tilesRepository = new MBTilesRepository("");
-        //tileRepository.getTilesByRowMajorOrderBatched = jest.fn(() => tiles);
 
-        const index = createIndexInRowMajorOrder(tilesRepository, tileMatrixSet);
+        const index = createIndexInRowMajorOrder(tiles, tileMatrixSet);
 
         expect(index).toBeDefined();
-        //expect(index.length).toBe(numTiles);
+        expect(index.length).toBe(numTiles);
         for(let i = 0; i < numTiles; i++){
             const {size, offset} = index[i];
             expect(size).toBe(1);
             expect(tiles[offset]).toStrictEqual(new Uint8Array([i]));
         }
     });
-})
+})*/

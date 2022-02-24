@@ -8,6 +8,8 @@ interface XyzIndex {
 }
 
 export default class MapLibreComtProvider {
+    private constructor() {}
+
     /**
      * Adds a COMT provider to MapLibre.
      * The COMT provider will be used when a source with a comt:// schema is used in a Mapbox style.

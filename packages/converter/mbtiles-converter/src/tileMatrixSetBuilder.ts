@@ -26,16 +26,14 @@ export default function createWMQTileMatrixSet(
 }
 
 /*
- * Corresponds to the Tiled Coordinate Reference Systems of MapML
- * see https://maps4html.org/MapML/spec/#tiled-coordinate-reference-systems-0
+ * Based on the OGC Two Dimensional Tile Matrix Set draft.
+ * see https://docs.opengeospatial.org/is/17-083r2/17-083r2.html
  * */
 export class TileMatrixFactory {
   private constructor() {}
 
   /*
-   *
    * see https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#62
-   * Y-axis goes downwards like XYZ tiling scheme
    * */
   static createWebMercatorQuad(
     zoom,
@@ -46,8 +44,8 @@ export class TileMatrixFactory {
     const minTileRow = TileMatrixFactory.lat2tile(bounds[1], zoom);
     const maxTileCol = TileMatrixFactory.lon2tile(bounds[2], zoom);
     const maxTileRow = TileMatrixFactory.lat2tile(bounds[3], zoom);
-    /* Y-axis goes downwards in the XYZ tiling scheme */
 
+    /* Y-axis goes downwards in the XYZ tiling scheme */
     return {
       zoom,
       aggregationCoefficient,

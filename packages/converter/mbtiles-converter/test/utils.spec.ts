@@ -2,8 +2,8 @@ import { toBytesLE } from "../src/utils";
 
 describe("toBytesLE", () => {
   it("should convert 4 bytes", () => {
-    // 11100 11100101 11011010
-    // 28    229      218
+    /* 11100 11100101 11011010
+     * 28    229      218       */
     const num = 1893850;
 
     const actualBuffer = toBytesLE(num, 4);
@@ -16,8 +16,8 @@ describe("toBytesLE", () => {
   });
 
   it("should convert 5 bytes", () => {
-    // 1110110 01111001 01000110 11000001
-    // 118     121       70       193
+    /* 1110110 01111001 01000110 11000001
+     *  118     121       70       193    */
     const num = 1987659457;
 
     const actualBuffer = toBytesLE(num);

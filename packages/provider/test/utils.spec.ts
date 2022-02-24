@@ -1,7 +1,7 @@
 import { convertUInt40LEToNumber } from "../src/utils";
 
 describe("convertUInt40LEToNumber", () => {
-    it("should convert 5 bytes", () => {
+    it("should convert number with 5 significant bytes", () => {
         /* hex -> 400000000 */
         const expectedNumber = 17179869184; //16GB
 
@@ -11,8 +11,4 @@ describe("convertUInt40LEToNumber", () => {
 
         expect(actualNumber).toBe(expectedNumber);
     });
-
-    //139 30 246 31 1
-    //8B1EF61F01
-    //597519900417
 });
