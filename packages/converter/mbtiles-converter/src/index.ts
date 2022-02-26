@@ -1,13 +1,11 @@
 #!/usr/bin/env node
-import sqlite3 from "sqlite3";
 import fs from "fs";
 import program from "commander";
 import { Metadata } from "@comt/spec";
-import WebMercatorQuadMetadataBuilder from "./metadataBuilder.js";
-import { createIndexInRowMajorOrder, IndexEntry } from "./indexFactory.js";
-import { MBTilesRepository } from "./mbTilesRepository.js";
+import IndexFactory, { IndexEntry } from "./indexFactory";
+import { MBTilesRepository } from "./mbTilesRepository";
 import { toBytesLE } from "./utils.js";
-import * as pkg from "../package.json";
+import pkg from "../package.json";
 
 program
     .version(pkg.version)
@@ -24,15 +22,15 @@ const MAGIC = "COMT";
 const VERSION = 1;
 const INDEX_ENTRY_TILE_SIZE = 4;
 
-const mbTilesFilename = options.inputFilePath;
-const db = new sqlite3.Database(mbTilesFilename);
-const metadata = await createMetadata(db);
-
-const repo = new MBTilesRepository(mbTilesFilename);
-const index = await createIndexInRowMajorOrder(repo, metadata.tileMatrixSet.tileMatrix);
-
-await createComTileArchive(program.outputFilePath, metadata, index, repo);
-console.info("Successfully saved the COMTiles archive in %s.", program.outputFilePath);
+(async () => {
+    const mbTilesFilename = options.inputFilePath;
+    const repo = await MBTilesRepository.create(mbTilesFilename);
+    const metadata = await repo.getMetadata();
+    const index = await IndexFactory.createIndexInRowMajorOrder(repo, metadata.tileMatrixSet.tileMatrix);
+    await createComTileArchive(program.outputFilePath, metadata, index, repo);
+    await repo.dispose();
+    console.info("Successfully saved the COMTiles archive in %s.", program.outputFilePath);
+})();
 
 async function createComTileArchive(
     fileName: string,
@@ -107,45 +105,4 @@ async function writeTiles(stream: fs.WriteStream, index: IndexEntry[], tileRepos
             }
         }
     }
-}
-
-function createMetadata(db: sqlite3.Database): Promise<Metadata> {
-    return new Promise((resolve, reject) => {
-        db.all("SELECT name, value FROM metadata;", (err, rows) => {
-            if (err) {
-                reject(err);
-                return;
-            }
-
-            const metadataBuilder = new WebMercatorQuadMetadataBuilder();
-            for (const row of rows) {
-                switch (row.name) {
-                    case "name":
-                        metadataBuilder.setName(row.value);
-                        break;
-                    case "bounds":
-                        metadataBuilder.setBoundingBox(row.value.split(",").map((value) => parseFloat(value.trim())));
-                        break;
-                    case "minzoom":
-                        metadataBuilder.setMinZoom(parseInt(row.value, 10));
-                        break;
-                    case "maxzoom":
-                        metadataBuilder.setMaxZoom(parseInt(row.value, 10));
-                        break;
-                    case "format":
-                        metadataBuilder.setTileFormat(row.value);
-                        break;
-                    case "attribution":
-                        metadataBuilder.setAttribution(row.value);
-                        break;
-                    case "json":
-                        metadataBuilder.setLayers(row.value);
-                        break;
-                }
-            }
-
-            const metadata = metadataBuilder.build();
-            resolve(metadata);
-        });
-    });
 }

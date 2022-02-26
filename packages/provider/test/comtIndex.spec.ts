@@ -27,9 +27,9 @@ describe("calculateIndexOffsetForTile", () => {
         ];
         const comtIndex = new ComtIndex(metadata);
 
-        const [byteOffset, index] = comtIndex.calculateIndexOffsetForTile(0, 0, 0);
+        const { offset, index } = comtIndex.calculateIndexOffsetForTile(0, 0, 0);
 
-        expect(byteOffset).toBe(0);
+        expect(offset).toBe(0);
         expect(index).toBe(0);
     });
 
@@ -75,72 +75,69 @@ describe("calculateIndexOffsetForTile", () => {
          * | 1 1
          * | _ _ >
          * */
-        const [offset, index] = comtIndex.calculateIndexOffsetForTile(1, 1, 0);
+        const { offset, index } = comtIndex.calculateIndexOffsetForTile(1, 1, 0);
 
         const expectIndex = 2;
         expect(offset).toBe(expectIndex * 9);
         expect(index).toBe(expectIndex);
     });
 
-    it("should return valid offset when a aggregationCoefficient with only dense fragments is specified", () => {
-        metadata.tileMatrixSet.tileMatrix = [
-            {
-                zoom: 0,
-                aggregationCoefficient: -1,
-                tileMatrixLimits: {
-                    minTileRow: 0,
-                    minTileCol: 0,
-                    maxTileRow: 0,
-                    maxTileCol: 0,
+    /*
+     * TMS -> x=2, y=3
+     * ^
+     * | -> 1 -> 1 -> 1 -> 0
+     * | -> 1 -> 1 -> 1 -> 1
+     * | -> 1 -> 1 -> 1 -> 1
+     * |    1 -> 1 -> 1 -> 1
+     * | _ _ >
+     * */
+    it.each`
+        tileIndex               | expectedIndex
+        ${{ z: 2, x: 2, y: 2 }} | ${1 + 2 + 12}
+        ${{ z: 2, x: 2, y: 3 }} | ${1 + 2 + 14}
+        ${{ z: 2, x: 3, y: 3 }} | ${1 + 2 + 15}
+    `(
+        "should return valid offset when a aggregationCoefficient with only dense fragments is specified",
+        ({ tileIndex, expectedIndex }) => {
+            metadata.tileMatrixSet.tileMatrix = [
+                {
+                    zoom: 0,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileRow: 0,
+                        minTileCol: 0,
+                        maxTileRow: 0,
+                        maxTileCol: 0,
+                    },
                 },
-            },
-            {
-                zoom: 1,
-                aggregationCoefficient: -1,
-                tileMatrixLimits: {
-                    minTileRow: 0,
-                    minTileCol: 0,
-                    maxTileRow: 0,
-                    maxTileCol: 1,
+                {
+                    zoom: 1,
+                    aggregationCoefficient: -1,
+                    tileMatrixLimits: {
+                        minTileRow: 0,
+                        minTileCol: 0,
+                        maxTileRow: 0,
+                        maxTileCol: 1,
+                    },
                 },
-            },
-            {
-                zoom: 2,
-                aggregationCoefficient: 1,
-                tileMatrixLimits: {
-                    minTileRow: 0,
-                    minTileCol: 0,
-                    maxTileRow: 3,
-                    maxTileCol: 3,
+                {
+                    zoom: 2,
+                    aggregationCoefficient: 1,
+                    tileMatrixLimits: {
+                        minTileRow: 0,
+                        minTileCol: 0,
+                        maxTileRow: 3,
+                        maxTileCol: 3,
+                    },
                 },
-            },
-        ];
-        const comtIndex = new ComtIndex(metadata);
+            ];
+            const comtIndex = new ComtIndex(metadata);
 
-        /*
-         * TMS -> x=2, y=3
-         * ^
-         * | -> 1 -> 1 -> 1 -> 0
-         * | -> 1 -> 1 -> 1 -> 1
-         * | -> 1 -> 1 -> 1 -> 1
-         * |    1 -> 1 -> 1 -> 1
-         * | _ _ >
-         * */
-        const [offset, index] = comtIndex.calculateIndexOffsetForTile(2, 2, 3);
-        const expectedIndex = 1 + 2 + 14;
-        expect(index).toBe(expectedIndex);
-        expect(offset).toBe(expectedIndex * 9);
-
-        const [offset2, index2] = comtIndex.calculateIndexOffsetForTile(2, 3, 3);
-        const expectedIndex2 = 1 + 2 + 15;
-        expect(index2).toBe(expectedIndex2);
-        expect(offset2).toBe(expectedIndex2 * 9);
-
-        const [offset3, index3] = comtIndex.calculateIndexOffsetForTile(2, 2, 2);
-        const expectedIndex3 = 1 + 2 + 12;
-        expect(index3).toBe(expectedIndex3);
-        expect(offset3).toBe(expectedIndex3 * 9);
-    });
+            const { offset, index } = comtIndex.calculateIndexOffsetForTile(tileIndex.z, tileIndex.x, tileIndex.y);
+            expect(index).toBe(expectedIndex);
+            expect(offset).toBe(expectedIndex * 9);
+        },
+    );
 
     it("should return valid offset when a aggregationCoefficient with sparse fragments is specified", () => {
         metadata.tileMatrixSet.tileMatrix = [
@@ -186,7 +183,7 @@ describe("calculateIndexOffsetForTile", () => {
          * |    0 -> 0 -> 0 -> 0
          * | _ _ >
          * */
-        const [offset, index] = comtIndex.calculateIndexOffsetForTile(2, 2, 2);
+        const { offset, index } = comtIndex.calculateIndexOffsetForTile(2, 2, 2);
         const expectedIndex = 1 + 2 + 3;
         expect(index).toBe(expectedIndex);
         expect(offset).toBe(expectedIndex * 9);
@@ -206,7 +203,7 @@ describe("calculateIndexOffsetForTile", () => {
          * |    0 -> 1 -> 1 -> 0
          * | _ _ >
          * */
-        const [offset2, index2] = comtIndex.calculateIndexOffsetForTile(2, 2, 3);
+        const { offset: offset2, index: index2 } = comtIndex.calculateIndexOffsetForTile(2, 2, 3);
         const expectedIndex2 = 1 + 2 + 7;
         expect(index2).toBe(expectedIndex2);
         expect(offset2).toBe(expectedIndex2 * 9);
@@ -231,7 +228,7 @@ describe("calculateIndexOffsetForTile", () => {
                 maxTileCol: 6,
             },
         };
-        const [offset3, index3] = comtIndex.calculateIndexOffsetForTile(3, 5, 5);
+        const { offset: offset3, index: index3 } = comtIndex.calculateIndexOffsetForTile(3, 5, 5);
         const expectedIndex3 = 1 + 2 + 9 + 17;
         expect(expectedIndex3).toBe(index3);
         expect(offset3).toBe(expectedIndex3 * 9);
@@ -398,7 +395,7 @@ describe("calculateIndexOffsetForTile", () => {
         const expectedIndex = 42790;
         const comtIndex = new ComtIndex(metadata);
 
-        const [offset, index] = comtIndex.calculateIndexOffsetForTile(14, 8705, 10634);
+        const { offset, index } = comtIndex.calculateIndexOffsetForTile(14, 8705, 10634);
 
         expect(index).toBe(expectedIndex);
         expect(offset).toBe(expectedIndex * 9);
@@ -734,170 +731,174 @@ describe("getFragmentRangeForTile", () => {
         expect(fragmentRange).toEqual(expectedFragmentRange);
     });
 
-    it("should calculate valid fragment range for a specific tile in the europe dataset", () => {
-        metadata.tileMatrixSet = {
-            tileMatrixCRS: "WebMercatorQuad",
-            fragmentOrdering: "RowMajor",
-            tileOrdering: "RowMajor",
-            tileMatrix: [
-                {
-                    zoom: 0,
-                    aggregationCoefficient: -1,
-                    tileMatrixLimits: {
-                        minTileCol: 0,
-                        minTileRow: 0,
-                        maxTileCol: 0,
-                        maxTileRow: 0,
+    it.each`
+        tileIndex                      | expectedIndex
+        ${{ z: 11, x: 1158, y: 1600 }} | ${309870}
+        ${{ z: 11, x: 830, y: 1600 }}  | ${289070}
+    `(
+        "should calculate valid fragment range for a specific tile in the europe dataset",
+        ({ tileIndex, expectedIndex }) => {
+            metadata.tileMatrixSet = {
+                tileMatrixCRS: "WebMercatorQuad",
+                fragmentOrdering: "RowMajor",
+                tileOrdering: "RowMajor",
+                tileMatrix: [
+                    {
+                        zoom: 0,
+                        aggregationCoefficient: -1,
+                        tileMatrixLimits: {
+                            minTileCol: 0,
+                            minTileRow: 0,
+                            maxTileCol: 0,
+                            maxTileRow: 0,
+                        },
                     },
-                },
-                {
-                    zoom: 1,
-                    aggregationCoefficient: -1,
-                    tileMatrixLimits: {
-                        minTileCol: 0,
-                        minTileRow: 1,
-                        maxTileCol: 1,
-                        maxTileRow: 1,
+                    {
+                        zoom: 1,
+                        aggregationCoefficient: -1,
+                        tileMatrixLimits: {
+                            minTileCol: 0,
+                            minTileRow: 1,
+                            maxTileCol: 1,
+                            maxTileRow: 1,
+                        },
                     },
-                },
-                {
-                    zoom: 2,
-                    aggregationCoefficient: -1,
-                    tileMatrixLimits: {
-                        minTileCol: 1,
-                        minTileRow: 2,
-                        maxTileCol: 2,
-                        maxTileRow: 3,
+                    {
+                        zoom: 2,
+                        aggregationCoefficient: -1,
+                        tileMatrixLimits: {
+                            minTileCol: 1,
+                            minTileRow: 2,
+                            maxTileCol: 2,
+                            maxTileRow: 3,
+                        },
                     },
-                },
-                {
-                    zoom: 3,
-                    aggregationCoefficient: -1,
-                    tileMatrixLimits: {
-                        minTileCol: 3,
-                        minTileRow: 4,
-                        maxTileCol: 5,
-                        maxTileRow: 7,
+                    {
+                        zoom: 3,
+                        aggregationCoefficient: -1,
+                        tileMatrixLimits: {
+                            minTileCol: 3,
+                            minTileRow: 4,
+                            maxTileCol: 5,
+                            maxTileRow: 7,
+                        },
                     },
-                },
-                {
-                    zoom: 4,
-                    aggregationCoefficient: -1,
-                    tileMatrixLimits: {
-                        minTileCol: 6,
-                        minTileRow: 9,
-                        maxTileCol: 10,
-                        maxTileRow: 14,
+                    {
+                        zoom: 4,
+                        aggregationCoefficient: -1,
+                        tileMatrixLimits: {
+                            minTileCol: 6,
+                            minTileRow: 9,
+                            maxTileCol: 10,
+                            maxTileRow: 14,
+                        },
                     },
-                },
-                {
-                    zoom: 5,
-                    aggregationCoefficient: -1,
-                    tileMatrixLimits: {
-                        minTileCol: 12,
-                        minTileRow: 18,
-                        maxTileCol: 20,
-                        maxTileRow: 29,
+                    {
+                        zoom: 5,
+                        aggregationCoefficient: -1,
+                        tileMatrixLimits: {
+                            minTileCol: 12,
+                            minTileRow: 18,
+                            maxTileCol: 20,
+                            maxTileRow: 29,
+                        },
                     },
-                },
-                {
-                    zoom: 6,
-                    aggregationCoefficient: -1,
-                    tileMatrixLimits: {
-                        minTileCol: 25,
-                        minTileRow: 37,
-                        maxTileCol: 40,
-                        maxTileRow: 58,
+                    {
+                        zoom: 6,
+                        aggregationCoefficient: -1,
+                        tileMatrixLimits: {
+                            minTileCol: 25,
+                            minTileRow: 37,
+                            maxTileCol: 40,
+                            maxTileRow: 58,
+                        },
                     },
-                },
-                {
-                    zoom: 7,
-                    aggregationCoefficient: -1,
-                    tileMatrixLimits: {
-                        minTileCol: 51,
-                        minTileRow: 75,
-                        maxTileCol: 80,
-                        maxTileRow: 116,
+                    {
+                        zoom: 7,
+                        aggregationCoefficient: -1,
+                        tileMatrixLimits: {
+                            minTileCol: 51,
+                            minTileRow: 75,
+                            maxTileCol: 80,
+                            maxTileRow: 116,
+                        },
                     },
-                },
-                {
-                    zoom: 8,
-                    aggregationCoefficient: 6,
-                    tileMatrixLimits: {
-                        minTileCol: 103,
-                        minTileRow: 150,
-                        maxTileCol: 161,
-                        maxTileRow: 233,
+                    {
+                        zoom: 8,
+                        aggregationCoefficient: 6,
+                        tileMatrixLimits: {
+                            minTileCol: 103,
+                            minTileRow: 150,
+                            maxTileCol: 161,
+                            maxTileRow: 233,
+                        },
                     },
-                },
-                {
-                    zoom: 9,
-                    aggregationCoefficient: 6,
-                    tileMatrixLimits: {
-                        minTileCol: 206,
-                        minTileRow: 300,
-                        maxTileCol: 322,
-                        maxTileRow: 467,
+                    {
+                        zoom: 9,
+                        aggregationCoefficient: 6,
+                        tileMatrixLimits: {
+                            minTileCol: 206,
+                            minTileRow: 300,
+                            maxTileCol: 322,
+                            maxTileRow: 467,
+                        },
                     },
-                },
-                {
-                    zoom: 10,
-                    aggregationCoefficient: 6,
-                    tileMatrixLimits: {
-                        minTileCol: 413,
-                        minTileRow: 600,
-                        maxTileCol: 644,
-                        maxTileRow: 935,
+                    {
+                        zoom: 10,
+                        aggregationCoefficient: 6,
+                        tileMatrixLimits: {
+                            minTileCol: 413,
+                            minTileRow: 600,
+                            maxTileCol: 644,
+                            maxTileRow: 935,
+                        },
                     },
-                },
-                {
-                    zoom: 11,
-                    aggregationCoefficient: 6,
-                    tileMatrixLimits: {
-                        minTileCol: 827,
-                        minTileRow: 1201,
-                        maxTileCol: 1289,
-                        maxTileRow: 1870,
+                    {
+                        zoom: 11,
+                        aggregationCoefficient: 6,
+                        tileMatrixLimits: {
+                            minTileCol: 827,
+                            minTileRow: 1201,
+                            maxTileCol: 1289,
+                            maxTileRow: 1870,
+                        },
                     },
-                },
-                {
-                    zoom: 12,
-                    aggregationCoefficient: 6,
-                    tileMatrixLimits: {
-                        minTileCol: 1655,
-                        minTileRow: 2402,
-                        maxTileCol: 2579,
-                        maxTileRow: 3740,
+                    {
+                        zoom: 12,
+                        aggregationCoefficient: 6,
+                        tileMatrixLimits: {
+                            minTileCol: 1655,
+                            minTileRow: 2402,
+                            maxTileCol: 2579,
+                            maxTileRow: 3740,
+                        },
                     },
-                },
-                {
-                    zoom: 13,
-                    aggregationCoefficient: 6,
-                    tileMatrixLimits: {
-                        minTileCol: 3311,
-                        minTileRow: 4805,
-                        maxTileCol: 5159,
-                        maxTileRow: 7481,
+                    {
+                        zoom: 13,
+                        aggregationCoefficient: 6,
+                        tileMatrixLimits: {
+                            minTileCol: 3311,
+                            minTileRow: 4805,
+                            maxTileCol: 5159,
+                            maxTileRow: 7481,
+                        },
                     },
-                },
-                {
-                    zoom: 14,
-                    aggregationCoefficient: 6,
-                    tileMatrixLimits: {
-                        minTileCol: 6622,
-                        minTileRow: 9610,
-                        maxTileCol: 10319,
-                        maxTileRow: 14962,
+                    {
+                        zoom: 14,
+                        aggregationCoefficient: 6,
+                        tileMatrixLimits: {
+                            minTileCol: 6622,
+                            minTileRow: 9610,
+                            maxTileCol: 10319,
+                            maxTileRow: 14962,
+                        },
                     },
-                },
-            ],
-        };
-        const comtIndex = new ComtIndex(metadata);
+                ],
+            };
+            const comtIndex = new ComtIndex(metadata);
 
-        const actualFragmentRange = comtIndex.getFragmentRangeForTile(11, 1158, 1600);
-        expect(actualFragmentRange.index).toEqual(309870);
-
-        const actualFragmentRange2 = comtIndex.getFragmentRangeForTile(11, 830, 1611);
-        expect(actualFragmentRange2.index).toEqual(289070);
-    });
+            const actualFragmentRange = comtIndex.getFragmentRangeForTile(tileIndex.z, tileIndex.x, tileIndex.y);
+            expect(actualFragmentRange.index).toEqual(expectedIndex);
+        },
+    );
 });

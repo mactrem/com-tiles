@@ -1,5 +1,5 @@
 general
-- use a base tsconfig.json and extend in the packages
+- use strict mode in tsconfig.base.json
 
 mbtiles-converter
 - row major means XYZ schema not TMS -> refactor the createIndexInRowMajorOrder method in the indexFactory module

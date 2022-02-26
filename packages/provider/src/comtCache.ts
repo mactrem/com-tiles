@@ -16,6 +16,25 @@ interface IndexEntry {
     size: number;
 }
 
+export type Callback = () => void;
+
+export class CancellationToken {
+    private readonly subscribers: Callback[] = [];
+
+    cancel(): void {
+        this.subscribers.forEach((subscriber) => subscriber());
+    }
+
+    register(callback: Callback): void {
+        this.subscribers.push(callback);
+    }
+
+    unregister(callback: Callback) {
+        const index = this.subscribers.indexOf(callback);
+        this.subscribers.splice(index, 1);
+    }
+}
+
 class IndexCache {
     private static readonly INDEX_ENTRY_NUM_BYTES = 9;
     /* 7 zoom levels (8-14) * 4 fragments per zoom */
@@ -45,7 +64,6 @@ class IndexCache {
     }
 
     /**
-     *
      * @param zoom
      * @param x
      * @param y Tms order
@@ -53,7 +71,7 @@ class IndexCache {
      */
     get(zoom: number, x: number, y: number): IndexEntry {
         //TODO: get rid of that redundant method call
-        const [offset, index] = this.comtIndex.calculateIndexOffsetForTile(zoom, x, y);
+        const { index } = this.comtIndex.calculateIndexOffsetForTile(zoom, x, y);
         const { startOffset, index: fragmentStartIndex } = this.comtIndex.getFragmentRangeForTile(zoom, x, y);
 
         const indexOffset = index * IndexCache.INDEX_ENTRY_NUM_BYTES;
@@ -83,29 +101,15 @@ export enum TileContent {
     PNG,
 }
 
-export class CancellationToken {
-    private readonly subscribers = [];
-
-    cancel(): void {
-        this.subscribers.forEach((subscriber) => subscriber());
-    }
-
-    register(callback: () => void): void {
-        this.subscribers.push(callback);
-    }
-
-    //TODO: unsubscribe
-}
-
 export default class ComtCache {
     private static readonly SUPPORTED_VERSION = 1;
     private static readonly INITIAL_CHUNK_SIZE = 2 ** 19; //512k
-    private static readonly METADATA_OFFSET_INDEX = 17; //TODO: reference spec
+    private static readonly METADATA_OFFSET_INDEX = 17;
     private static readonly SUPPORTED_TILE_MATRIX_CRS = "WebMercatorQuad";
     private static readonly SUPPORTED_ORDERING = "RowMajor";
     private static readonly INDEX_ENTRY_NUM_BYTES = 9;
-    private indexCache: IndexCache;
-    private comtIndex: ComtIndex;
+    private indexCache: IndexCache = null;
+    private comtIndex: ComtIndex = null;
     private readonly requestCache = new Map<number, Promise<ArrayBuffer>>();
 
     /**
@@ -126,6 +130,10 @@ export default class ComtCache {
      * @param prefetchHeader Specifies if the header should be prefetched or lazy loaded.
      */
     static async create(comtUrl: string, tileContent = TileContent.MVT, prefetchHeader = true): Promise<ComtCache> {
+        if (tileContent !== TileContent.MVT) {
+            throw new Error("Only Mapbox Vector Tiles are currently supported as content of a map tile.");
+        }
+
         const header = prefetchHeader ? await ComtCache.loadHeader(comtUrl) : null;
         return new ComtCache(comtUrl, header);
     }
@@ -218,14 +226,9 @@ export default class ComtCache {
         lastBytePos: number,
         cancellationToken?: CancellationToken,
     ): Promise<ArrayBuffer> {
-        const controller = new AbortController();
-        const signal = controller.signal;
-
+        const { signal, abort } = new AbortController();
         if (cancellationToken) {
-            //TODO: use promise instead-> memory leak
-            cancellationToken.register(() => {
-                controller.abort();
-            });
+            cancellationToken.register(abort);
         }
 
         const response = await fetch(url, {
@@ -234,12 +237,12 @@ export default class ComtCache {
             },
             signal,
         });
+        cancellationToken?.unregister(abort);
 
         if (!response.ok) {
             throw new Error(response.statusText);
         }
 
-        //TODO: unsubscribe from cancellationToken
         return response.arrayBuffer();
     }
 
@@ -313,7 +316,7 @@ export default class ComtCache {
         }
     }
 
-    private async fetchMVT(tileOffset: number, tileSize): Promise<Uint8Array> {
+    private async fetchMVT(tileOffset: number, tileSize: number): Promise<Uint8Array> {
         const buffer = await ComtCache.fetchBinaryData(this.comtUrl, tileOffset, tileOffset + tileSize - 1);
         const compressedTile = new Uint8Array(buffer);
         return pako.ungzip(compressedTile);

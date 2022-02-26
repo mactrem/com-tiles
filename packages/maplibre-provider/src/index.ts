@@ -8,6 +8,7 @@ interface XyzIndex {
 }
 
 export default class MapLibreComtProvider {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     private constructor() {}
 
     /**
@@ -18,6 +19,7 @@ export default class MapLibreComtProvider {
         let comtCache: provider.ComtCache;
 
         maplibregl.addProtocol("comt", (params, tileHandler) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [tileUrl, url, z, x, y] = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
             const cancellationToken = new provider.CancellationToken();
             //TODO: extract comtUrl from url

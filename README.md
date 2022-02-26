@@ -6,6 +6,18 @@ the tiles or tile batches via http range requests.
 The main focus of COMTiles is to significantly reduce coasts for the hosting of large raster and vector tilesets at global scale 
 in the cloud.  
 COMTiles aims to be a MBTiles database for the cloud.
+Loading up over 350 million tiles for a planet scale dataset is inpractiable
+
+The same as the idea behind MBTiles to handle more easy
+
+also the water tiles which are 2/3 of the whole planet dataset is inprecticble
+and wasting of money
+One archive file with the metdata and tiles in one file.
+
+### Usage
+mbitle-convert --max-old-space
+maplibre-provider for MapLibre -> for a example of how to use see the debug page
+Or use your own build on top of the ComtCache in the @comt/provider package
 
 ### Concept  
 Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.  

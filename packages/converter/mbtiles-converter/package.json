@@ -3,9 +3,8 @@
   "version": "1.0.0-beta.0",
   "description": "Converts a MBTiles database to a COMTiles archive.",
   "main": "dist/src/index.js",
-  "type": "module",
   "bin": {
-    "mbtiles-converter": "./dist/src/index.js"
+    "convert-comtiles": "./dist/src/index.js"
   },
   "engines": {
     "node": ">=16"
@@ -30,5 +29,8 @@
     "prettier": "^2.5.1",
     "ts-jest": "^26.5.5",
     "typescript": "^4.2.4"
-  }
+  },
+  "files": [
+    "dist/*"
+  ]
 }

@@ -1,128 +1,115 @@
-//import { Database, OPEN_READONLY } from "sqlite3";
-import * as sqlite from "sqlite3";
-import * as util from "util";
-import { TileMatrix } from "@comt/spec/types/tileMatrix";
+import { Database, OPEN_READONLY } from "sqlite3";
+import { promisify } from "util";
+import { Metadata } from "@comt/spec";
+import WebMercatorQuadMetadataBuilder from "./metadataBuilder";
+import { TileMatrixLimits } from "./types";
 
 export interface Tile {
-  column: number;
-  row: number;
-  data: Uint8Array;
+    column: number;
+    row: number;
+    data: Uint8Array;
 }
 
 export class MBTilesRepository {
-  private static readonly TILES_TABLE_NAME = "tiles";
+    private static readonly METADATA_TABLE_NAME = "metadata";
+    private static readonly TILES_TABLE_NAME = "tiles";
 
-  constructor(private readonly fileName: string) {}
+    private constructor(private readonly db: Database) {}
 
-  /**
-   * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
-   * */
-  async getTilesByRowMajorOrder(
-    zoom: number,
-    limit?: TileMatrix["tileMatrixLimits"]
-  ): Promise<Tile[]> {
-    //TODO: connect in ctor -> reduce overhead
-    const db = await this.connect(this.fileName);
-
-    let query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
-    if (limit) {
-      query += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
-      query += " ORDER BY tile_row, tile_column ASC";
-      const tiles = await util.promisify(db.all.bind(db))(query);
-
-      return this.hasMissingTiles(limit, tiles)
-        ? this.addMissingTiles(limit, tiles)
-        : tiles;
-    }
-  }
-
-  /**
-   * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
-   * */
-  async *getTilesByRowMajorOrderBatched(
-    zoom: number,
-    limit?: TileMatrix["tileMatrixLimits"],
-    batchSize = 50000
-  ): AsyncIterable<Tile[]> {
-    //TODO: connect in ctor -> reduce overhead
-    const db = await this.connect(this.fileName);
-
-    let query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
-    if (limit) {
-      query += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
-    }
-    query += " ORDER BY tile_row, tile_column ASC";
-    //TODO: the addMissingTiles approach doesn't work with batching
-    //TODO: use while and evaluate the number of returned tiles for the return check
-    for (let offset = 0; ; offset += batchSize) {
-      const limitQuery = ` ${query} LIMIT ${batchSize} OFFSET ${offset};`;
-
-      const tiles = await util.promisify(db.all.bind(db))(limitQuery);
-      const numTiles = tiles.length;
-
-      if (numTiles === 0) {
-        db.close();
-        return;
-      }
-
-      //TODO: not working for a fragment size larger then the batch size
-      yield this.hasMissingTiles(limit, tiles)
-        ? this.addMissingTiles(limit, tiles)
-        : tiles;
-    }
-  }
-
-  private hasMissingTiles(
-    limit: TileMatrix["tileMatrixLimits"],
-    tiles: Tile[]
-  ): boolean {
-    const expectedNumTiles =
-      (limit.maxTileCol - limit.minTileCol + 1) *
-      (limit.maxTileRow - limit.minTileRow + 1);
-    const actualNumTiles = tiles.length;
-    return expectedNumTiles !== actualNumTiles;
-  }
-
-  //TODO: find proper solution with empty mvt tile -> when adding size 0
-  private addMissingTiles(
-    limit: TileMatrix["tileMatrixLimits"],
-    tiles: Tile[]
-  ) {
-    const paddedTiles: Tile[] = [];
-
-    for (let row = limit.minTileRow; row <= limit.maxTileRow; row++) {
-      for (let col = limit.minTileCol; col <= limit.maxTileCol; col++) {
-        if (!tiles.some((tile) => tile.row === row && tile.column === col)) {
-          const emptyTile = new Uint8Array();
-          paddedTiles.push({ column: col, row, data: emptyTile });
-        } else {
-          paddedTiles.push(tiles.shift());
-        }
-      }
+    static async create(fileName: string): Promise<MBTilesRepository> {
+        const db = await MBTilesRepository.connect(fileName);
+        return new MBTilesRepository(db);
     }
 
-    return paddedTiles;
-  }
+    async getMetadata(): Promise<Metadata> {
+        const query = `SELECT name, value FROM ${MBTilesRepository.METADATA_TABLE_NAME};`;
+        const rows = await promisify(this.db.all.bind(this.db))(query);
 
-  async getTile(zoom: number, row: number, column: number): Promise<Tile> {
-    const db = await this.connect(this.fileName);
-
-    const query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom} AND tile_column = ${column} AND tile_row = ${row};`;
-    const rows = await util.promisify(db.all.bind(db))(query);
-
-    return rows[0];
-  }
-
-  private connect(dbPath: string): Promise<sqlite.Database> {
-    return new Promise<sqlite.Database>((resolve, reject) => {
-      const db = new sqlite.Database(dbPath, sqlite.OPEN_READONLY, (err) => {
-        if (err) {
-          reject(err.message);
-          return;
+        const metadataBuilder = new WebMercatorQuadMetadataBuilder();
+        for (const row of rows) {
+            switch (row.name) {
+                case "name":
+                    metadataBuilder.setName(row.value);
+                    break;
+                case "bounds":
+                    metadataBuilder.setBoundingBox(row.value.split(",").map((value) => parseFloat(value.trim())));
+                    break;
+                case "minzoom":
+                    metadataBuilder.setMinZoom(parseInt(row.value, 10));
+                    break;
+                case "maxzoom":
+                    metadataBuilder.setMaxZoom(parseInt(row.value, 10));
+                    break;
+                case "format":
+                    metadataBuilder.setTileFormat(row.value);
+                    break;
+                case "attribution":
+                    metadataBuilder.setAttribution(row.value);
+                    break;
+                case "json":
+                    metadataBuilder.setLayers(row.value);
+                    break;
+            }
         }
 
-        resolve(db);
-      });
-    });
-  }
+        return metadataBuilder.build();
+    }
+
+    /**
+     * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
+     * */
+    getTilesByRowMajorOrder(zoom: number, limit?: TileMatrixLimits): Promise<Tile[]> {
+        let query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
+        if (limit) {
+            query += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
+        }
+        query += " ORDER BY tile_row, tile_column ASC;";
+        return promisify(this.db.all.bind(this.db))(query);
+    }
+
+    /**
+     * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
+     * */
+    async *getTilesByRowMajorOrderBatched(
+        zoom: number,
+        limit?: TileMatrixLimits,
+        batchSize = 50000,
+    ): AsyncIterable<Tile[]> {
+        let query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
+        if (limit) {
+            query += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
+        }
+        query += " ORDER BY tile_row, tile_column ASC";
+        for (let offset = 0; ; offset += batchSize) {
+            const limitQuery = ` ${query} LIMIT ${batchSize} OFFSET ${offset};`;
+            const tiles = await promisify(this.db.all.bind(this.db))(limitQuery);
+            if (tiles.length === 0) {
+                return;
+            }
+
+            yield tiles;
+        }
+    }
+
+    async getTile(zoom: number, row: number, column: number): Promise<Tile> {
+        const query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom} AND tile_column = ${column} AND tile_row = ${row};`;
+        return promisify(this.db.get.bind(this.db))(query);
+    }
+
+    async dispose(): Promise<void> {
+        return promisify(this.db.close.bind(this.db))();
+    }
+
+    private static connect(dbPath: string): Promise<Database> {
+        return new Promise<Database>((resolve, reject) => {
+            const db = new Database(dbPath, OPEN_READONLY, (err) => {
+                if (err) {
+                    reject(err.message);
+                    return;
+                }
+
+                resolve(db);
+            });
+        });
+    }
 }

@@ -1,18 +1,19 @@
 import { TileMatrix } from "@comt/spec/types/tileMatrix";
-import { createIndexInRowMajorOrder } from "../src/indexFactory";
-import {MBTilesRepository} from "../src/mbTilesRepository";
+import IndexFactory from "../src/indexFactory";
+import { MBTilesRepository, Tile } from "../src/mbTilesRepository";
 
 function range(to: number) {
-  return [...Array(to).keys()];
+    return [...Array.from(Array(to).keys())];
 }
 
-describe("createIndexInRowMajorOrder", ()=> {
-    it("should create dense index fragments in row-major order", ()=>{
-        const numTiles = 4**0 + 4**1 + 4**2;
-        const tiles: Uint8Array[] = range(numTiles).map( (i)=> new Uint8Array([i]));
+Array(10).keys();
 
-
-
+describe("createIndexInRowMajorOrder", () => {
+    it("should create dense index fragments in row-major order", async () => {
+        const numTiles = 4 ** 0 + 4 ** 1 + 4 ** 2;
+        const tiles = range(numTiles).map((i) => {
+            return { data: new Uint8Array([i]) };
+        });
         const tileMatrixSet: TileMatrix[] = [];
         tileMatrixSet.push({
             zoom: 0,
@@ -21,8 +22,8 @@ describe("createIndexInRowMajorOrder", ()=> {
                 minTileCol: 0,
                 minTileRow: 0,
                 maxTileCol: 0,
-                maxTileRow: 0
-            }
+                maxTileRow: 0,
+            },
         });
         tileMatrixSet.push({
             zoom: 1,
@@ -31,8 +32,8 @@ describe("createIndexInRowMajorOrder", ()=> {
                 minTileCol: 0,
                 minTileRow: 0,
                 maxTileCol: 1,
-                maxTileRow: 1
-            }
+                maxTileRow: 1,
+            },
         });
         tileMatrixSet.push({
             zoom: 2,
@@ -41,26 +42,45 @@ describe("createIndexInRowMajorOrder", ()=> {
                 minTileCol: 0,
                 minTileRow: 0,
                 maxTileCol: 3,
-                maxTileRow: 3
-            }
+                maxTileRow: 3,
+            },
         });
-        const tileRepository = new MBTilesRepository("");
-        //tileRepository.getTilesByRowMajorOrderBatched = jest.fn(() => tiles);
+        const tileRepository = await MBTilesRepository.create("");
+        //tileRepository.getTilesByRowMajorOrder = jest.fn((z) => (z === 0 ? tiles.splice(0, 1) : tiles.splice(0, 4)));
+        tileRepository.getTilesByRowMajorOrder = jest.fn(
+            (z) =>
+                new Promise((resolve) => {
+                    const tileBatch = z === 0 ? tiles.splice(0, 1) : tiles.splice(0, 4);
+                    resolve(tileBatch as Tile[]);
+                }),
+        );
 
-        const index = createIndexInRowMajorOrder(tileRepository, tileMatrixSet);
+        const index = await IndexFactory.createIndexInRowMajorOrder(tileRepository, tileMatrixSet);
 
         expect(index).toBeDefined();
-        //expect(index.length).toBe(numTiles);
-        for(let i = 0; i < numTiles; i++){
-            const {size, offset} = index[i];
+        index.forEach((indexEntry, i) => {
+            const { size, offset } = index[i];
             expect(size).toBe(1);
-            expect(tiles[offset]).toStrictEqual(new Uint8Array([i]));
-        }
+            expect(offset).toBe(i);
+        });
     });
 
-    it("should create sparse index fragments in row-major order", ()=>{
-        const numTiles = 4**0 + 4**1 + 4;
-        const tiles: Uint8Array[] = range(numTiles).map( (i)=> new Uint8Array([i]));
+    it("should create sparse index fragments in row-major order", async () => {
+        const numTiles = 4 ** 0 + 4 ** 1 + 4;
+        const xyzIndices = [
+            { row: 0, column: 0 },
+            { row: 0, column: 0 },
+            { row: 1, column: 0 },
+            { row: 0, column: 1 },
+            { row: 1, column: 1 },
+            { row: 1, column: 1 },
+            { row: 1, column: 2 },
+            { row: 2, column: 1 },
+            { row: 2, column: 2 },
+        ];
+        const tiles = range(numTiles).map((i) => {
+            return { data: new Uint8Array([i]), ...xyzIndices.shift() };
+        });
         const tileMatrixSet: TileMatrix[] = [];
         tileMatrixSet.push({
             zoom: 0,
@@ -69,8 +89,8 @@ describe("createIndexInRowMajorOrder", ()=> {
                 minTileCol: 0,
                 minTileRow: 0,
                 maxTileCol: 0,
-                maxTileRow: 0
-            }
+                maxTileRow: 0,
+            },
         });
         tileMatrixSet.push({
             zoom: 1,
@@ -79,8 +99,8 @@ describe("createIndexInRowMajorOrder", ()=> {
                 minTileCol: 0,
                 minTileRow: 0,
                 maxTileCol: 1,
-                maxTileRow: 1
-            }
+                maxTileRow: 1,
+            },
         });
         tileMatrixSet.push({
             zoom: 2,
@@ -89,20 +109,25 @@ describe("createIndexInRowMajorOrder", ()=> {
                 minTileCol: 1,
                 minTileRow: 1,
                 maxTileCol: 2,
-                maxTileRow: 2
-            }
+                maxTileRow: 2,
+            },
         });
-        const tilesRepository = new MBTilesRepository("");
-        //tileRepository.getTilesByRowMajorOrderBatched = jest.fn(() => tiles);
+        const tileRepository = await MBTilesRepository.create("");
+        tileRepository.getTilesByRowMajorOrder = jest.fn(
+            (z) =>
+                new Promise((resolve) => {
+                    const tileBatch = z !== 1 ? tiles.splice(0, 1) : tiles.splice(0, 4);
+                    resolve(tileBatch as Tile[]);
+                }),
+        );
 
-        const index = createIndexInRowMajorOrder(tilesRepository, tileMatrixSet);
+        const index = await IndexFactory.createIndexInRowMajorOrder(tileRepository, tileMatrixSet);
 
         expect(index).toBeDefined();
-        //expect(index.length).toBe(numTiles);
-        for(let i = 0; i < numTiles; i++){
-            const {size, offset} = index[i];
+        index.forEach((indexEntry, i) => {
+            const { size, offset } = index[i];
             expect(size).toBe(1);
-            expect(tiles[offset]).toStrictEqual(new Uint8Array([i]));
-        }
+            expect(offset).toBe(i);
+        });
     });
-})
+});
