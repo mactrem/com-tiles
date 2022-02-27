@@ -23,7 +23,7 @@ the specific map tiles seems to be the most effective approach in terms of the n
 A COMTiles file archive has the following layout:  
 ![layout](assets/layout.svg)
 
-Based on the concept of index fragments most of the time only one additional pre-fetch is needed per zoom level for the current viewport of the map.
+Based on the concept of index fragments most of the time only one additional pre-fetch is needed per zoom level before accessing the map tiles for the current viewport of the map.
 This can also be prefetched later on
 For example if we use a tileset of europe.
 Zoom 0-10 are in the initial fetch.
@@ -32,41 +32,8 @@ fetch for 11-14 is needed, which means 4 additional fetches for index fagments (
 
 The extend of the tileset is defined in the ``TileMatrixSet`` of the metadata document.
 The coneceptsye of TileMatrixSet and TileMatrixSet limits is based on the the OGC Matrix in the metadata document.
+The concept and structure of the TileMatrixSet is inspired by the OGC draft 'OGC Two Dimensional Tile Matrix Set'
 
-
-The number of index entries (records) per fragment are specified via the aggreationCoefficent in tileMatrix definiton of the
-
-The fragment coordiante system always starts at the top right.
-Depending of the extend of the tilset the fragments can be sparse or dense.
-This can be calculated
-
-The user should not notice that additonal fetch requests
-
-A COMTiles archive mainly consists of a header with metadata, an index and the actual map tiles.
-The index
-The index is also streamable which means that only parts of the index can be requested
-
-Different approaches haven been evaluated: SFC, Directory based and fragments
-
-
-
-
-A COMT archive consists of the following parts:
-- Header  
-  Contains in particular the metadata which describes the TileSet.  
-  The metadata has a TileMatrixSet definition which describes the extend of the TileSet.  
-  The concept and structure of the TileMatrixSet is inspired by the OGC draft 'OGC Two Dimensional Tile Matrix Set' .  
-- Index  
-  The index is designed for the minimal number of request -> performance and many
-  In most cases only one index fragment fetch is needed before accessing the tiles. This can be cached later on.
-  The index references the map tiles in the data section`` in a compact way and consists of a collection of index entries.  
-  A index entry consist of a offset to the tile (default 5 bytes) and a size of a tile (4 bytes) in the data section.  
-  One important concept of COMTiles is that the index is also streamable which means that only parts of the index (fragments) can be requested
-  via http range requests.
-  The index is structured in a way that the index entries of the index which are intersecting the current
-  viewport of the map (and also with a additional buffer) can be requested with a minimal number of HTTP requests.  
-- Body  
-  Contains the actual raster or vector tiles.  
 
 ### Use Cases
 - Displaying map tiles in the browser via a web mapping framework like MapLibreGL JS
@@ -78,11 +45,6 @@ To convert a MBTiles database to a COM∂Tiles archive the [@comt/mbtiles-conver
 command line tool can be used.    
 For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the [@comt/maplibre-provider](packages/maplibre-provider) package can be used.    
 For the integration in other web mapping libraries like OpenLayer or Leaflet the [@comt/provider](packages/maplibre-provider) package can be used.
-
-
-mbitle-convert --max-old-space
-maplibre-provider for MapLibre -> for a example of how to use see the debug page
-Or use your own build on top of the ComtCache in the @comt/provider package
 
 
 #### Repository structure
