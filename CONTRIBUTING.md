@@ -6,7 +6,6 @@ To install the dependencies in all packages run the following command in the top
 npm install
 ````
 
-
 If you want to add a dependency named `abbrev` from the registry as a dependency 
 of your workspace `a`, you may use the workspace config to tell the npm installer that package should 
 be added as a dependency of the provided workspace:

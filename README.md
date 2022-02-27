@@ -6,11 +6,11 @@ the tiles or tile batches via http range requests.
 The main focus of COMTiles is to significantly reduce coasts for the hosting of large raster and vector tilesets at global scale 
 in the cloud.  
 COMTiles aims to be a MBTiles database for the cloud.
-Loading up over 350 million tiles for a planet scale dataset is inpractiable
-
-The same as the idea behind MBTiles to handle more easy
-
+Loading up over 350 million tiles for a planet scale vector tiels dataset is expensive in the upload and time consuming. 
+Also it's hard to handle such a large number of files and leaded to the creation of MBTiles.
+-> purpose of geopackage or MBTiles
 also the water tiles which are 2/3 of the whole planet dataset is inprecticble
+Any global-scale map system must acknowledge the earth is 70% ocean. Map image APIs already take advantage of this by special-casing solid blue PNG images.
 and wasting of money
 One archive file with the metdata and tiles in one file.
 
@@ -28,6 +28,12 @@ One main design goal of COMTiles is to reduce the number of requests for perform
 A COMTiles archive mainly consists of a header with metadata, an index and the actual map tiles.
 The index
 The index is also streamable which means that only parts of the index can be requested
+
+Different approaches haven been evaluated: SFC, Directory based and fragments
+
+
+A COMTiles file archive has the following layout:  
+![layout](assets/layout2.png)
 
 
 A COMT archive consists of the following parts:
@@ -69,6 +75,13 @@ Example video with a europe tileset hosted on a local MinIO storage with a disab
 Example video with a europe tileset hosted on a AWS S3 standard storage with a disabled browser cache:
 [![COMTiles YouTube video](./assets/AwsS3.png)](https://www.youtube.com/watch?v=5StxZbfvMUw)
 
+
+### Similar Formats
+#### Cloud Optimized GeoTiff
+#### GeoFlatBuf
+#### PMTiles
+#### Cotar
+Index is not streamable which limits the use case for smaller extracts
 
 ### References
 - https://medium.com/planet-stories/cloud-native-geospatial-part-2-the-cloud-optimized-geotiff-6b3f15c696ed
