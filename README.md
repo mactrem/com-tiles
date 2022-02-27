@@ -3,7 +3,7 @@
 Based on the ideas of [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of raster and in particular vector map tilesets.
 COMTiles are a streamable and read optimized file archive for hosting map tiles at global scale on a cloud object storage.
 Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.
-COMTiles in contrast is designed to be hosted only on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or server on the backend side.
+COMTiles in contrast is designed to be hosted on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or server on the backend side.
 The map tiles can be accessed directly from a browser via http range requests.
 The main focus of COMTiles is to significantly reduce coasts and simplify the hosting of large raster and vector tilesets at global scale 
 in the cloud.
@@ -11,25 +11,34 @@ Via COMTiles an object storage can be used as a spatial database for the visuali
 COMTiles aims to be a MBTiles database for the cloud.
 
 ### Concept  
-The basic idea is to use an additional `index ` which stores the address within the archive for and the size of a specific map tile.     
-For a planet wide vector tileset the index has about 3GB of size.    
-Because of this the index also has to be streamable to allow a fluent user experience already known for maps like Google Maps or OpenStreetMap.    
-One main design goal of COMTiles is to reduce the number of http requests for the download of the index for performance and cost reasons.    
+The basic idea is to use an additional `index` which stores the address within the archive for and the size of a specific map tile.
+For a planet wide vector tileset this index has about 3GB of size.
+Because of that the index has to be streamable which means that only parts of the index can be requested to allow a fluent user experience already known for maps like Google Maps or OpenStreetMap.    
+One main design goal of COMTiles is to minimize the number of http requests for the download of the index for performance and cost reasons.    
 With Space Filling Curves (Hilber, Z-Order, Row-Major), directory based and fragment based different approaches had been evaluated
 for finding the most effective way for structuring the index.  
-Tests showed that subdividing the index peer zoom level in so called ``index fragments`` seems to be the most effective approach 
-in terms of the number of http range requests.
+Tests showed that subdividing the index peer zoom level in so called ``index fragments`` with a varialbe number of ``index entries`` referencing
+the specific map tiles seems to be the most effective approach in terms of the number of http range requests.
+
+A COMTiles file archive has the following layout:  
+![layout](assets/layout.svg)
+
+Based on the concept of index fragments most of the time only one additional pre-fetch is needed per zoom level for the current viewport of the map.
+This can also be prefetched later on
+For example if we use a tileset of europe.
+Zoom 0-10 are in the initial fetch.
+For exploring a city like munich and die enviornment only one additonal
+fetch for 11-14 is needed, which means 4 additional fetches for index fagments (37kb) are needed.
+
+The extend of the tileset is defined in the ``TileMatrixSet`` of the metadata document.
+The coneceptsye of TileMatrixSet and TileMatrixSet limits is based on the the OGC Matrix in the metadata document.
+
+
 The number of index entries (records) per fragment are specified via the aggreationCoefficent in tileMatrix definiton of the
 
 The fragment coordiante system always starts at the top right.
 Depending of the extend of the tilset the fragments can be sparse or dense.
 This can be calculated
-
-The extend of the tileset is described via OGC Matrix in the metadata document.
-
-
-A COMTiles file archive has the following layout:  
-![layout](assets/layout.svg)
 
 The user should not notice that additonal fetch requests
 
@@ -39,11 +48,7 @@ The index is also streamable which means that only parts of the index can be req
 
 Different approaches haven been evaluated: SFC, Directory based and fragments
 
-Most of the time only one additional fetch is need.
-For example if we use a tileset of europe.
-Zoom 0-10 are in the initial fetch.
-For exploring a city like munich and die enviornment only one additonal
-fetch for 11-14 is needed, which means 4 additional fetches for index fagments (37kb) are needed.
+
 
 
 A COMT archive consists of the following parts:
@@ -69,17 +74,23 @@ A COMT archive consists of the following parts:
 - Downloading map extracts for the hosting on a dedicated on-premise infrastructure
 
 ### Tools
+To convert a MBTiles database to a COM∂Tiles archive the [@comt/mbtiles-converter](packages/converter/mbtiles-converter) 
+command line tool can be used.    
+For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the [@comt/maplibre-provider](packages/maplibre-provider) package can be used.    
+For the integration in other web mapping libraries like OpenLayer or Leaflet the [@comt/provider](packages/maplibre-provider) package can be used.
+
+
 mbitle-convert --max-old-space
 maplibre-provider for MapLibre -> for a example of how to use see the debug page
 Or use your own build on top of the ComtCache in the @comt/provider package
 
 
-### Repository structure
-- @comt/spec -> COMT file format specification
+#### Repository structure
+- @comt/spec -> COMTiles file format specification
 - @comt/provider -> Utility functions for working with COMTiles
 - @comt/maplibre-provider -> COMTiles provider for MapLibre GL JS  
 - @comt/server -> MapServer for serving tiles, can be hosted in a cloud native (serverless) environment
-- @comt/mbtiles-converter -> Converting map tiles stored in a MBTiles database to a COM Tiles archive
+- @comt/mbtiles-converter -> Converting map tiles stored in a MBTiles database to a COMTiles archive
 - @comt/tilelive-comtiles -> Integration into tilelive for generating Mapbox Vector Tiles 
 
 ### Demo
@@ -107,8 +118,11 @@ One archive file with the metdata and tiles in one file.
 
 ### Similar formats
 #### Cloud Optimized GeoTiff
+only raster
 #### GeoFlatBuf
+focus on analysis
 #### PMTiles
+see video
 #### Cotar
 Index is not streamable which limits the use case for smaller extracts
 
