@@ -41,10 +41,9 @@ The concept and structure of the TileMatrixSet is inspired by the OGC draft 'OGC
 - Downloading map extracts for the hosting on a dedicated on-premise infrastructure
 
 ### Tools
-To convert a MBTiles database to a COM∂Tiles archive the [@comt/mbtiles-converter](packages/converter/mbtiles-converter) 
-command line tool can be used.    
-For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the [@comt/maplibre-provider](packages/maplibre-provider) package can be used.    
-For the integration in other web mapping libraries like OpenLayer or Leaflet the [@comt/provider](packages/maplibre-provider) package can be used.
+- [@comt/mbtiles-converter](packages/converter/mbtiles-converter): To convert a MBTiles database to a COMTiles archive the @comt/mbtiles-converter command line tool can be used.    
+- [@comt/provider](packages/provider): For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the @comt/maplibre-provider package can be used.    
+- [@comt/maplibre-provider](packages/maplibre-provider): For the integration in other web mapping libraries like OpenLayer or Leaflet the @comt/maplibre-provider package can be used.
 
 
 #### Repository structure
