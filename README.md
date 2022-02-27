@@ -1,13 +1,13 @@
 ## Cloud Optimized Map Tiles (COMTiles)
 
-Based on the ideas of [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of raster and in particular vector map tilesets.  
-COMTiles are a streamable and read optimized file archive for hosting map tiles at global scale on a cloud object storage.   
-Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.  
-COMTiles in contrast is designed to be hosted only on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or server on the backend side.  
-The map tiles can be accessed directly from a browser via http range requests.  
+Based on the ideas of [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of raster and in particular vector map tilesets.
+COMTiles are a streamable and read optimized file archive for hosting map tiles at global scale on a cloud object storage.
+Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.
+COMTiles in contrast is designed to be hosted only on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or server on the backend side.
+The map tiles can be accessed directly from a browser via http range requests.
 The main focus of COMTiles is to significantly reduce coasts and simplify the hosting of large raster and vector tilesets at global scale 
-in the cloud.  
-Via COMTiles an object storage can be used as a spatial database for the visualization of map tiles.  
+in the cloud.
+Via COMTiles an object storage can be used as a spatial database for the visualization of map tiles. 
 COMTiles aims to be a MBTiles database for the cloud.
 
 ### Concept  
