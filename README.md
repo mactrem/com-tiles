@@ -33,7 +33,7 @@ Different approaches haven been evaluated: SFC, Directory based and fragments
 
 
 A COMTiles file archive has the following layout:  
-![layout](assets/layout2.png)
+![layout](assets/layout.svg)
 
 
 A COMT archive consists of the following parts:
