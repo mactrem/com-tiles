@@ -32,7 +32,7 @@ To minimize the number of batched tile requests the tiles in the data section sh
 The ordering of the tiles can be specified with the `tileOrdering` property (Hilbert, Z-Order, Row-Major) of the metadata document.
 
 #### Index
-The basic concept of a COMTiles archive is to create an additional `index` which stores the references (offset and size) to the actual map tiles located in the data section via so called `index entries (records)`.  
+The basic concept of a COMTiles archive is to create an additional `index` which stores the references (offset and size) to the actual map tiles located in the data section via so called `index entries (records)`.
 For a planet wide vector tileset this index has about 3 gb in size (will be optimized in v2 to about 1.3 gb).
 Because of the resulting size for large tilesets the index has to be streamable which means that only parts of the index can be requested to allow a fluent user experience already known for maps like Google Maps or OpenStreetMap.    
 One main design goal of COMTiles is to minimize the number of HTTP GET range requests for the download of parts of the index for performance and cost reasons.
