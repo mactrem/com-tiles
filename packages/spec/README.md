@@ -35,7 +35,7 @@ For a planet scale vector tileset (zoom 0-14) the index is about 3 GB in size, w
 To make the index streamable, so that only parts of the index can be fetched, the index is divided into `index fragments`.
 The number of index entries per fragment is defined via the `aggregationCoefficient` property in the metadata document.
 For quadtree based TileMatrixCRS like WebMercatorQuad it's recommended
-to be power of 4 -> NumberOfIndexRecordsPerFragment =  4^aggregationCoefficient.
+to be power of 4 (NumberOfIndexRecordsPerFragment=4^aggregationCoefficient).
 The aggregationCoefficient is defined for every zoom level and has a default value of 6 which means 4096 index entries are aggregated.
 The boundaries of a tileset are defined via a `TileMatrix` in the metadata document.
 Depending on the tileset boundaries a index fragment can be a sparse or dense fragment.
