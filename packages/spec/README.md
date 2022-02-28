@@ -37,11 +37,12 @@ The number of index entries per fragment is defined via the `aggregationCoeffici
 For quadtree based TileMatrixCRS like WebMercatorQuad it's recommended
 to be power of 4 (NumberOfIndexRecordsPerFragment=4^aggregationCoefficient).
 The aggregationCoefficient is defined for every zoom level and has a default value of 6 which means 4096 index entries are aggregated.
-The boundaries of a tileset are defined via a `TileMatrix` in the metadata document.
+The boundaries of a tileset are defined via the `TileMatrixSet` data structure in the metadata document.
 Depending on the tileset boundaries a index fragment can be a sparse or dense fragment.
-The order of how the index fragments are arranged the index can be defined with the `fragmentOrdering` property.
-The order of how the index entries within an index fragment are arranged can be defined with the `tileOrdering`.
-Tests showed that index entries and fragments arranged in the `RowMajor` (default) order produces the best results.
+Based on the `tile matrix set limits` structure defined in the metdata document the number of index entries in a sparse fragment can be calculated.
+The order of how the index fragments are arranged can be defined with the `fragmentOrdering` property.
+The order of how the index entries within an index fragment are arranged can be defined with the `tileOrdering` property.
+Tests showed that index entries and fragments arranged in the `RowMajor` order (default) produces the best results.
 In addition the index entries can also be ordered via the space filling curves `Z-order` and `Hilbert`.
 
 **Data**  
