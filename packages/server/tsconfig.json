@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "es2022",
+    "outDir": "./dist",
+    "resolveJsonModule": true
+  }
+}

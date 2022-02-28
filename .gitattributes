@@ -1,0 +1,9 @@
+* text eol=lf
+
+*.png binary
+*.mbtiles binary
+*.pbf binary
+*.ttf binary
+*.cot binary
+
+*.pbf filter=lfs diff=lfs merge=lfs -text
