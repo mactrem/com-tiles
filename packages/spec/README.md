@@ -81,12 +81,12 @@ Example for the index aggregation of sparse fragments:
 ## Glossary
 - MapTile
 - TileSet
-- TileMatrixBuilder
+- TileMatrixSet
 - TileMatrix
 - TileMatrixLimits
 - Index
 - IndexFragment
-- IndexRecord
+- IndexEntry
 - AggregationCoefficient: Specifies the Number of index entries aggregated in one index fragment. 
   For quadtree based TileMatrixCRS like WebMercatorQuad it's recommended
   to be power of 4.
