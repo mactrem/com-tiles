@@ -8,8 +8,8 @@ the tiles or tile batches via http range requests.
 ### Layout
 
 Little endian encoding is used.  
-A COMTiles file archive has the following layout:
-![layout](assets/layout.png)
+A COMTiles file archive has the following layout:   
+![layout](assets/layout.png)    
 **Magic**  
 4-byte ANSI string ("comt") 
 
@@ -44,33 +44,10 @@ Tests showed that index entries and fragments arranged in the `RowMajor` (defaul
 In addition the index entries can also be ordered via the space filling curves `Z-order` and `Hilbert`.
 
 **Data**  
-Raster or vector tile Blobs. 
-The content is specified in the `tileFormat` property of the metadata document.
+The data section contains the actual vector or raster tile blobs.
+The encoding is specified with the `tileFormat` property in the metadata document.
 The used order of the map tiles can be specified via the `tileOrdering` property in the metadata document.
 Besides the default value `RowMajor` there can be also the space filling curves `ZOrder` and `Hilbert`.
-  
-
-
-
-  - The Data are ordered in a space filling curve as specified in the metatdata ``dataOrdering`` property. By ordering the data in a space filling curve. the get requests can be batched to minimize http rang request in addition to minimize cache misses and page fault on the OS side in the cloud
-  - Reduce number of range request and therefore reduce the coast by batching tile request e.g. instead of 32 only 4 are needed when use row-major order for the data
-
-
-
-
-
-  - The index is also streamable which means that only parts of the index can be requested
-  - This is important because at planet scale the index can have size about 2.7 GB with 8 bytes per IndexEntry?
-  - The index consists of a array of index entries and is clustered per zoom in cluster cells
-  - A index entry consists of a TileOffset (default 4 bytes) and TileSize (default 4 bytes)
-  - The size of the cluster cells is defined via the coalescence coefficient in the metadata document
-  - Store offset per fragment and ensure that the tiles are also ordered in the same way
-  - TODO: merge indexFragmentOrdering, indexRecordOrdering and dataOrdering
-  - At the beginning of each index fragment the offset is stored with 5 bytes 
-  - Layout IndexRecord
-    - Offset -> size specified in the metadata document -> defaults to uint32 > 2 bytes for relative offset
-    - TileSize -> unit32 or 3 bytes (16 MB)?
-
 
 ## Concepts
 
@@ -81,13 +58,6 @@ Inspired by 'OGC Two Dimensional Tile Matrix Set' OGC draft
 -> TileMatrix
 
 ### Index Fragments
-Idea -> Minimal number of HTTP range requests because every requests slow down and has to be payed
-There is an additional request or requests per zoom level for fetching the index fragment
-before accessing the tiles. This index request can be fetched later on and even
-if an index request is necessary tests showed that loading the tiles including the
-index fetch on only a classic AWS S3 storage happens under 500 milliseconds. -> standard speicherklasse
-mit cdn noch bessere ergbrenisse möglich -> aber dass gehört nicht in spec
-
 
 ### Index Aggregation
 -> Explain Dense vs Sparse Fragments
@@ -121,7 +91,7 @@ Example:
 
 ### Loading the index
 
-### Improvements -> v2
+### Improvements for v2
 -> index fragment only one absolute offset per fragment and every index entries holds only the tile size
 -> index table as part of the header -> compress fragments
 
@@ -139,12 +109,4 @@ Example:
   Number of index records to aggregate to a fragment. 
   For quadtree based TileMatrixCRS like WebMercatorQuad it's recommended
   to be power of 4. Has to be quadtratic -> Or only on side and quadtratic so power of 2
-
-
-## References
-- https://medium.com/planet-stories/cloud-native-geospatial-part-2-the-cloud-optimized-geotiff-6b3f15c696ed
-- https://towardsdatascience.com/turn-amazon-s3-into-a-spatio-temporal-database-40f1a210e943
-- https://github.com/flatgeobuf/flatgeobuf
-- https://medium.com/@mojodna/tapalcatl-cloud-optimized-tile-archives-1db8d4577d92
-- https://docs.tiledb.com/main/basic-concepts/terminology
-- https://github.com/protomaps/PMTiles
+  

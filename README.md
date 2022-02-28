@@ -9,9 +9,14 @@ in the cloud.
 Via COMTiles an object storage can be used as a spatial database for the visualization of map tiles.
 COMTiles aims to be a MBTiles database for the cloud.
 
+### Use Cases
+- Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS
+- Downloading map extracts for the offline usage in apps
+- Downloading map extracts for the hosting on a dedicated on-premise infrastructure
+
 ### Concept
 A COMTiles archive mainly consists of a metdata, index and data section.  
-For a more detailed description of the format have a look at the [specification](packages/specification).
+For a more detailed description of the format have a look at the [specification](packages/spec).
 
 A COMTiles file archive has the following layout:  
 ![layout](assets/layout.svg)
@@ -47,11 +52,6 @@ In addition parts of the index can also be unfragmented which means the index en
 The unfragmented part of the index must be downloaded with the first initial fetch when the page loads.
 For a planet wide tileset this should be zoom 0 to 7.
 
-### Use Cases
-- Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS
-- Downloading map extracts for the offline usage in apps
-- Downloading map extracts for the hosting on a dedicated on-premise infrastructure
-
 ### Tools
 - [@comt/mbtiles-converter](packages/converter/mbtiles-converter): To convert a MBTiles database to a COMTiles archive the @comt/mbtiles-converter command line tool can be used.
 - [@comt/provider](packages/provider): For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the @comt/maplibre-provider package can be used.
@@ -80,9 +80,10 @@ Europe tileset hosted on a AWS S3 standard storage with a disabled browser cache
 
 
 ### Advantages over directly hosting the map tiles
-
-
-Loading up over 350 million tiles for a planet scale vector tiels dataset is expensive in the upload and time consuming.
+- Loading up over 350 million tiles for a planet scale vector tiels dataset
+- Every single put request has to be paid
+- Als
+- Not a single format for the data
 
 Also it's hard to handle such a large number of files and leaded to the creation of MBTiles.
 -> purpose of geopackage or MBTiles
