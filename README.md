@@ -45,7 +45,7 @@ Depending on the boundaries of the tileset the index fragments can be sparse or 
 Based on the `tile matrix set limits` structure defined in the metdata document the number of index entries in a sparse fragment can be calculated.
 In addition parts of the index can also be unfragmented which means the index entries are not aggregated into fragments.
 The unfragmented part of the index must be downloaded with the first initial fetch when the page loads.
-For a planet wide tileset this should be zoom 0 to 7.
+For a planet wide tileset this should be zoom level 0 to 7.
 
 ### Tools
 - [@comt/mbtiles-converter](packages/converter/mbtiles-converter): To convert a MBTiles database to a COMTiles archive the @comt/mbtiles-converter command line tool can be used.
