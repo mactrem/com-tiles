@@ -76,7 +76,11 @@ Example video with a europe tileset hosted on a AWS S3 standard storage with a d
 
 
 ### Advantages over directly hosting the map tiles
-Loading up over 350 million tiles for a planet scale vector tiels dataset is expensive in the upload and time consuming.
+- Loading up over 350 million tiles to cloud storage for a planet scale vector tiles dataset is expensive because every tile
+  counts as a transaction which has to be paid
+- Uploading a single large file is much faster t
+- Not a single format for the data
+
 Also it's hard to handle such a large number of files and leaded to the creation of MBTiles.
 -> purpose of geopackage or MBTiles
 also the water tiles which are 2/3 of the whole planet dataset is inprecticble
@@ -87,13 +91,27 @@ One archive file with the metdata and tiles in one file.
 -> put request costs
 -> water tiles have to be stored
 -> not a single format for metadata
-
 ### Similar formats
 #### Cloud Optimized GeoTiff
-#### GeoFlatBuf
+A [Cloud Optimized GeoTIFF (COG) ](https://www.cogeo.org/) is a regular GeoTIFF file with an internal organization that let clients ask for just the portions of a file that they need
+via HTTP GET range requests. A COG is limited to raster data.
+
+#### FlatGeobuf
+
 #### PMTiles
+PMTiles is a single-file archive format for pyramids of map tiles
+
+Index is structured in tile pyramids compared to fragments in a COMT archive.
+This leads to a large number of request at global sacle when zooming into zoom level 7.
+Also the index is about double in size why less part of the index can be downloaded with the first initial fetch.
+
+see https://studio.youtube.com/video/e1VvLJeduRo/edit for a comparision
+index around double in size
+
+so in the intial request in the vidoe for euroepe can requested to zoom 11 instead 7
 #### Cotar
-Index is not streamable which limits the use case for smaller extracts
+Index is not streamable which limits the use case to smaller extracts-
+
 
 ### References
 - https://medium.com/planet-stories/cloud-native-geospatial-part-2-the-cloud-optimized-geotiff-6b3f15c696ed

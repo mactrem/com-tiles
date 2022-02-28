@@ -79,44 +79,19 @@ Europe tileset hosted on a AWS S3 standard storage with a disabled browser cache
 [![COMTiles YouTube video](./assets/AwsS3.png)](https://www.youtube.com/watch?v=5StxZbfvMUw)
 
 
-### Advantages over directly hosting the map tiles
-- Loading up over 350 million tiles for a planet scale vector tiels dataset
-- Every single put request has to be paid
-- Als
-- Not a single format for the data
-
-Also it's hard to handle such a large number of files and leaded to the creation of MBTiles.
--> purpose of geopackage or MBTiles
-also the water tiles which are 2/3 of the whole planet dataset is inprecticble
-Any global-scale map system must acknowledge the earth is 70% ocean. Map image APIs already take advantage of this by special-casing solid blue PNG images.
-and wasting of money
-One archive file with the metdata and tiles in one file.
--> time consuming
--> put request costs
--> water tiles have to be stored
--> not a single format for metadata
-
 ### Similar formats
 #### Cloud Optimized GeoTiff
-
 A [Cloud Optimized GeoTIFF (COG) ](https://www.cogeo.org/) is a regular GeoTIFF file with an internal organization that let clients ask for just the portions of a file that they need
 via HTTP GET range requests. A COG is limited to raster data.
 
 #### FlatGeobuf
-Focus on analysis because no generalizatin via tiles.
-Based on to cluster the data on a packed Hilbert R-Tree enabling fast bounding box spatial filtering
+
 #### PMTiles
-Similar concepts.
-Index is based on tile pyramids compared to fragments in a COMT archive.
-This leads to a large number of request at global sacle when zooming into zoom level 7.
-Also the index is about double in size why less part of the index can be downloaded with the first initial fetch.
+PMTiles is a single-file archive format for pyramids of map tiles.
+For a comparison see the following [video](https://www.youtube.com/watch?v=e1VvLJeduRo)
 
-see video for comparision
-index around double in size
-
-so in the intial request in the vidoe for euroepe can requested to zoom 11 instead 7
 #### Cotar
-Index is not streamable which limits the use case for smaller extracts
+
 
 ### References
 - https://medium.com/planet-stories/cloud-native-geospatial-part-2-the-cloud-optimized-geotiff-6b3f15c696ed

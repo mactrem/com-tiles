@@ -31,12 +31,13 @@ A single index entry consists of a offset (default 5 bytes) and the size of the 
 in the data section. Offset and size are encoded as unsigned integers in the little-endian order.
 With the defaults a map tile can have a maximum size of 4 GB and an offset of 1 TB.
 The number of bytes for the offset can be defined via the `tileOffsetBytes` property in the metadata document.
-For a planet scale vector tileset (zoom 0-14) the index is about 3 GB in size, which is to large to download the index as a whole.   
+For a planet scale vector tileset (zoom 0-14) the index is about 3 GB in size, which is to large to download the index as a whole.
 To make the index streamable, so that only parts of the index can be fetched, the index is divided into `index fragments`.
 The number of index entries per fragment is defined via the `aggregationCoefficient` property in the metadata document.
--> NumberOfIndexRecordsPerFragment =  4^aggregationCoefficient
+For quadtree based TileMatrixCRS like WebMercatorQuad it's recommended
+to be power of 4 -> NumberOfIndexRecordsPerFragment =  4^aggregationCoefficient.
 The aggregationCoefficient is defined for every zoom level and has a default value of 6 which means 4096 index entries are aggregated.
-The boundaries of a tileset are defined via a `TileMatrix` in the metadata document.  
+The boundaries of a tileset are defined via a `TileMatrix` in the metadata document.
 Depending on the tileset boundaries a index fragment can be a sparse or dense fragment.
 The order of how the index fragments are arranged the index can be defined with the `fragmentOrdering` property.
 The order of how the index entries within an index fragment are arranged can be defined with the `tileOrdering`.
@@ -52,49 +53,29 @@ Besides the default value `RowMajor` there can be also the space filling curves 
 ## Concepts
 
 ### TileMatrix
-Inspired by 'OGC Two Dimensional Tile Matrix Set' OGC draft
--> TileSet
--> TileMatrixLimits
--> TileMatrix
+Inspired by 'OGC Two Dimensional Tile Matrix Set' OGC specification (draft).
+- TileSet
+- TileMatrix
+- TileMatrixLimits
 
 ### Index Fragments
 
 ### Index Aggregation
--> Explain Dense vs Sparse Fragments
--> Explain Index Fragments
-One important concept of COMTiles is that the index is also streamable which means that only parts (Fragments) of the index can be requested
-via http range requests. This important because when deploying a vector tiles tileset for the full planet the index can get about 2.7 GB of size (zoom 0-14).
-One main goal of COMTiles is to structure the index in a way that the index records of the index which are intersecting the current
-viewport of the map (and also with a additional buffer) can be requested with a minimal number of http requests. Two approaches where examined of how to organize
-the index entries of an index for a given TileMatrix (zoom level) of a TileMatrixBuilder:   
-- ordering via space filling curves (SFC) e.g. row-major order, hilbert curve, Z-Order (morton code)  
-- aggregating the index records in fragments 
-
-Tests showed that ordering the index entries in a row-major order is in most cases more efficient in terms of the number of requests compared to hilbert curve or Z-Order.   
-In the majority of cases it turned out to be more effective to cluster the index entries of a TileMatrix in cluster cells compared to using an SFC.  
-The number of index records which are part of a cluster cell are specified by the ``coalescence coefficient`` for every TileMatrix of TileMatrixBuilder. 
-
-The number of index records will be aggregated by a quarter with a incrementation of the coalescenceCoefficient by one 
--> NumberOfIndexRecordsPerClusterCell =  4^aggregationCoefficient  
-For example a ``aggregation coefficient`` of 6 means that 4096 (4^6) index records are aggregated in one cluster cell.  
-A index cluster always has the extent of a quadtree node at a specific zoom level to be cacheable in the browser.
-Test showed that ``aggregation coefficient`` of 6 shows good results regarding the latency.
-A index fragment can be dense or sparse depending on the used aggregation coefficient and area of the tileset. 
-The client has to handle the sparse matrix via the TileMatrixBuilder min/max rows/columns.
-
-Example:
+Example for the index aggregation of sparse fragments:
 - TileMatrixCRS: WebMercatorQuad
 - Extracted Area: Europe and Africa
-- Index and Cluster Cell Order: Row-Major
+- Index fragment order: Row-Major
 
 ![sparseIndex](assets/sparseIndex.png)
 
 ### Loading the index
 
 ### Improvements for v2
--> index fragment only one absolute offset per fragment and every index entries holds only the tile size
--> index table as part of the header -> compress fragments
-
+- Only one absolute offset per fragment is stored and every index entry holds only the tile size.
+  The client is responsible for resolving the absolute offset for the index entries of a fragment.
+  This can reduce the index size for a planet vector tileset from 3gb to about 1.3gb.
+- Compress the index and add a additional index table to the archive which references the variable sized index fragments.
+  The full index table can be fetched within the initial request.
 
 ## Glossary
 - MapTile
@@ -105,8 +86,7 @@ Example:
 - Index
 - IndexFragment
 - IndexRecord
-- AggregationCoefficient 
-  Number of index records to aggregate to a fragment. 
+- AggregationCoefficient: Specifies the Number of index entries aggregated in one index fragment. 
   For quadtree based TileMatrixCRS like WebMercatorQuad it's recommended
-  to be power of 4. Has to be quadtratic -> Or only on side and quadtratic so power of 2
+  to be power of 4.
   
