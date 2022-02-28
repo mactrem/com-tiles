@@ -9,11 +9,6 @@ in the cloud.
 Via COMTiles an object storage can be used as a spatial database for the visualization of map tiles.
 COMTiles aims to be a MBTiles database for the cloud.
 
-### Use Cases
-- Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS
-- Downloading map extracts for the offline usage in apps
-- Downloading map extracts for the hosting on a dedicated on-premise infrastructure
-
 ### Concept
 A COMTiles archive mainly consists of a metdata, index and data section.  
 For a more detailed description of the format have a look at the [specification](packages/spec).
@@ -92,6 +87,11 @@ For a comparison see the following [video](https://www.youtube.com/watch?v=e1VvL
 
 #### Cotar
 
+
+### Use Cases
+- Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS
+- Downloading map extracts for the offline usage in apps
+- Downloading map extracts for the hosting on a dedicated on-premise infrastructure
 
 ### References
 - https://medium.com/planet-stories/cloud-native-geospatial-part-2-the-cloud-optimized-geotiff-6b3f15c696ed
