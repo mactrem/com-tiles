@@ -1,0 +1,55 @@
+{
+	"type": "object",
+	"required": [
+		"name",
+		"tileFormat",
+		"tileMatrixSet"
+	],
+	"properties": {
+		"name": {
+			"type": "string",
+			"description": "Name of the tileset."
+		},
+		"description": {
+			"type": "string",
+			"description": "Description of the tileset."
+		},
+		"attribution": {
+			"type": "string",
+			"description": "Text attribution to be displayed on the map."
+		},
+		"tileOffsetBytes": {
+			"type": "integer",
+			"description": "Number of bytes used to encode the offset to a map tile in an index record. Defaults to 4 bytes."
+		},
+		"tileFormat": {
+			"$ref": "tileFormat.json"
+		},
+		"tileMatrixSet": {
+			"type": "object",
+			"description": "Collection of tile matrices defined at different scales with a common coordinate reference system.",
+			"properties": {
+				"tileMatrixCRS": {
+					"type": "string",
+					"description": "Name of the Common TileMatrixSet definition (https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#61) as defined in the 'OGC Two Dimensional Tile Matrix Set' OGC draft. Defaults to WebMercatorQuad."
+				},
+				"fragmentOrdering": {
+					"description": "Specifies how the index fragments and data fragments are ordered. Defaults to row-major order",
+					"$ref": "spaceFillingCurveOrdering.json"
+				},
+				"tileOrdering": {
+					"description": "Specifies how the index entries within an index fragment and the tiles within an tile fragment are ordered. Defaults to row-major order",
+					"$ref": "spaceFillingCurveOrdering.json"
+				},
+				"tileMatrix": {
+					"type": "array",
+					"items": {
+						"$ref": "tileMatrix.json"
+					},
+					"description": "Collection of tile matrices defined at different scales."
+				}
+			},
+			"additionalProperties": false
+		}
+	}
+}

@@ -1,0 +1,9 @@
+{
+  "name": "comt",
+  "workspaces": [
+    "./packages/*"
+  ],
+  "devDependencies": {
+    "@types/sqlite3": "^3.1.7"
+  }
+}
