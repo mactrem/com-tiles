@@ -88,7 +88,7 @@ via HTTP GET range requests. A COG is limited to raster data.
 
 #### PMTiles
 PMTiles is a single-file archive format for pyramids of map tiles.
-For a comparison see the following [video](https://www.youtube.com/watch?v=e1VvLJeduRo)
+For a comparison see the following [video](https://www.youtube.com/watch?v=e1VvLJeduRo).
 
 #### Cotar
 
