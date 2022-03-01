@@ -1,13 +1,14 @@
 import { Metadata } from "@comt/spec";
 import { TileMatrix } from "@comt/spec/types/tileMatrix";
 import createWmqTileMatrixSet, { BoundingBox, TileMatrixFactory } from "./tileMatrixFactory";
+import { TileFormat } from "@comt/spec/types/tileFormat";
 
 export default class WebMercatorQuadMetadataBuilder {
     private name = "";
     private description = "";
     private attribution = "";
     private tileOffsetBytes = 5;
-    private tileFormat: Metadata["tileFormat"] = "pbf";
+    private tileFormat: TileFormat = "pbf";
     private bbox: BoundingBox;
     private minZoom = 0;
     private maxZoom = 14;
@@ -33,7 +34,7 @@ export default class WebMercatorQuadMetadataBuilder {
         return this;
     }
 
-    setTileFormat(tileFormat: Metadata["tileFormat"]) {
+    setTileFormat(tileFormat: TileFormat) {
         this.tileFormat = tileFormat;
         return this;
     }
@@ -62,12 +63,9 @@ export default class WebMercatorQuadMetadataBuilder {
     }
 
     /*
-     * The boundary is in all TileMatrix (zoom levels) instances of the TileMatrixBuilder the same.
-     * A distinction must be made between:
-     * - COMTiles metadata
-     * - Metadata of the original tileset like MVT because additional metadata are needed -> separate version, json with vector layers
-     *   -> additional optional fields has to be possible like in the MBTiles format -> https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md
-     * - Zoom 0 - 7 have no aggregation factor, 8 - 14 an aggregation factor of 6
+     * The boundary is in all TileMatrix (zoom levels) instances the same.
+     * Zoom 0 to 7 are not fragmented and have an aggregation factor of -1.
+     * Zoom 8 to 14 have an aggregation factor of 6.
      * */
     build(): Metadata {
         if (!this.name || !this.bbox) {

@@ -14,7 +14,7 @@ export interface TileMatrix {
    */
   zoom: number;
   /**
-   * Describes how many index records are aggregated to a fragment. A value of -1 specifies that no index fragmentation is used.
+   * Describes how many index records are aggregated to a fragment. The total number of index records per fragment is calculated by 4^aggregationCoefficient.A value of -1 specifies that no index fragmentation is used.
    */
   aggregationCoefficient: number;
   /**

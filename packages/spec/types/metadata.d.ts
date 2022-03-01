@@ -39,7 +39,7 @@ export interface Metadata {
      */
     fragmentOrdering?: "RowMajor" | "ZOrder" | "Hilbert";
     /**
-     * Specifies how the index records within an index fragment and the tiles within an tile fragment are ordered. Defaults to row-major order
+     * Specifies how the index entries within an index fragment and the tiles within an tile fragment are ordered. Defaults to row-major order
      */
     tileOrdering?: "RowMajor" | "ZOrder" | "Hilbert";
     /**

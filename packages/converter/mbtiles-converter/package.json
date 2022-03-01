@@ -2,6 +2,11 @@
   "name": "@comt/mbtiles-converter",
   "version": "1.0.0-beta.0",
   "description": "Converts a MBTiles database to a COMTiles archive.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mactrem/com-tiles.git"
+  },
   "main": "dist/src/index.js",
   "bin": {
     "convert-comtiles": "./dist/src/index.js"
@@ -15,7 +20,6 @@
     "lint": "eslint --max-warnings=0 --fix --ext .ts src",
     "format": "prettier --write \"**/*.ts\""
   },
-  "license": "MIT",
   "dependencies": {
     "@comt/spec": "*",
     "commander": "^9.0.0",
@@ -32,5 +36,9 @@
   },
   "files": [
     "dist/*"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/mactrem/com-tiles/issues"
+  },
+  "homepage": "https://github.com/mactrem/com-tiles#readme"
 }

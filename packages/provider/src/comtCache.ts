@@ -51,7 +51,7 @@ class IndexCache {
      * when the last fragment of the partial index is incomplete, but in general this doesn't matter.
      * */
     constructor(
-        private readonly metadata: Metadata, //Metadata["tileMatrixSet"],
+        private readonly metadata: Metadata,
         private readonly partialIndex = new Uint8Array(0),
         private readonly cacheSize?: number,
     ) {

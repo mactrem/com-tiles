@@ -2,6 +2,11 @@
   "name": "@comt/maplibre-provider",
   "version": "1.0.0-beta.0",
   "description": "COMTiles provider for MapLibre GL JS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mactrem/com-tiles.git"
+  },
   "main": "dist/src/comtCache.js",
   "engines": {
     "node": ">=15"
@@ -14,15 +19,6 @@
     "lint": "eslint --max-warnings=0 --fix --ext .ts src",
     "format": "prettier --write \"**/*.ts\" \"**./*.json\""
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/mactrem/com-tiles.git"
-  },
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/mactrem/com-tiles/issues"
-  },
-  "homepage": "https://github.com/mactrem/com-tiles#readme",
   "dependencies": {
     "@comt/provider": "*",
     "maplibre-gl": "^1.15.2"
@@ -48,5 +44,9 @@
   },
   "files": [
     "dist/*"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/mactrem/com-tiles/issues"
+  },
+  "homepage": "https://github.com/mactrem/com-tiles#readme"
 }

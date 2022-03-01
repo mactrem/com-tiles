@@ -2,11 +2,11 @@ import express from "express";
 import cors from "cors";
 import { program } from "commander";
 import provider from "@comt/provider";
-import { Metadata } from "@comt/spec";
 import * as path from "path";
 import { ComtReader } from "./comtReader.js";
+import { TileFormat } from "@comt/spec/types/tileFormat";
 
-const SUPPORTED_TILE_FORMAT: Metadata["tileFormat"] = "pbf";
+const SUPPORTED_TILE_FORMAT: TileFormat = "pbf";
 
 program
     .option("-f, --fileName <path>", "specify path and filename of the COMTiles archive file")

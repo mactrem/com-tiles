@@ -1,6 +1,6 @@
 import { TileMatrix } from "@comt/spec/types/tileMatrix";
 import { MBTilesRepository, Tile } from "./mbTilesRepository";
-import { TileMatrixLimits } from "./types";
+import { TileMatrixLimits } from "@comt/spec/types/tileMatrixLimits";
 
 /* 5 bytes offset and 4 bytes size as default */
 export interface IndexEntry {

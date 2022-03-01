@@ -1,7 +1,16 @@
-## COMTiles mbtiles-converter
+## @comt/mbtiles-converter
 
-Converts a MBTiles file into a COMTiles archive.  
-Currently the full index of the COMTiles archive is loaded into memory.  
-For a COMTiles archive at planet scale the index can have approximately 3 GB in size.  
-For converting a plant scale MBTiles database the ```--max-old-space-size``` of the Node process has to be adjusted.
-  
+The `@comt/mbtiles-converter` command line tool can be used to convert a MBTiles file into a COMTiles archive.  
+The generated COMTiles archive can be hosted on an object storage like AWS S3 or Azure Blob Storage
+and directly accessed from a browser with the [@comt/maplibre-provider](../../maplibre-provider) library.
+
+To use the @comt/mbtiles-converter Node.js with version 16 or higher has to be installed on the system.  
+Use the following command to install the @comt/mbtiles-converter 
+````bash
+npm install @comt/mbtiles-converter
+````
+
+For converting a MBTiles database `test.mbtiles` into a COMTiles archive `test.comt` execute
+````bash
+convert-comtiles -i test.mbtiles -o test.comt
+````
