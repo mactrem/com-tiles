@@ -1,5 +1,5 @@
 {
-  "name": "@comt/mbtiles-converter",
+  "name": "@com-tiles/mbtiles-converter",
   "version": "1.0.0-beta.0",
   "description": "Converts a MBTiles database to a COMTiles archive.",
   "license": "MIT",

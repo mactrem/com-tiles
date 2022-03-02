@@ -1,5 +1,5 @@
 {
-  "name": "@comt/maplibre-provider",
+  "name": "@com-tiles/maplibre-provider",
   "version": "1.0.0-beta.0",
   "description": "COMTiles provider for MapLibre GL JS",
   "license": "MIT",

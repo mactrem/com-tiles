@@ -1,5 +1,5 @@
 {
-  "name": "comt",
+  "name": "com-tiles",
   "workspaces": [
     "./packages/*"
   ],

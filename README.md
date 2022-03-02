@@ -48,17 +48,17 @@ The unfragmented part of the index must be downloaded with the first initial fet
 For a planet wide tileset this should be zoom level 0 to 7.
 
 ### Tools
-- [@comt/mbtiles-converter](packages/converter/mbtiles-converter): To convert a MBTiles database to a COMTiles archive the @comt/mbtiles-converter command line tool can be used.
-- [@comt/provider](packages/provider): For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the @comt/maplibre-provider package can be used.
-- [@comt/maplibre-provider](packages/maplibre-provider): For the integration in other web mapping libraries like OpenLayer or Leaflet the @comt/maplibre-provider package can be used.
+- [@com-tiles/mbtiles-converter](packages/converter/mbtiles-converter): To convert a MBTiles database to a COMTiles archive the `@com-tiles/mbtiles-converter` command line tool can be used.
+- [@com-tiles/maplibre-provider](packages/maplibre-provider): For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the `@com-tiles/maplibre-provider`package can be used.
+- [@com-tiles/provider](packages/provider): For the integration in other web mapping libraries like OpenLayer or Leaflet the `@com-tiles/provider` package can be used.
 
 ### Repository structure
-- @comt/spec -> COMTiles file format specification
-- @comt/provider -> Utility functions for working with COMTiles
-- @comt/maplibre-provider -> COMTiles provider for MapLibre GL JS
-- @comt/server -> MapServer for serving tiles, can be hosted in a cloud native (serverless) environment
-- @comt/mbtiles-converter -> Converting map tiles stored in a MBTiles database to a COMTiles archive
-- @comt/tilelive-comtiles -> Integration into tilelive for generating Mapbox Vector Tiles
+- [@com-tiles/spec](packages/spec): COMTiles file format specification
+- [@com-tiles/provider](packages/provider): Utility functions for working with COMTiles
+- [@com-tiles/maplibre-provider](packages/maplibre-provider): COMTiles provider for MapLibre GL JS
+- [@com-tiles/server](packages/server): MapServer for serving tiles, can be hosted in a cloud native (serverless) environment
+- [@com-tiles/mbtiles-converter](packages/converter/mbtiles-converter): Converting map tiles stored in a MBTiles database to a COMTiles archive
+- [@com-tiles/tilelive-comtiles](packages/converter/tilelive-comtiles): Integration into tilelive for generating Mapbox Vector Tiles
 
 ### Demo
 In the following examples the europe tileset is based on a MBTiles database from [MapTiler](https://www.maptiler.com/data/) and converted to
