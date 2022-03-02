@@ -1,5 +1,5 @@
 import maplibregl from "maplibre-gl";
-import * as provider from "@comt/provider";
+import * as provider from "@com-tiles/provider";
 
 interface XyzIndex {
     x: number;

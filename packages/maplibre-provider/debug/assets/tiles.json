@@ -30,5 +30,5 @@
     2.5444437451708134e-14,
     1
   ],
-  "tiles": ["comt://http://0.0.0.0:9000/comtiles/europe-new.cot?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=GOU2K72ZS2U565K3K994%2F20220227%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20220227T181425Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJHT1UySzcyWlMyVTU2NUszSzk5NCIsImV4cCI6MTY0NTk4OTI2MSwicGFyZW50IjoibWluaW9hZG1pbiJ9.3IZ6f_MzHvOp62ZTQCPY9oexooVs0KhzuUGkOTz36SrBwYM2_hEN-ofbcNxgmLSnM26TCxU2pdiybC7pxAphIA&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=767077a5e0e5303f250c0fdfa466d3e83f1788cce49e1ceb86e89ace8a3bc469/{z}/{x}/{y}"]
+  "tiles": ["comt://https://{z}/{x}/{y}"]
 }

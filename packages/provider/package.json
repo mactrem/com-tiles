@@ -1,6 +1,6 @@
 {
   "name": "@com-tiles/provider",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.2",
   "description": "Utility functions for working with COMTiles",
   "license": "MIT",
   "repository": {
@@ -19,7 +19,7 @@
     "format": "prettier --write \"**/*.ts\""
   },
   "dependencies": {
-    "@comt/spec": "*",
+    "@com-tiles/spec": "*",
     "pako": "^2.0.4"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 {
   "name": "@com-tiles/maplibre-provider",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "description": "COMTiles provider for MapLibre GL JS",
   "license": "MIT",
   "repository": {
@@ -20,7 +20,7 @@
     "format": "prettier --write \"**/*.ts\" \"**./*.json\""
   },
   "dependencies": {
-    "@comt/provider": "*",
+    "@com-tiles/provider": "*",
     "maplibre-gl": "^1.15.2"
   },
   "devDependencies": {

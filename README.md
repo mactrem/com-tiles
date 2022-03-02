@@ -73,6 +73,18 @@ Europe tileset hosted on a local MinIO storage with a disabled browser cache:
 Europe tileset hosted on a AWS S3 standard storage with a disabled browser cache:
 [![COMTiles YouTube video](./assets/AwsS3.png)](https://www.youtube.com/watch?v=5StxZbfvMUw)
 
+### COMTiles archive vs directly hosting the map tiles
+**Advantages of COMTiles**
+- Loading up over 350 million tiles to a cloud storage for a planet scale vector tiles dataset is significantly more expensive because every tile
+  upload has to be paid separately
+- Uploading a single large file is noticeably faster compared to uploading millions of individual files
+- A archive format which combines the metadata which describes the tileset and data into one file is more easy to handle
+- Saves storage because a (raster) tileset at global scale can have many repeated tiles (about 70 percent of the earth is water)
+- Tile requests can be batched to significantly reduce the number of requests    
+
+**Advantages of directly hosting the map tiles**   
+- For a tileset at global scale from zoom level 8 on at least one prefetch for a index fragment is needed for every zoom level up to 14 -> this is bearly or not at all noticeable for the user regarding the user experience and workflow
+
 
 ### Similar formats
 #### Cloud Optimized GeoTiff
@@ -80,12 +92,11 @@ A [Cloud Optimized GeoTIFF (COG) ](https://www.cogeo.org/) is a regular GeoTIFF 
 via HTTP GET range requests. A COG is limited to raster data.
 
 #### FlatGeobuf
+A performant binary encoding for geographic data based on flatbuffers that can hold a collection of Simple Features including circular interpolations as defined by SQL-MM Part 3.
 
 #### PMTiles
-PMTiles is a single-file archive format for pyramids of map tiles.
-For a comparison see the following [video](https://www.youtube.com/watch?v=e1VvLJeduRo).
-
-#### Cotar
+[PMTiles](https://github.com/protomaps/PMTiles) is a single-file archive format for pyramids of map tiles.
+The index of a PMTiles archive is structured in tile pyramids compared to the fragment based approach in a COMT archive.
 
 
 ### Use Cases

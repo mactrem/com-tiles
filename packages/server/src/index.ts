@@ -1,10 +1,10 @@
 import express from "express";
 import cors from "cors";
 import { program } from "commander";
-import provider from "@comt/provider";
 import * as path from "path";
+import provider from "@com-tiles/provider";
+import { TileFormat } from "@com-tiles/spec/types/tileFormat";
 import { ComtReader } from "./comtReader.js";
-import { TileFormat } from "@comt/spec/types/tileFormat";
 
 const SUPPORTED_TILE_FORMAT: TileFormat = "pbf";
 

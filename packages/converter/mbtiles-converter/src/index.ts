@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import fs from "fs";
 import program from "commander";
-import { Metadata } from "@comt/spec";
+import { Metadata } from "@com-tiles/spec";
 import IndexFactory, { IndexEntry } from "./indexFactory";
 import { MBTilesRepository } from "./mbTilesRepository";
 import { toBytesLE } from "./utils.js";

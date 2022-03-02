@@ -1,6 +1,6 @@
 {
   "name": "@com-tiles/spec",
-  "version": "1.0.0-beta.0",
+  "version": "1.0.0-beta.1",
   "description": "Schema definition of a COMTiles archive",
   "license": "MIT",
   "repository": {
@@ -22,7 +22,8 @@
   },
   "files": [
     "metadata-schema/*",
-    "types/*"
+    "types/*",
+    "assets/*"
   ],
   "bugs": {
     "url": "https://github.com/mactrem/com-tiles/issues"

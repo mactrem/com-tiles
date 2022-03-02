@@ -1,6 +1,6 @@
-import { Metadata } from "@comt/spec";
 import fs from "fs-extra";
-import provider from "@comt/provider";
+import { Metadata } from "@com-tiles/spec";
+import provider from "@com-tiles/provider";
 
 export class ComtReader {
     private static readonly TILE_SIZE_BYTE_LENGTH = 4;

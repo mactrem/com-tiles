@@ -1,8 +1,8 @@
 import { Database, OPEN_READONLY } from "sqlite3";
 import { promisify } from "util";
-import { Metadata } from "@comt/spec";
+import { Metadata } from "@com-tiles/spec";
+import { TileMatrixLimits } from "@com-tiles/spec/types/tileMatrixLimits";
 import WebMercatorQuadMetadataBuilder from "./metadataBuilder";
-import { TileMatrixLimits } from "@comt/spec/types/tileMatrixLimits";
 
 export interface Tile {
     column: number;
