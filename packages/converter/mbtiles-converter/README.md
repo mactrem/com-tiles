@@ -13,3 +13,10 @@ For converting a MBTiles database `test.mbtiles` into a COMTiles archive `test.c
 ````bash
 convert-comtiles -i test.mbtiles -o test.comt
 ````
+
+For performance reasons the full index is kept in memory.  
+On Node.JS 16 and higher the default heap size is 4096 mb.  
+This is enough for creating a COMTiles archive up to a classic vector tileset at planet scale with about 360 million tiles which has an index
+about 3.1 gb in size.  
+For creating a COMTiles with even more tiles the `--max-old-space-size` setting of Node.JS has 
+to be adjusted.  

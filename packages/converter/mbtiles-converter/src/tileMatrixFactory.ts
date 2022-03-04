@@ -29,24 +29,36 @@ export class TileMatrixFactory {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     private constructor() {}
 
-    /*
-     * see https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#62
-     * */
-    static createWebMercatorQuad(zoom: number, bounds: BoundingBox, aggregationCoefficient = 6): TileMatrix {
+    static createWebMercatorQuadFromLatLon(zoom: number, bounds: BoundingBox, aggregationCoefficient = 6): TileMatrix {
         const minTileCol = TileMatrixFactory.lon2tile(bounds[0], zoom);
         const minTileRow = TileMatrixFactory.lat2tile(bounds[1], zoom);
         const maxTileCol = TileMatrixFactory.lon2tile(bounds[2], zoom);
         const maxTileRow = TileMatrixFactory.lat2tile(bounds[3], zoom);
 
+        return TileMatrixFactory.createWebMercatorQuad(
+            zoom,
+            { minTileCol, minTileRow, maxTileCol, maxTileRow },
+            aggregationCoefficient,
+        );
+    }
+
+    /*
+     * see https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#62
+     * */
+    static createWebMercatorQuad(
+        zoom: number,
+        limits: TileMatrix["tileMatrixLimits"],
+        aggregationCoefficient = 6,
+    ): TileMatrix {
         /* Y-axis goes downwards in the XYZ tiling scheme */
         return {
             zoom,
             aggregationCoefficient,
             tileMatrixLimits: {
-                minTileCol,
-                minTileRow,
-                maxTileCol,
-                maxTileRow,
+                minTileCol: limits.minTileCol,
+                minTileRow: limits.minTileRow,
+                maxTileCol: limits.maxTileCol,
+                maxTileRow: limits.maxTileRow,
             },
         };
     }
@@ -54,7 +66,11 @@ export class TileMatrixFactory {
     /*
      * see https://docs.opengeospatial.org/is/17-083r2/17-083r2.html#63
      * */
-    static createWorldCRS84Quad(): TileMatrix {
+    static createWorldCRS84Quad(
+        zoom: number,
+        limits: TileMatrix["tileMatrixLimits"],
+        aggregationCoefficient = 6,
+    ): TileMatrix {
         throw new Error("Not implemented yet.");
     }
 

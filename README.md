@@ -85,7 +85,6 @@ Europe tileset hosted on a AWS S3 standard storage with a disabled browser cache
 **Advantages of directly hosting the map tiles**   
 - For a tileset at global scale from zoom level 8 on at least one prefetch for a index fragment is needed for every zoom level up to 14 -> this is bearly or not at all noticeable for the user regarding the user experience and workflow
 
-
 ### Similar formats
 #### Cloud Optimized GeoTiff
 A [Cloud Optimized GeoTIFF (COG) ](https://www.cogeo.org/) is a regular GeoTIFF file with an internal organization that let clients ask for just the portions of a file that they need
@@ -96,8 +95,9 @@ A performant binary encoding for geographic data based on flatbuffers that can h
 
 #### PMTiles
 [PMTiles](https://github.com/protomaps/PMTiles) is a single-file archive format for pyramids of map tiles.
-The index of a PMTiles archive is structured in tile pyramids compared to the fragment based approach in a COMT archive.
+The index of a PMTiles archive is structured in tile pyramids compared to the fragment based approach in a COMTiles archive.
 
+#### Basic no spatial context Zarr, TileDB, Parquet
 
 ### Use Cases
 - Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS

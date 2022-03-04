@@ -3,6 +3,8 @@ import { promisify } from "util";
 import { Metadata } from "@com-tiles/spec";
 import { TileMatrixLimits } from "@com-tiles/spec/types/tileMatrixLimits";
 import WebMercatorQuadMetadataBuilder from "./metadataBuilder";
+import { TileMatrix } from "@com-tiles/spec/types/tileMatrix";
+import { TileMatrixFactory } from "./tileMatrixFactory";
 
 export interface Tile {
     column: number;
@@ -26,6 +28,8 @@ export class MBTilesRepository {
         const rows = await promisify(this.db.all.bind(this.db))(query);
 
         const metadataBuilder = new WebMercatorQuadMetadataBuilder();
+        let minZoom = 0;
+        let maxZoom = 0;
         for (const row of rows) {
             switch (row.name) {
                 case "name":
@@ -35,10 +39,12 @@ export class MBTilesRepository {
                     metadataBuilder.setBoundingBox(row.value.split(",").map((value) => parseFloat(value.trim())));
                     break;
                 case "minzoom":
-                    metadataBuilder.setMinZoom(parseInt(row.value, 10));
+                    minZoom = parseInt(row.value, 10);
+                    metadataBuilder.setMinZoom(minZoom);
                     break;
                 case "maxzoom":
-                    metadataBuilder.setMaxZoom(parseInt(row.value, 10));
+                    maxZoom = parseInt(row.value, 10);
+                    metadataBuilder.setMaxZoom(maxZoom);
                     break;
                 case "format":
                     metadataBuilder.setTileFormat(row.value);
@@ -51,6 +57,13 @@ export class MBTilesRepository {
                     break;
             }
         }
+
+        const tileMatrixLimits = [];
+        for (let zoom = minZoom; zoom <= maxZoom; zoom++) {
+            const limits = await this.getTileMatrixLimits(zoom);
+            tileMatrixLimits.push(limits);
+        }
+        metadataBuilder.setBoundingBox(tileMatrixLimits);
 
         return metadataBuilder.build();
     }
@@ -89,6 +102,11 @@ export class MBTilesRepository {
 
             yield tiles;
         }
+    }
+
+    async getTileMatrixLimits(zoom: number): Promise<TileMatrix["tileMatrixLimits"]> {
+        const query = `SELECT min(tile_column) as minTileCol, max(tile_column) as maxTileCol, min(tile_row) as minTileRow, max(tile_row) as maxTileRow FROM tiles WHERE zoom_level = ${zoom};`;
+        return promisify(this.db.get.bind(this.db))(query);
     }
 
     async getTile(zoom: number, row: number, column: number): Promise<Tile> {

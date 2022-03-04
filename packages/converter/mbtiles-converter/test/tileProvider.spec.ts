@@ -1,6 +1,6 @@
-import { TileMatrix } from "@comt/spec/types/tileMatrix";
-import IndexFactory from "../src/indexFactory";
+import { TileMatrix } from "@com-tiles/spec/types/tileMatrix";
 import { MBTilesRepository, Tile } from "../src/mbTilesRepository";
+import TileProvider from "../src/tileProvider";
 
 function range(to: number) {
     return [...Array.from(Array(to).keys())];
@@ -8,7 +8,8 @@ function range(to: number) {
 
 Array(10).keys();
 
-describe("createIndexInRowMajorOrder", () => {
+//TODO: fix test
+describe("TileProvider", () => {
     it("should create dense index fragments in row-major order", async () => {
         const numTiles = 4 ** 0 + 4 ** 1 + 4 ** 2;
         const tiles = range(numTiles).map((i) => {
@@ -46,7 +47,6 @@ describe("createIndexInRowMajorOrder", () => {
             },
         });
         const tileRepository = await MBTilesRepository.create("");
-        //tileRepository.getTilesByRowMajorOrder = jest.fn((z) => (z === 0 ? tiles.splice(0, 1) : tiles.splice(0, 4)));
         tileRepository.getTilesByRowMajorOrder = jest.fn(
             (z) =>
                 new Promise((resolve) => {
@@ -54,15 +54,13 @@ describe("createIndexInRowMajorOrder", () => {
                     resolve(tileBatch as Tile[]);
                 }),
         );
+        const tileProvider = new TileProvider(tileRepository, tileMatrixSet);
 
-        const index = await IndexFactory.createIndexInRowMajorOrder(tileRepository, tileMatrixSet);
+        const actualTiles = tileProvider.getTilesInRowMajorOrder();
 
-        expect(index).toBeDefined();
-        index.forEach((indexEntry, i) => {
-            const { size, offset } = index[i];
-            expect(size).toBe(1);
-            expect(offset).toBe(i);
-        });
+        for await (const tile of actualTiles) {
+            expect(tile).toEqual(tiles.shift());
+        }
     });
 
     it("should create sparse index fragments in row-major order", async () => {
@@ -120,14 +118,12 @@ describe("createIndexInRowMajorOrder", () => {
                     resolve(tileBatch as Tile[]);
                 }),
         );
+        const tileProvider = new TileProvider(tileRepository, tileMatrixSet);
 
-        const index = await IndexFactory.createIndexInRowMajorOrder(tileRepository, tileMatrixSet);
+        const actualTiles = tileProvider.getTilesInRowMajorOrder();
 
-        expect(index).toBeDefined();
-        index.forEach((indexEntry, i) => {
-            const { size, offset } = index[i];
-            expect(size).toBe(1);
-            expect(offset).toBe(i);
-        });
+        for await (const tile of actualTiles) {
+            expect(tile).toEqual(tiles.shift());
+        }
     });
 });
