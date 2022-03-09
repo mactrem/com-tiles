@@ -1,7 +1,7 @@
 import maplibregl from "maplibre-gl";
 import MapLibreComtProvider from "../src/index";
 
-MapLibreComtProvider.register();
+MapLibreComtProvider.register(true);
 
 const map = new maplibregl.Map({
     container: "map",
@@ -9,3 +9,5 @@ const map = new maplibregl.Map({
     center: [16.335668227571986, 48.18343081801389],
     zoom: 0,
 });
+
+map.addControl(new maplibregl.NavigationControl());

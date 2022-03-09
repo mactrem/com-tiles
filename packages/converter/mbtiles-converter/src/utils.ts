@@ -76,3 +76,18 @@ export function calculateNumTiles(tileMatrixSet: TileMatrix[]): number {
         return numTiles + (limits.maxTileRow - limits.minTileRow + 1) * (limits.maxTileCol - limits.minTileCol + 1);
     }, 0);
 }
+
+/*
+ * Unfragmented BBox
+ * */
+export function getNumberOfMissingTiles() {
+    //Check for missing tile -> but fragment based
+    //previousRow, previousColumn, previousZoom
+    //if new zoom -> tileBounds min
+    //if previousColumn === tileSet.maxColumn -> currentColumn = 0 and previousRow + 1
+    //else previousRow === currentRow and currentColumn === previousColumn+1
+    //calculate number of missing tiles
+    //1. calculate current index -> calcluateIndeOffsetForTile
+    //2. compare with previous index
+    //-> return diff
+}

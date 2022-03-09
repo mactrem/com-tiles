@@ -14,8 +14,10 @@ export default class MapLibreComtProvider {
     /**
      * Adds a COMT provider to MapLibre.
      * The COMT provider will be used when a source with a comt:// schema is used in a Mapbox style.
+     *
+     * @param prefetchHeader Specifies if the header should be prefetched or lazy loaded.
      */
-    static register(): void {
+    static register(prefetchHeader = true): void {
         let comtCache: provider.ComtCache;
 
         maplibregl.addProtocol("comt", (params, tileHandler) => {

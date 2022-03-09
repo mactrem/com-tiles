@@ -4,13 +4,7 @@ import { Metadata } from "@com-tiles/spec";
 import { TileMatrixLimits } from "@com-tiles/spec/types/tileMatrixLimits";
 import WebMercatorQuadMetadataBuilder from "./metadataBuilder";
 import { TileMatrix } from "@com-tiles/spec/types/tileMatrix";
-import { TileMatrixFactory } from "./tileMatrixFactory";
-
-export interface Tile {
-    column: number;
-    row: number;
-    data: Uint8Array;
-}
+import { Tile, TileInfo } from "./tileProvider";
 
 export class MBTilesRepository {
     private static readonly METADATA_TABLE_NAME = "metadata";
@@ -28,8 +22,6 @@ export class MBTilesRepository {
         const rows = await promisify(this.db.all.bind(this.db))(query);
 
         const metadataBuilder = new WebMercatorQuadMetadataBuilder();
-        let minZoom = 0;
-        let maxZoom = 0;
         for (const row of rows) {
             switch (row.name) {
                 case "name":
@@ -39,12 +31,10 @@ export class MBTilesRepository {
                     metadataBuilder.setBoundingBox(row.value.split(",").map((value) => parseFloat(value.trim())));
                     break;
                 case "minzoom":
-                    minZoom = parseInt(row.value, 10);
-                    metadataBuilder.setMinZoom(minZoom);
+                    metadataBuilder.setMinZoom(parseInt(row.value, 10));
                     break;
                 case "maxzoom":
-                    maxZoom = parseInt(row.value, 10);
-                    metadataBuilder.setMaxZoom(maxZoom);
+                    metadataBuilder.setMaxZoom(parseInt(row.value, 10));
                     break;
                 case "format":
                     metadataBuilder.setTileFormat(row.value);
@@ -58,26 +48,23 @@ export class MBTilesRepository {
             }
         }
 
-        const tileMatrixLimits = [];
-        for (let zoom = minZoom; zoom <= maxZoom; zoom++) {
-            const limits = await this.getTileMatrixLimits(zoom);
-            tileMatrixLimits.push(limits);
-        }
-        metadataBuilder.setBoundingBox(tileMatrixLimits);
-
         return metadataBuilder.build();
     }
 
     /**
      * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
      * */
-    getTilesByRowMajorOrder(zoom: number, limit?: TileMatrixLimits): Promise<Tile[]> {
-        let query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
-        if (limit) {
-            query += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
-        }
-        query += " ORDER BY tile_row, tile_column ASC;";
-        return promisify(this.db.all.bind(this.db))(query);
+    getTilesByRowMajorOrder(zoom: number, limit?: TileMatrixLimits): Promise<Omit<Tile, "zoom">[]> {
+        const selectStatement = `SELECT tile_column as column, tile_row as row, tile_data as data FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
+        return this.getTiles(selectStatement, limit);
+    }
+
+    /**
+     * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
+     * */
+    getByteLengthOfTilesByRowMajorOrder(zoom: number, limit?: TileMatrixLimits): Promise<Omit<TileInfo, "zoom">[]> {
+        const selectStatement = `SELECT tile_column as column, tile_row as row, length(tile_data) as size FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
+        return this.getTiles(selectStatement, limit);
     }
 
     /**
@@ -116,6 +103,14 @@ export class MBTilesRepository {
 
     async dispose(): Promise<void> {
         return promisify(this.db.close.bind(this.db))();
+    }
+
+    private getTiles(selectStatement: string, limit?: TileMatrixLimits) {
+        if (limit) {
+            selectStatement += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
+        }
+        selectStatement += " ORDER BY tile_row, tile_column ASC;";
+        return promisify(this.db.all.bind(this.db))(selectStatement);
     }
 
     private static connect(dbPath: string): Promise<Database> {

@@ -56,7 +56,7 @@ describe("TileProvider", () => {
         );
         const tileProvider = new TileProvider(tileRepository, tileMatrixSet);
 
-        const actualTiles = tileProvider.getTilesInRowMajorOrder();
+        const actualTiles = tileProvider.getTilesInRowMajorOrderTest();
 
         for await (const tile of actualTiles) {
             expect(tile).toEqual(tiles.shift());
@@ -120,7 +120,7 @@ describe("TileProvider", () => {
         );
         const tileProvider = new TileProvider(tileRepository, tileMatrixSet);
 
-        const actualTiles = tileProvider.getTilesInRowMajorOrder();
+        const actualTiles = tileProvider.getTilesInRowMajorOrderTest();
 
         for await (const tile of actualTiles) {
             expect(tile).toEqual(tiles.shift());

@@ -32,7 +32,8 @@ export class TileMatrixFactory {
     static createWebMercatorQuadFromLatLon(zoom: number, bounds: BoundingBox, aggregationCoefficient = 6): TileMatrix {
         const minTileCol = TileMatrixFactory.lon2tile(bounds[0], zoom);
         const minTileRow = TileMatrixFactory.lat2tile(bounds[1], zoom);
-        const maxTileCol = TileMatrixFactory.lon2tile(bounds[2], zoom);
+        //TODO: quick and dirty hack -> find proper solution
+        const maxTileCol = TileMatrixFactory.lon2tile(bounds[2] - 0.00000001, zoom);
         const maxTileRow = TileMatrixFactory.lat2tile(bounds[3], zoom);
 
         return TileMatrixFactory.createWebMercatorQuad(
