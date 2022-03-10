@@ -2,27 +2,26 @@ import { TileMatrix } from "@com-tiles/spec/types/tileMatrix";
 import { TileMatrixLimits } from "@com-tiles/spec/types/tileMatrixLimits";
 import { MBTilesRepository } from "./mbTilesRepository";
 
-export interface Tile {
+export interface TileRecord {
     zoom: number;
     column: number;
     row: number;
     data: Uint8Array;
 }
 
-export interface TileInfo extends Omit<Tile, "data"> {
+export interface TileInfoRecord extends Omit<TileRecord, "data"> {
     size: number;
 }
 
-//TODO: refactor naming
-export enum DataContent {
+export enum RecordType {
     TILE,
     SIZE,
 }
 
-type TileType<T extends DataContent> = T extends DataContent.SIZE
-    ? TileInfo
-    : T extends DataContent.TILE
-    ? Tile
+type TileRecordType<T extends RecordType> = T extends RecordType.SIZE
+    ? TileInfoRecord
+    : T extends RecordType.TILE
+    ? TileRecord
     : never;
 
 export default class TileProvider {
@@ -39,16 +38,18 @@ export default class TileProvider {
 
     /**
      *
-     * @returns Collection of map tiles where tiles are arranged in row-major order
+     * @returns Collection of map tiles or the size of the tiles depending on the {@link TileRecordType}.
+     * The tiles are arranged in row-major order.
      */
-    async *getTilesInRowMajorOrder<T extends DataContent>(tileType: T): AsyncIterable<TileType<T>> {
+    async *getTilesInRowMajorOrder<T extends RecordType>(tileType: T): AsyncIterable<TileRecordType<T>> {
         const minZoom = this.tileMatrixSet[0].zoom;
-        const maxZoom = this.tileMatrixSet[this.tileMatrixSet.length - 1].zoom;
+        const maxZoom = this.tileMatrixSet.at(-1).zoom;
 
-        const getTiles =
-            tileType === DataContent.SIZE
-                ? this.repository.getByteLengthOfTilesByRowMajorOrder.bind(this.repository)
-                : this.repository.getTilesByRowMajorOrder.bind(this.repository);
+        const getTiles = (
+            tileType === RecordType.SIZE
+                ? this.repository.getByteLengthOfTilesByRowMajorOrder
+                : this.repository.getTilesByRowMajorOrder
+        ).bind(this.repository);
 
         for (let zoom = minZoom; zoom <= maxZoom; zoom++) {
             const tileMatrix = this.tileMatrixSet[zoom];
@@ -57,8 +58,7 @@ export default class TileProvider {
             if (!TileProvider.useIndexFragmentation(tileMatrix)) {
                 const tiles = await getTiles(zoom, limits);
                 for (const tile of tiles) {
-                    //TODO: refactor
-                    yield { zoom, ...tile } as any;
+                    yield { zoom, ...tile };
                 }
             } else {
                 /* use index fragments and sparse fragments */
@@ -75,8 +75,7 @@ export default class TileProvider {
                         );
                         const tiles = await getTiles(zoom, sparseFragmentBounds);
                         for (const tile of tiles) {
-                            //TODO: refactor
-                            yield { zoom, ...tile } as any;
+                            yield { zoom, ...tile };
                         }
 
                         /* increment column and keep row */

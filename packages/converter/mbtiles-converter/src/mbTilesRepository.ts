@@ -4,7 +4,7 @@ import { Metadata } from "@com-tiles/spec";
 import { TileMatrixLimits } from "@com-tiles/spec/types/tileMatrixLimits";
 import WebMercatorQuadMetadataBuilder from "./metadataBuilder";
 import { TileMatrix } from "@com-tiles/spec/types/tileMatrix";
-import { Tile, TileInfo } from "./tileProvider";
+import { TileRecord, TileInfoRecord } from "./tileProvider";
 
 export class MBTilesRepository {
     private static readonly METADATA_TABLE_NAME = "metadata";
@@ -54,7 +54,7 @@ export class MBTilesRepository {
     /**
      * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
      * */
-    getTilesByRowMajorOrder(zoom: number, limit?: TileMatrixLimits): Promise<Omit<Tile, "zoom">[]> {
+    getTilesByRowMajorOrder(zoom: number, limit?: TileMatrixLimits): Promise<Omit<TileRecord, "zoom">[]> {
         const selectStatement = `SELECT tile_column as column, tile_row as row, tile_data as data FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
         return this.getTiles(selectStatement, limit);
     }
@@ -62,7 +62,10 @@ export class MBTilesRepository {
     /**
      * Ordered by tileRow and tileColumn in ascending order which corresponds to row-major order.
      * */
-    getByteLengthOfTilesByRowMajorOrder(zoom: number, limit?: TileMatrixLimits): Promise<Omit<TileInfo, "zoom">[]> {
+    getByteLengthOfTilesByRowMajorOrder(
+        zoom: number,
+        limit?: TileMatrixLimits,
+    ): Promise<Omit<TileInfoRecord, "zoom">[]> {
         const selectStatement = `SELECT tile_column as column, tile_row as row, length(tile_data) as size FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
         return this.getTiles(selectStatement, limit);
     }
@@ -74,7 +77,7 @@ export class MBTilesRepository {
         zoom: number,
         limit?: TileMatrixLimits,
         batchSize = 50000,
-    ): AsyncIterable<Tile[]> {
+    ): AsyncIterable<TileRecord[]> {
         let query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom}`;
         if (limit) {
             query += ` AND tile_column >= ${limit.minTileCol} AND tile_column <= ${limit.maxTileCol} AND tile_row >= ${limit.minTileRow} AND tile_row<= ${limit.maxTileRow}`;
@@ -96,7 +99,7 @@ export class MBTilesRepository {
         return promisify(this.db.get.bind(this.db))(query);
     }
 
-    async getTile(zoom: number, row: number, column: number): Promise<Tile> {
+    async getTile(zoom: number, row: number, column: number): Promise<TileRecord> {
         const query = `SELECT tile_column as column, tile_row as row, tile_data as data  FROM ${MBTilesRepository.TILES_TABLE_NAME} WHERE zoom_level = ${zoom} AND tile_column = ${column} AND tile_row = ${row};`;
         return promisify(this.db.get.bind(this.db))(query);
     }

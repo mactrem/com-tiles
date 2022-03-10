@@ -1,5 +1,5 @@
 import { TileMatrix } from "@com-tiles/spec/types/tileMatrix";
-import { MBTilesRepository, Tile } from "../src/mbTilesRepository";
+import { MBTilesRepository, TileRecord } from "../src/mbTilesRepository";
 import TileProvider from "../src/tileProvider";
 
 function range(to: number) {

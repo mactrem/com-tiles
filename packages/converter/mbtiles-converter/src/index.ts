@@ -2,9 +2,9 @@
 import fs from "fs";
 import program from "commander";
 import { MBTilesRepository } from "./mbTilesRepository";
-import { calculateNumTiles, toBytesLE } from "./utils.js";
+import { toBytesLE } from "./utils.js";
 import pkg from "../package.json";
-import MapTileProvider, { DataContent, Tile } from "./tileProvider";
+import MapTileProvider, { RecordType } from "./tileProvider";
 import Logger from "./logger";
 import { ComtIndex } from "@com-tiles/provider";
 import { Metadata } from "@com-tiles/spec";
@@ -41,7 +41,6 @@ const MAX_ZOOM_DB_QUERY = parseInt(options.maxZoomDbQuery) || 8;
 
 async function createComTileArchive(mbTilesFilename: string, comTilesFileName: string, logger: Logger) {
     const repo = await MBTilesRepository.create(mbTilesFilename);
-    //TODO: on planet scale -> maxColumn 1 to much
     const metadata = await repo.getMetadata();
     /**
      * Query the TileMatrixLimits for the lower zoom levels from the db.
@@ -58,22 +57,19 @@ async function createComTileArchive(mbTilesFilename: string, comTilesFileName: s
     const tileMatrixSet = metadata.tileMatrixSet.tileMatrix;
     const metadataJson = JSON.stringify(metadata);
 
-    const indexEntryByteLength = INDEX_ENTRY_SIZE_BYTE_LENGTH + metadata.tileOffsetBytes;
-    const numIndexEntries = calculateNumTiles(tileMatrixSet);
-    const indexByteLength = indexEntryByteLength * numIndexEntries;
-
-    const stream = fs.createWriteStream(comTilesFileName, {
+    let stream = fs.createWriteStream(comTilesFileName, {
         encoding: "binary",
         highWaterMark: 1_000_000,
     });
 
     logger.info("Writing the header and metadata to the COMTiles archive.");
-    writeHeader(stream, metadataJson.length, indexByteLength);
+    writeHeader(stream, metadataJson.length);
     writeMetadata(stream, metadataJson);
 
     const tileProvider = new MapTileProvider(repo, tileMatrixSet);
     logger.info("Writing the index to the COMTiles archive.");
-    await writeIndex(stream, tileProvider, metadata, indexEntryByteLength);
+    const indexEntryByteLength = INDEX_ENTRY_SIZE_BYTE_LENGTH + metadata.tileOffsetBytes;
+    const indexByteLength = await writeIndex(stream, tileProvider, metadata, indexEntryByteLength);
 
     logger.info("Writing the map tiles to the the COMTiles archive.");
     await writeTiles(stream, tileProvider);
@@ -81,14 +77,13 @@ async function createComTileArchive(mbTilesFilename: string, comTilesFileName: s
     stream.end();
     await repo.dispose();
 
-    const writeStream = fs.createWriteStream(comTilesFileName, { flags: "r+", start: 12 });
-    const indexLengthBuffer = toBytesLE(indexByteLengthCalculated, 5);
-    writeStream.write(indexLengthBuffer);
-    console.log("Diff: ", indexByteLengthCalculated - indexByteLength);
+    stream = fs.createWriteStream(comTilesFileName, { flags: "r+", start: 12 });
+    const indexLengthBuffer = toBytesLE(indexByteLength, 5);
+    stream.write(indexLengthBuffer);
+    stream.end();
 }
 
-let dataSectionStart = 0;
-function writeHeader(stream: fs.WriteStream, metadataByteLength: number, indexByteLength: number) {
+function writeHeader(stream: fs.WriteStream, metadataByteLength: number) {
     stream.write(MAGIC);
 
     const versionBuffer = Buffer.alloc(4);
@@ -98,20 +93,17 @@ function writeHeader(stream: fs.WriteStream, metadataByteLength: number, indexBy
     const metadataLengthBuffer = Buffer.alloc(4);
     metadataLengthBuffer.writeUInt32LE(metadataByteLength);
     stream.write(metadataLengthBuffer);
-    console.log("metadata: ", metadataByteLength);
-    dataSectionStart = 17 + metadataByteLength;
 
-    const indexLengthBuffer = toBytesLE(indexByteLength, 5);
+    /* Reserve the bytes but write the real index size later when the full index is written to disk.
+     *  Calculating the index size results in a false size */
+    const indexLengthBuffer = toBytesLE(0, 5);
     stream.write(indexLengthBuffer);
-
-    console.log("indexLength ", indexByteLength);
 }
 
 function writeMetadata(stream: fs.WriteStream, metadataJson: string) {
     stream.write(metadataJson, "utf-8");
 }
 
-let indexByteLengthCalculated = 0;
 async function writeIndex(
     stream: fs.WriteStream,
     tileProvider: MapTileProvider,
@@ -119,22 +111,20 @@ async function writeIndex(
     indexEntryByteLength: number,
 ) {
     const comtIndex = new ComtIndex(metadata);
-    const tiles = tileProvider.getTilesInRowMajorOrder(DataContent.SIZE);
+    const tiles = tileProvider.getTilesInRowMajorOrder(RecordType.SIZE);
 
     const tileOffsetByteLength = indexEntryByteLength - 4;
     let dataSectionOffset = 0;
-    let previousIndex = 0;
-    let j = 0;
+    let previousIndex = -1;
+    let numIndexEntries = 0;
     for await (const { zoom, column, row, size: tileLength } of tiles) {
         const { index: currentIndex } = comtIndex.calculateIndexOffsetForTile(zoom, column, row);
-        //TODO: also handle the first tile if missing
         const padding = currentIndex - previousIndex - 1;
         /* Add a padding in the index for the missing tiles in the MBTiles database */
         if (padding > 0) {
             for (let i = 0; i < padding; i++) {
-                //console.info(padding);
                 await writeIndexEntry(stream, 0, 0, tileOffsetByteLength, indexEntryByteLength);
-                j++;
+                numIndexEntries++;
             }
         }
 
@@ -142,12 +132,10 @@ async function writeIndex(
 
         dataSectionOffset += tileLength;
         previousIndex = currentIndex;
-        j++;
+        numIndexEntries++;
     }
 
-    indexByteLengthCalculated = j * indexEntryByteLength;
-    dataSectionStart += indexByteLengthCalculated;
-    console.log("DataSectionStart: ", dataSectionStart);
+    return numIndexEntries * indexEntryByteLength;
 }
 
 async function writeIndexEntry(
@@ -160,35 +148,28 @@ async function writeIndexEntry(
     const buffer = Buffer.alloc(indexEntryByteLength);
     toBytesLE(offset, tileOffsetByteLength).copy(buffer, 0);
     buffer.writeUInt32LE(tileLength, tileOffsetByteLength);
-
-    const canContinue = stream.write(buffer);
-    if (!canContinue) {
-        await new Promise((resolve) => {
-            stream.once("drain", resolve);
-        });
-    }
+    await writeBuffer(stream, buffer);
 }
 
-async function writeTiles(stream: fs.WriteStream, tileProvider: MapTileProvider) {
-    const tiles = tileProvider.getTilesInRowMajorOrder(DataContent.TILE);
+async function writeTiles(stream: fs.WriteStream, tileProvider: MapTileProvider): Promise<void> {
+    const tiles = tileProvider.getTilesInRowMajorOrder(RecordType.TILE);
 
     /* Batching the tile writes did not bring the expected performance gain because allocating the buffer
      * for the tile batches was to expensive. So we simplified again to single tile writes. */
     for await (const { data: tile } of tiles) {
         const tileLength = tile.byteLength;
-
-        if (tileLength === 0) {
-            debugger;
-        }
-
         if (tileLength > 0) {
             const tileBuffer = Buffer.from(tile);
-            const canContinue = stream.write(tileBuffer);
-            if (!canContinue) {
-                await new Promise((resolve) => {
-                    stream.once("drain", resolve);
-                });
-            }
+            await writeBuffer(stream, tileBuffer);
         }
+    }
+}
+
+async function writeBuffer(stream: fs.WriteStream, buffer: Buffer): Promise<void> {
+    const canContinue = stream.write(buffer);
+    if (!canContinue) {
+        await new Promise((resolve) => {
+            stream.once("drain", resolve);
+        });
     }
 }
