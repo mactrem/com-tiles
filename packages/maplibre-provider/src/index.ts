@@ -8,7 +8,7 @@ interface XyzIndex {
     z: number;
 }
 
-export default class MapLibreComtProvider {
+export class MapLibreComtProvider {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     private constructor() {}
 
@@ -48,7 +48,7 @@ export default class MapLibreComtProvider {
         });
     }
 
-    static fetchTile(comtCache: provider.ComtCache, xyzIndex: XyzIndex, tileHandler, cancellationToken): void {
+    private static fetchTile(comtCache: provider.ComtCache, xyzIndex: XyzIndex, tileHandler, cancellationToken): void {
         comtCache
             .getTile(xyzIndex.z, xyzIndex.x, xyzIndex.y, cancellationToken)
             .then((tile) => tileHandler(null, tile, null, null));

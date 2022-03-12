@@ -5,7 +5,7 @@ and display the map tiles based on the MapLibre web mapping framework.
 
 Register the `MapLibreComProvider` before creating a MapLibre map instance
 ````js
-import MapLibreComtProvider from "../src/index";
+import  { MapLibreComtProvider } from "@com-tiles/maplibre-provider";
 
 MapLibreComtProvider.register();
 
