@@ -65,7 +65,7 @@ const tileMatrixSet: TileMatrix[] = [
     },
     {
         zoom: 3,
-        aggregationCoefficient: 1,
+        aggregationCoefficient: -1,
         tileMatrixLimits: {
             minTileCol: 2,
             minTileRow: 2,

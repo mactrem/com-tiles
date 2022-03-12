@@ -150,7 +150,6 @@ export default class ComtCache {
     async getTile(zoom: number, x: number, y: number, cancellationToken?: CancellationToken): Promise<ArrayBuffer> {
         /* Lazy load the header on the first tile request */
         if (!this.header) {
-            //TODO: test
             if (!this.headerLoaded) {
                 this.headerLoaded = ComtCache.loadHeader(this.comtUrl);
                 this.header = await this.headerLoaded;
