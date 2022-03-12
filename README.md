@@ -96,9 +96,7 @@ A performant binary encoding for geographic data based on flatbuffers that can h
 #### PMTiles
 [PMTiles](https://github.com/protomaps/PMTiles) is a single-file archive format for pyramids of map tiles.
 The index of a PMTiles archive is structured in tile pyramids compared to the fragment based approach in a COMTiles archive.
-For a comparison of the latency see the following video [Video](https://www.youtube.com/watch?v=oqyQ3wo7n18)
-
-#### Basic no spatial context Zarr, TileDB, Parquet
+For a comparison of the latency see the following video [Video](https://www.youtube.com/watch?v=oqyQ3wo7n18).
 
 ### Use Cases
 - Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS
