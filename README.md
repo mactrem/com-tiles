@@ -4,7 +4,7 @@ COMTiles are a streamable and read optimized file archive for hosting map tiles 
 Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.
 COMTiles in contrast is designed to be hosted on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or server on the backend side.
 The map tiles can be accessed directly from a browser via HTTP GET range requests.
-The main focus of COMTiles is to significantly reduce coasts and simplify the hosting of large raster and vector tilesets at global scale
+The main focus of COMTiles is to significantly reduce costs and simplify the hosting of large raster and vector tilesets at global scale
 in the cloud.
 Via COMTiles an object storage can be used as a spatial database for the visualization of map tiles.
 COMTiles aims to be a MBTiles database for the cloud.
@@ -36,7 +36,7 @@ The basic concept of a COMTiles archive is to create an additional `index` which
 For a planet wide vector tileset this index has about 3 gb in size (will be optimized in v2 to about 1.3 gb).
 Because of the resulting size for large tilesets the index has to be streamable which means that only parts of the index can be requested to allow a fluent user experience already known from maps like Google Maps or OpenStreetMap.
 One main design goal of COMTiles is to minimize the number of HTTP GET range requests for the download of parts of the index for performance and cost reasons.
-With ordering the index as a Space Filling Curves (Hilbert, Z-Order, Row-Major), packing pyramids into directories and aggregating the index in fragments three different approaches has been evaluated.
+With ordering the index on space-filling curves (Hilbert, Z-Order, Row-Major), packing pyramids into directories and aggregating the index in fragments three different approaches has been evaluated.
 Tests showed that subdividing the index peer zoom level in so called ``index fragments`` with a variable number of ``index entries`` referencing
 the specific map tiles seems to be the most effective approach in terms of the number of http range requests for viusalizing map tiles at global scale.
 Based on the concept of index fragments most of the time only one additional pre-fetch per zoom level is needed before accessing the map tiles for the current viewport of the map.
@@ -85,7 +85,6 @@ Europe tileset hosted on a AWS S3 standard storage with a disabled browser cache
 **Advantages of directly hosting the map tiles**   
 - For a tileset at global scale from zoom level 8 on at least one prefetch for a index fragment is needed for every zoom level up to 14 -> this is bearly or not at all noticeable for the user regarding the user experience and workflow
 
-
 ### Similar formats
 #### Cloud Optimized GeoTiff
 A [Cloud Optimized GeoTIFF (COG) ](https://www.cogeo.org/) is a regular GeoTIFF file with an internal organization that let clients ask for just the portions of a file that they need
@@ -96,8 +95,8 @@ A performant binary encoding for geographic data based on flatbuffers that can h
 
 #### PMTiles
 [PMTiles](https://github.com/protomaps/PMTiles) is a single-file archive format for pyramids of map tiles.
-The index of a PMTiles archive is structured in tile pyramids compared to the fragment based approach in a COMT archive.
-
+The index of a PMTiles archive is structured in tile pyramids compared to the fragment based approach in a COMTiles archive.
+For a comparison of the latency see the following video [Video](https://www.youtube.com/watch?v=oqyQ3wo7n18).
 
 ### Use Cases
 - Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS

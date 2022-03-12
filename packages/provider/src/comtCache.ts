@@ -111,6 +111,7 @@ export default class ComtCache {
     private indexCache: IndexCache = null;
     private comtIndex: ComtIndex = null;
     private readonly requestCache = new Map<number, Promise<ArrayBuffer>>();
+    private headerLoaded: Promise<Header>;
 
     /**
      *
@@ -149,9 +150,13 @@ export default class ComtCache {
     async getTile(zoom: number, x: number, y: number, cancellationToken?: CancellationToken): Promise<ArrayBuffer> {
         /* Lazy load the header on the first tile request */
         if (!this.header) {
-            //TODO: avoid redundant header requests
-            this.header = await ComtCache.loadHeader(this.comtUrl);
-            this.initIndex(this.header);
+            if (!this.headerLoaded) {
+                this.headerLoaded = ComtCache.loadHeader(this.comtUrl);
+                this.header = await this.headerLoaded;
+                this.initIndex(this.header);
+            } else {
+                await this.headerLoaded;
+            }
         }
 
         const { metadata } = this.header;
@@ -159,7 +164,7 @@ export default class ComtCache {
         const tmsY = (1 << zoom) - y - 1;
         const limit = metadata.tileMatrixSet.tileMatrix[zoom].tileMatrixLimits;
         if (x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow) {
-            console.trace("Requested tile not within the boundary ot the TileSet.");
+            /* Requested tile not within the boundary ot the TileSet */
             return new Uint8Array(0);
         }
 
@@ -181,12 +186,6 @@ export default class ComtCache {
         let indexFragment: ArrayBuffer;
         /* avoid redundant requests to the same index fragment */
         if (!this.requestCache.has(fragmentRange.startOffset)) {
-            console.info(
-                `Fetch fragment with index offset ${(fragmentRange.startOffset / 1024 / 1024).toFixed(
-                    2,
-                )} MB for tile ${zoom}/${x}/${y}`,
-            );
-
             const startOffset = this.header.indexOffset + fragmentRange.startOffset;
             const endOffset = this.header.indexOffset + fragmentRange.endOffset;
             const indexEntryRequest = ComtCache.fetchBinaryData(

@@ -1,78 +1,81 @@
 import { TileMatrix } from "@com-tiles/spec/types/tileMatrix";
 import { TileMatrixLimits } from "@com-tiles/spec/types/tileMatrixLimits";
-import { MBTilesRepository, Tile } from "./mbTilesRepository";
+import { MBTilesRepository } from "./mbTilesRepository";
 
-/* 5 bytes offset and 4 bytes size as default */
-export interface IndexEntry {
-    offset: number;
-    size: number;
+export interface TileRecord {
     zoom: number;
-    row: number;
     column: number;
+    row: number;
+    data: Uint8Array;
 }
 
-export default class IndexFactory {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    private constructor() {}
+export interface TileInfoRecord extends Omit<TileRecord, "data"> {
+    size: number;
+}
+
+export enum RecordType {
+    TILE,
+    SIZE,
+}
+
+type TileRecordType<T extends RecordType> = T extends RecordType.SIZE
+    ? TileInfoRecord
+    : T extends RecordType.TILE
+    ? TileRecord
+    : never;
+
+export default class TileProvider {
+    /**
+     *
+     * @param repository Repository for accessing the tiles
+     * @param tileMatrixSet Describes the bounds of the tileset
+     */
+    constructor(private readonly repository: MBTilesRepository, private readonly _tileMatrixSet: TileMatrix[]) {}
+
+    get tileMatrixSet(): TileMatrix[] {
+        return this._tileMatrixSet;
+    }
 
     /**
      *
-     * Create an index where the fragments and the index entries of a fragment are arranged in row-major order.
-     *
-     * @param tileRepository Repository for accessing the tiles
-     * @param tileMatrixSet Describes the bounds of the tileset
-     * @returns Collection of {@link IndexEntry}
+     * @returns Collection of map tiles or the size of the tiles depending on the {@link TileRecordType}.
+     * The tiles are arranged in row-major order.
      */
-    static async createIndexInRowMajorOrder(
-        tileRepository: MBTilesRepository,
-        tileMatrixSet: TileMatrix[],
-    ): Promise<IndexEntry[]> {
-        const index: IndexEntry[] = [];
-        const minZoom = tileMatrixSet[0].zoom;
-        const maxZoom = tileMatrixSet[tileMatrixSet.length - 1].zoom;
+    async *getTilesInRowMajorOrder<T extends RecordType>(tileType: T): AsyncIterable<TileRecordType<T>> {
+        const minZoom = this.tileMatrixSet[0].zoom;
+        const maxZoom = this.tileMatrixSet.at(-1).zoom;
+
+        const getTiles = (
+            tileType === RecordType.SIZE
+                ? this.repository.getByteLengthOfTilesByRowMajorOrder
+                : this.repository.getTilesByRowMajorOrder
+        ).bind(this.repository);
 
         for (let zoom = minZoom; zoom <= maxZoom; zoom++) {
-            const tileMatrix = tileMatrixSet[zoom];
+            const tileMatrix = this.tileMatrixSet[zoom];
             const limits = tileMatrix.tileMatrixLimits;
 
-            if (!IndexFactory.useIndexFragmentation(tileMatrix)) {
-                /* reference to the current tile in the array */
-                const tileIndex = index.length - 1;
-                /* reference to the current tile in the final blob */
-                let offset = index.length ? index[tileIndex].offset + index[tileIndex].size : 0;
-
-                const tiles = await tileRepository.getTilesByRowMajorOrder(zoom);
-                const paddedTiles = IndexFactory.hasMissingTiles(limits, tiles)
-                    ? this.addMissingTiles(limits, tiles)
-                    : tiles;
-                for (const { data, row, column } of paddedTiles) {
-                    const size = data.length;
-                    index.push({ offset, size, zoom, row, column });
-                    offset += size;
+            if (!TileProvider.useIndexFragmentation(tileMatrix)) {
+                const tiles = await getTiles(zoom, limits);
+                for (const tile of tiles) {
+                    yield { zoom, ...tile };
                 }
             } else {
                 /* use index fragments and sparse fragments */
                 const numIndexEntriesPerFragmentSide = 2 ** tileMatrix.aggregationCoefficient;
                 // eslint-disable-next-line prefer-const
                 let { fragmentMinColIndex, numFragmentsCol, numFragmentsRow, denseFragmentBounds } =
-                    IndexFactory.calculateDenseFragmentBounds(limits, numIndexEntriesPerFragmentSide);
+                    TileProvider.calculateDenseFragmentBounds(limits, numIndexEntriesPerFragmentSide);
 
                 for (let fragmentRow = 0; fragmentRow < numFragmentsRow; fragmentRow++) {
                     for (let fragmentCol = 0; fragmentCol < numFragmentsCol; fragmentCol++) {
-                        const sparseFragmentBounds = IndexFactory.calculateSparseFragmentBounds(
+                        const sparseFragmentBounds = TileProvider.calculateSparseFragmentBounds(
                             limits,
                             denseFragmentBounds,
                         );
-                        const tiles = await tileRepository.getTilesByRowMajorOrder(zoom, sparseFragmentBounds);
-                        const paddedTiles = IndexFactory.hasMissingTiles(sparseFragmentBounds, tiles)
-                            ? IndexFactory.addMissingTiles(sparseFragmentBounds, tiles)
-                            : tiles;
-
-                        for (const { column, row, data } of paddedTiles) {
-                            const size = data.length;
-                            const tileIndex = index.length - 1;
-                            const offset = index.length ? index[tileIndex].offset + index[tileIndex].size : 0;
-                            index.push({ offset, size, zoom, row, column });
+                        const tiles = await getTiles(zoom, sparseFragmentBounds);
+                        for (const tile of tiles) {
+                            yield { zoom, ...tile };
                         }
 
                         /* increment column and keep row */
@@ -92,8 +95,6 @@ export default class IndexFactory {
                 }
             }
         }
-
-        return index;
     }
 
     private static calculateDenseFragmentBounds(limits: TileMatrixLimits, numIndexEntriesPerFragmentSide: number) {
@@ -136,28 +137,5 @@ export default class IndexFactory {
 
     private static useIndexFragmentation(tileMatrix: TileMatrix): boolean {
         return tileMatrix.aggregationCoefficient !== -1;
-    }
-
-    private static hasMissingTiles(limit: TileMatrixLimits, tiles: Tile[]): boolean {
-        const expectedNumTiles = (limit.maxTileCol - limit.minTileCol + 1) * (limit.maxTileRow - limit.minTileRow + 1);
-        const actualNumTiles = tiles.length;
-        return expectedNumTiles !== actualNumTiles;
-    }
-
-    private static addMissingTiles(limit: TileMatrixLimits, tiles: Tile[]) {
-        const paddedTiles: Tile[] = [];
-
-        for (let row = limit.minTileRow; row <= limit.maxTileRow; row++) {
-            for (let col = limit.minTileCol; col <= limit.maxTileCol; col++) {
-                if (!tiles.some((tile) => tile.row === row && tile.column === col)) {
-                    const emptyTile = new Uint8Array();
-                    paddedTiles.push({ column: col, row, data: emptyTile });
-                } else {
-                    paddedTiles.push(tiles.shift());
-                }
-            }
-        }
-
-        return paddedTiles;
     }
 }

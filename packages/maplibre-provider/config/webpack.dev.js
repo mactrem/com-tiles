@@ -10,7 +10,7 @@ const HTML_TEMPLATE = path.join(ROOT_DIRECTORY, "debug/index.html");
 
 module.exports = merge(common, {
     mode: "development",
-    devtool: "inline-source-map",
+    devtool: "source-map",
     entry: {
         index: path.join(ROOT_DIRECTORY, "debug/index.ts"),
         debug: path.join(ROOT_DIRECTORY, "debug/debug.ts"),

@@ -19,7 +19,7 @@ export interface Metadata {
    */
   attribution?: string;
   /**
-   * Number of bytes used to encode the offset to a map tile in an index record. Defaults to 4 bytes.
+   * Number of bytes used to encode the offset to a map tile in an index record. Defaults to 5 bytes.
    */
   tileOffsetBytes?: number;
   /**

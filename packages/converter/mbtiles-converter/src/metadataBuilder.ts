@@ -9,7 +9,7 @@ export default class WebMercatorQuadMetadataBuilder {
     private attribution = "";
     private tileOffsetBytes = 5;
     private tileFormat: TileFormat = "pbf";
-    private bbox: BoundingBox;
+    private bbox: BoundingBox | TileMatrix["tileMatrixLimits"][];
     private minZoom = 0;
     private maxZoom = 14;
     private layers = "";
@@ -39,7 +39,7 @@ export default class WebMercatorQuadMetadataBuilder {
         return this;
     }
 
-    setBoundingBox(bbox: BoundingBox) {
+    setBoundingBox(bbox: BoundingBox | TileMatrix["tileMatrixLimits"][]) {
         this.bbox = bbox;
         return this;
     }
@@ -62,20 +62,28 @@ export default class WebMercatorQuadMetadataBuilder {
         return this;
     }
 
-    /*
+    /**
+     *
      * The boundary is in all TileMatrix (zoom levels) instances the same.
      * Zoom 0 to 7 are not fragmented and have an aggregation factor of -1.
      * Zoom 8 to 14 have an aggregation factor of 6.
-     * */
-    build(): Metadata {
+     */
+    async build(): Promise<Metadata> {
         if (!this.name || !this.bbox) {
-            throw new Error("No name or bounding box specified for the TileMatrixBuilder.");
+            throw new Error("No name or bounding box specified for the tileset.");
         }
 
         const tileMatrices: TileMatrix[] = [];
         for (let zoom = this.minZoom; zoom <= this.maxZoom; zoom++) {
             const aggregationCoefficient = zoom <= 7 ? -1 : 6;
-            const tileMatrix = TileMatrixFactory.createWebMercatorQuad(zoom, this.bbox, aggregationCoefficient);
+
+            let tileMatrix: TileMatrix;
+            if (this.isTileMatrixLimits(this.bbox)) {
+                tileMatrix = TileMatrixFactory.createWebMercatorQuad(zoom, this.bbox[zoom], aggregationCoefficient);
+            } else {
+                tileMatrix = TileMatrixFactory.createWebMercatorQuadFromLatLon(zoom, this.bbox, aggregationCoefficient);
+            }
+
             tileMatrices.push(tileMatrix);
         }
 
@@ -89,5 +97,17 @@ export default class WebMercatorQuadMetadataBuilder {
             layers: this.layers,
             tileMatrixSet,
         };
+    }
+
+    private isTileMatrixLimits(
+        bbox: BoundingBox | TileMatrix["tileMatrixLimits"][],
+    ): bbox is TileMatrix["tileMatrixLimits"][] {
+        const props: (keyof TileMatrix["tileMatrixLimits"])[] = [
+            "minTileRow",
+            "minTileCol",
+            "maxTileRow",
+            "maxTileCol",
+        ];
+        return props.every((prop) => Object.prototype.hasOwnProperty.call(bbox[0], prop));
     }
 }
