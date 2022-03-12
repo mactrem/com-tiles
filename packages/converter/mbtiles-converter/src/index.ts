@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 import fs from "fs";
 import program from "commander";
+import { ComtIndex } from "@com-tiles/provider";
+import { Metadata } from "@com-tiles/spec";
 import { MBTilesRepository } from "./mbTilesRepository";
 import { toBytesLE } from "./utils.js";
 import pkg from "../package.json";
 import MapTileProvider, { RecordType } from "./tileProvider";
 import Logger from "./logger";
-import { ComtIndex } from "@com-tiles/provider";
-import { Metadata } from "@com-tiles/spec";
 
 program
     .version(pkg.version)

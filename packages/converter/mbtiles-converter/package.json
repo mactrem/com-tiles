@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@com-tiles/spec": "*",
+    "@com-tiles/provider": "*",
     "commander": "^9.0.0",
     "sqlite3": "^5.0.2"
   },
