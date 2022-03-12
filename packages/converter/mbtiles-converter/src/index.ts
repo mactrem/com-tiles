@@ -32,7 +32,7 @@ const MAX_ZOOM_DB_QUERY = parseInt(options.maxZoomDbQuery) || 8;
 (async () => {
     const logger = new Logger();
     const mbTilesFilename = options.inputFilePath;
-    const comTilesFilename = program.outputFilePath;
+    const comTilesFilename = options.outputFilePath;
 
     logger.info(`Converting the MBTiles file ${mbTilesFilename} to a COMTiles archive.`);
     await createComTileArchive(mbTilesFilename, comTilesFilename, logger);
