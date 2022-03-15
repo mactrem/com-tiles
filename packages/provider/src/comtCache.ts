@@ -3,6 +3,7 @@ import { Metadata } from "@com-tiles/spec";
 import ComtIndex, { FragmentRange } from "./comtIndex";
 import LruCache from "./lruCache";
 import { convertUInt40LEToNumber } from "./utils";
+import BatchedTilesProvider, { TileRequest } from "./batchedTilesProvider";
 
 interface Header {
     indexOffset: number;
@@ -112,6 +113,7 @@ export default class ComtCache {
     private comtIndex: ComtIndex = null;
     private readonly requestCache = new Map<number, Promise<ArrayBuffer>>();
     private headerLoaded: Promise<Header>;
+    private readonly batchedTilesProvider: BatchedTilesProvider;
 
     /**
      *
@@ -119,10 +121,12 @@ export default class ComtCache {
      * @param prefetchHeader Specifies if the header should be fetched during construction of the class and before
      *          the first tile is requested.
      */
-    private constructor(private readonly comtUrl: string, private header?: Header) {
+    private constructor(private readonly comtUrl: string, private readonly throttleTime, private header?: Header) {
         if (header) {
             this.initIndex(header);
         }
+
+        this.batchedTilesProvider = new BatchedTilesProvider(comtUrl, throttleTime);
     }
 
     /**
@@ -130,13 +134,18 @@ export default class ComtCache {
      * @param tileContent Content type of the map tiles.
      * @param prefetchHeader Specifies if the header should be prefetched or lazy loaded.
      */
-    static async create(comtUrl: string, tileContent = TileContent.MVT, prefetchHeader = true): Promise<ComtCache> {
+    static async create(
+        comtUrl: string,
+        tileContent = TileContent.MVT,
+        prefetchHeader = true,
+        throttleTime = 5,
+    ): Promise<ComtCache> {
         if (tileContent !== TileContent.MVT) {
             throw new Error("Only Mapbox Vector Tiles are currently supported as content of a map tile.");
         }
 
         const header = prefetchHeader ? await ComtCache.loadHeader(comtUrl) : null;
-        return new ComtCache(comtUrl, header);
+        return new ComtCache(comtUrl, throttleTime, header);
     }
 
     /**
@@ -173,6 +182,59 @@ export default class ComtCache {
         const absoluteTileOffset = this.header.dataOffset + indexEntry.offset;
         /* Return an empty array if the tile is missing */
         return indexEntry.size ? this.fetchMVT(absoluteTileOffset, indexEntry.size) : new Uint8Array(0);
+    }
+
+    async getTileWithBatchedRequest(
+        zoom: number,
+        x: number,
+        y: number,
+        cancellationToken?: CancellationToken,
+    ): Promise<ArrayBuffer> {
+        /* Lazy load the header on the first tile request */
+        if (!this.header) {
+            //TODO: test
+            if (!this.headerLoaded) {
+                this.headerLoaded = ComtCache.loadHeader(this.comtUrl);
+                this.header = await this.headerLoaded;
+                this.initIndex(this.header);
+            } else {
+                await this.headerLoaded;
+            }
+        }
+
+        const { metadata } = this.header;
+        /* COMTiles uses the y-axis alignment of the TMS spec which is flipped compared to xyz */
+        const tmsY = (1 << zoom) - y - 1;
+        const limit = metadata.tileMatrixSet.tileMatrix[zoom].tileMatrixLimits;
+        if (x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow) {
+            /* Requested tile not within the boundary ot the TileSet */
+            return new Uint8Array(0);
+        }
+
+        const indexEntry =
+            this.indexCache.get(zoom, x, tmsY) ?? (await this.fetchIndexEntry(zoom, x, tmsY, cancellationToken));
+        const absoluteTileOffset = this.header.dataOffset + indexEntry.offset;
+
+        const tileRequest: TileRequest = {
+            index: {
+                x,
+                y,
+                z: zoom,
+            },
+            range: {
+                startOffset: absoluteTileOffset,
+                endOffset: absoluteTileOffset + indexEntry.size - 1,
+            },
+        };
+
+        //TODO: add cancelationToken
+        /* Return an empty array if the tile is missing */
+        return indexEntry.size ? this.batchedTilesProvider.getTile(tileRequest) : new Uint8Array(0);
+    }
+
+    //TODO: remove -> only test
+    resetBatchedRequests() {
+        this.batchedTilesProvider.resetTileRequests();
     }
 
     private async fetchIndexEntry(

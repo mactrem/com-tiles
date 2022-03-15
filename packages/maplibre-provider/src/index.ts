@@ -1,11 +1,16 @@
 import maplibregl from "maplibre-gl";
 import * as provider from "@com-tiles/provider";
-import { TileContent } from "@com-tiles/provider";
+import { TileContent, CancellationToken } from "@com-tiles/provider";
 
 interface XyzIndex {
     x: number;
     y: number;
     z: number;
+}
+
+export enum TileFetchStrategy {
+    BATCHED,
+    SINGLE,
 }
 
 export class MapLibreComtProvider {
@@ -20,14 +25,18 @@ export class MapLibreComtProvider {
      *
      * @param tileContent Content type of the map tiles.
      * Only Mapbox Vector Tiles are currently supported as content of a map tile.
-     *
+     * @param tileFetchStrategy Specifies if the tiles should be fetched in batches or tile by tile.
      */
-    static register(tileContent = TileContent.MVT): void {
+    static register(tileContent = TileContent.MVT, tileFetchStrategy = TileFetchStrategy.BATCHED): void {
         let comtCache: provider.ComtCache;
+        //TODO: refactor
+        let fetchTiles: (...params: any) => Promise<Uint8Array>;
 
         maplibregl.addProtocol("comt", (params, tileHandler) => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [tileUrl, url, z, x, y] = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
+            console.log("fetching %s/%s/%s %s", z, x, y, new Date().getTime());
+
             const cancellationToken = new provider.CancellationToken();
             const xyzIndex = {
                 x: parseInt(x, 10),
@@ -36,21 +45,32 @@ export class MapLibreComtProvider {
             };
 
             if (!comtCache) {
-                provider.ComtCache.create(url, TileContent.MVT, false).then((cache) => {
+                provider.ComtCache.create(url, tileContent, false).then((cache) => {
                     comtCache = cache;
-                    MapLibreComtProvider.fetchTile(comtCache, xyzIndex, tileHandler, cancellationToken);
+
+                    fetchTiles = (
+                        tileFetchStrategy === TileFetchStrategy.BATCHED
+                            ? comtCache.getTileWithBatchedRequest
+                            : comtCache.getTile
+                    ).bind(comtCache);
+                    MapLibreComtProvider.fetchTile(xyzIndex, tileHandler, cancellationToken, fetchTiles);
                 });
             } else {
-                MapLibreComtProvider.fetchTile(comtCache, xyzIndex, tileHandler, cancellationToken);
+                MapLibreComtProvider.fetchTile(xyzIndex, tileHandler, cancellationToken, fetchTiles);
             }
 
             return { cancel: () => cancellationToken.cancel() };
         });
     }
 
-    private static fetchTile(comtCache: provider.ComtCache, xyzIndex: XyzIndex, tileHandler, cancellationToken): void {
-        comtCache
-            .getTile(xyzIndex.z, xyzIndex.x, xyzIndex.y, cancellationToken)
-            .then((tile) => tileHandler(null, tile, null, null));
+    private static fetchTile(
+        xyzIndex: XyzIndex,
+        tileHandler,
+        cancellationToken: CancellationToken,
+        fetchTiles: (...params: any) => Promise<Uint8Array>,
+    ): void {
+        fetchTiles(xyzIndex.z, xyzIndex.x, xyzIndex.y, cancellationToken).then((tile) =>
+            tileHandler(null, tile, null, null),
+        );
     }
 }

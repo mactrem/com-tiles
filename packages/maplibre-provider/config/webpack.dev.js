@@ -13,6 +13,7 @@ module.exports = merge(common, {
     devtool: "source-map",
     entry: {
         index: path.join(ROOT_DIRECTORY, "debug/index.ts"),
+        batched: path.join(ROOT_DIRECTORY, "debug/index-batched.ts"),
         debug: path.join(ROOT_DIRECTORY, "debug/debug.ts"),
     },
     plugins: [
@@ -21,6 +22,12 @@ module.exports = merge(common, {
             filename: "index.html",
             template: HTML_TEMPLATE,
             chunks: ["index"],
+        }),
+        new HtmlWebpackPlugin({
+            title: "MapLibre GL COMTiles Batched Demo",
+            filename: "index-batched.html",
+            template: HTML_TEMPLATE,
+            chunks: ["batched"],
         }),
         new HtmlWebpackPlugin({
             title: "MapLibre GL COMTiles Debug",
