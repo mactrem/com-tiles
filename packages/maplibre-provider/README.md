@@ -28,3 +28,10 @@ with a `comt://` prefix like in the following example
     "maxzoom": 14
 }
 ````
+
+Per default the individual tile requests get batched to improve performance and in particular to reduce the storage costs.  
+This can reduce the number of tile requests about 90% on a 4k display and 50% on a HD display.  
+To disable this optimization create the `MapLibreComtProvider` with the following options
+````js
+MapLibreComtProvider.register(TileContent.MVT, TileFetchStrategy.SINGLE)
+````

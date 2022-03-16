@@ -2,8 +2,10 @@ import pako from "pako";
 import { Metadata } from "@com-tiles/spec";
 import ComtIndex, { FragmentRange } from "./comtIndex";
 import LruCache from "./lruCache";
-import { convertUInt40LEToNumber } from "./utils";
-import BatchedTilesProvider, { TileRequest } from "./batchedTilesProvider";
+import { convertUInt40LEToNumber, Optional } from "./utils";
+import BatchRequestDispatcher, { TileRequest } from "./batchRequestDispatcher";
+import { TmsIndex, XyzIndex } from "./tileIndex";
+import CancellationToken from "./cancellationToken";
 
 interface Header {
     indexOffset: number;
@@ -15,25 +17,6 @@ interface Header {
 interface IndexEntry {
     offset: number;
     size: number;
-}
-
-export type Callback = () => void;
-
-export class CancellationToken {
-    private readonly subscribers: Callback[] = [];
-
-    cancel(): void {
-        this.subscribers.forEach((subscriber) => subscriber());
-    }
-
-    register(callback: Callback): void {
-        this.subscribers.push(callback);
-    }
-
-    unregister(callback: Callback) {
-        const index = this.subscribers.indexOf(callback);
-        this.subscribers.splice(index, 1);
-    }
 }
 
 class IndexCache {
@@ -65,15 +48,13 @@ class IndexCache {
     }
 
     /**
-     * @param zoom
-     * @param x
-     * @param y Tms order
+     * @param tmsIndex Index of a specific tile in the TMS tiling scheme.
      * @returns Relative offset and size of the specified tile in the data section.
      */
-    get(zoom: number, x: number, y: number): IndexEntry {
-        //TODO: get rid of that redundant method call
-        const { index } = this.comtIndex.calculateIndexOffsetForTile(zoom, x, y);
-        const { startOffset, index: fragmentStartIndex } = this.comtIndex.getFragmentRangeForTile(zoom, x, y);
+    get(tmsIndex: TmsIndex): IndexEntry {
+        const { z, x, y } = tmsIndex;
+        const { index } = this.comtIndex.calculateIndexOffsetForTile(z, x, y);
+        const { startOffset, index: fragmentStartIndex } = this.comtIndex.getFragmentRangeForTile(z, x, y);
 
         const indexOffset = index * IndexCache.INDEX_ENTRY_NUM_BYTES;
         if (indexOffset <= this.partialIndex.byteLength - IndexCache.INDEX_ENTRY_NUM_BYTES) {
@@ -113,26 +94,21 @@ export default class ComtCache {
     private comtIndex: ComtIndex = null;
     private readonly requestCache = new Map<number, Promise<ArrayBuffer>>();
     private headerLoaded: Promise<Header>;
-    private readonly batchedTilesProvider: BatchedTilesProvider;
+    private readonly batchedTilesProvider: BatchRequestDispatcher;
 
-    /**
-     *
-     * @param comtUrl Url to an object storage where the COMT archive is hosted.
-     * @param prefetchHeader Specifies if the header should be fetched during construction of the class and before
-     *          the first tile is requested.
-     */
     private constructor(private readonly comtUrl: string, private readonly throttleTime, private header?: Header) {
         if (header) {
             this.initIndex(header);
         }
 
-        this.batchedTilesProvider = new BatchedTilesProvider(comtUrl, throttleTime);
+        this.batchedTilesProvider = new BatchRequestDispatcher(comtUrl, throttleTime);
     }
 
     /**
      * @param comtUrl Url to object storage where the COMTiles archive is hosted.
      * @param tileContent Content type of the map tiles.
      * @param prefetchHeader Specifies if the header should be prefetched or lazy loaded.
+     * @param throttleTime Time to wait for batching up the tile requests.
      */
     static async create(
         comtUrl: string,
@@ -151,99 +127,94 @@ export default class ComtCache {
     /**
      * Fetches a map tile with the given XYZ index from the specified COMTiles archive.
      *
-     * @param zoom Zoom level for the specific tile.
-     * @param x X index for the specific tile.
-     * @param y Y index for the specific, axis goes down (XYZ tiling scheme)
+     * @param xyzIndex Index of the tile in the XYZ tiling scheme.
      * @param cancellationToken For aborting the tile request.
      */
-    async getTile(zoom: number, x: number, y: number, cancellationToken?: CancellationToken): Promise<ArrayBuffer> {
-        /* Lazy load the header on the first tile request */
-        if (!this.header) {
-            if (!this.headerLoaded) {
-                this.headerLoaded = ComtCache.loadHeader(this.comtUrl);
-                this.header = await this.headerLoaded;
-                this.initIndex(this.header);
-            } else {
-                await this.headerLoaded;
-            }
-        }
-
-        const { metadata } = this.header;
-        /* COMTiles uses the y-axis alignment of the TMS spec which is flipped compared to xyz */
-        const tmsY = (1 << zoom) - y - 1;
-        const limit = metadata.tileMatrixSet.tileMatrix[zoom].tileMatrixLimits;
-        if (x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow) {
-            /* Requested tile not within the boundary ot the TileSet */
-            return new Uint8Array(0);
-        }
-
-        const indexEntry =
-            this.indexCache.get(zoom, x, tmsY) ?? (await this.fetchIndexEntry(zoom, x, tmsY, cancellationToken));
-        const absoluteTileOffset = this.header.dataOffset + indexEntry.offset;
-        /* Return an empty array if the tile is missing */
-        return indexEntry.size ? this.fetchMVT(absoluteTileOffset, indexEntry.size) : new Uint8Array(0);
-    }
-
-    async getTileWithBatchedRequest(
-        zoom: number,
-        x: number,
-        y: number,
-        cancellationToken?: CancellationToken,
-    ): Promise<ArrayBuffer> {
-        /* Lazy load the header on the first tile request */
-        if (!this.header) {
-            //TODO: test
-            if (!this.headerLoaded) {
-                this.headerLoaded = ComtCache.loadHeader(this.comtUrl);
-                this.header = await this.headerLoaded;
-                this.initIndex(this.header);
-            } else {
-                await this.headerLoaded;
-            }
-        }
-
-        const { metadata } = this.header;
-        /* COMTiles uses the y-axis alignment of the TMS spec which is flipped compared to xyz */
-        const tmsY = (1 << zoom) - y - 1;
-        const limit = metadata.tileMatrixSet.tileMatrix[zoom].tileMatrixLimits;
-        if (x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow) {
-            /* Requested tile not within the boundary ot the TileSet */
-            return new Uint8Array(0);
-        }
-
-        const indexEntry =
-            this.indexCache.get(zoom, x, tmsY) ?? (await this.fetchIndexEntry(zoom, x, tmsY, cancellationToken));
-        const absoluteTileOffset = this.header.dataOffset + indexEntry.offset;
-
-        const tileRequest: TileRequest = {
-            index: {
-                x,
-                y,
-                z: zoom,
-            },
-            range: {
-                startOffset: absoluteTileOffset,
-                endOffset: absoluteTileOffset + indexEntry.size - 1,
-            },
+    async getTile(xyzIndex: XyzIndex, cancellationToken?: CancellationToken): Promise<ArrayBuffer> {
+        const provider = (index, indexEntry, absoluteTileOffset, cancellationToken) => {
+            return this.fetchMVT(absoluteTileOffset, indexEntry.size, cancellationToken);
         };
 
-        //TODO: add cancelationToken
+        return this.fetchTile(xyzIndex, provider, cancellationToken);
+    }
+
+    /**
+     * Tries to batch the tile requests by aggregating all requests within the given throttleTime.
+     *
+     * @param xyzIndex Index of the tile in the XYZ tiling scheme.
+     * @param cancellationToken For aborting the tile request.
+     */
+    async getTileWithBatchRequest(xyzIndex: XyzIndex, cancellationToken?: CancellationToken): Promise<ArrayBuffer> {
+        const provider = (index, indexEntry, absoluteTileOffset, cancellationToken) => {
+            const tileRequest: TileRequest = {
+                index: xyzIndex,
+                range: {
+                    startOffset: absoluteTileOffset,
+                    endOffset: absoluteTileOffset + indexEntry.size - 1,
+                },
+            };
+
+            return this.batchedTilesProvider.fetchTile(tileRequest, cancellationToken);
+        };
+
+        return this.fetchTile(xyzIndex, provider, cancellationToken);
+    }
+
+    private async fetchTile(
+        xyzIndex: XyzIndex,
+        tileProvider: (
+            index: XyzIndex,
+            indexEntry: IndexEntry,
+            absoluteTileOffset: number,
+            cancellationToken: CancellationToken,
+        ) => Promise<ArrayBuffer>,
+        cancellationToken?: CancellationToken,
+    ): Promise<ArrayBuffer> {
+        const optionalIndexEntry = await this.getIndexEntry(xyzIndex, cancellationToken);
+        if (!optionalIndexEntry.isPresent()) {
+            return new Uint8Array(0);
+        }
+        const { indexEntry, absoluteTileOffset } = optionalIndexEntry.get();
+
         /* Return an empty array if the tile is missing */
-        return indexEntry.size ? this.batchedTilesProvider.getTile(tileRequest) : new Uint8Array(0);
+        return indexEntry.size
+            ? tileProvider(xyzIndex, indexEntry, absoluteTileOffset, cancellationToken)
+            : new Uint8Array(0);
     }
 
-    //TODO: remove -> only test
-    resetBatchedRequests() {
-        this.batchedTilesProvider.resetTileRequests();
+    private async getIndexEntry(
+        xyzIndex: XyzIndex,
+        cancellationToken,
+    ): Promise<Optional<{ indexEntry: IndexEntry; absoluteTileOffset: number }>> {
+        /* Lazy load the header on the first tile request */
+        if (!this.header) {
+            if (!this.headerLoaded) {
+                this.headerLoaded = ComtCache.loadHeader(this.comtUrl);
+                this.header = await this.headerLoaded;
+                this.initIndex(this.header);
+            } else {
+                await this.headerLoaded;
+            }
+        }
+
+        const { metadata } = this.header;
+        const { x, y, z } = xyzIndex;
+        /* COMTiles uses the y-axis alignment of the TMS spec which is flipped compared to xyz */
+        const tmsY = (1 << z) - y - 1;
+        const limit = metadata.tileMatrixSet.tileMatrix[z].tileMatrixLimits;
+        if (x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow) {
+            /* Requested tile not within the boundary ot the TileSet */
+            return Optional.empty();
+        }
+
+        const tmsIndex = { z, x, y: tmsY };
+        const indexEntry = this.indexCache.get(tmsIndex) ?? (await this.fetchIndexEntry(tmsIndex, cancellationToken));
+        const absoluteTileOffset = this.header.dataOffset + indexEntry.offset;
+        return Optional.of({ indexEntry, absoluteTileOffset });
     }
 
-    private async fetchIndexEntry(
-        zoom: number,
-        x: number,
-        y: number,
-        cancellationToken: CancellationToken,
-    ): Promise<IndexEntry> {
-        const fragmentRange = this.comtIndex.getFragmentRangeForTile(zoom, x, y);
+    private async fetchIndexEntry(tmsIndex: TmsIndex, cancellationToken: CancellationToken): Promise<IndexEntry> {
+        const fragmentRange = this.comtIndex.getFragmentRangeForTile(tmsIndex.z, tmsIndex.x, tmsIndex.y);
 
         let indexFragment: ArrayBuffer;
         /* avoid redundant requests to the same index fragment */
@@ -267,9 +238,8 @@ export default class ComtCache {
             indexFragment = await this.requestCache.get(fragmentRange.startOffset);
         }
 
-        //TODO: refactor -> get rid of get call on index fragment for calculation
         this.indexCache.setIndexFragment(fragmentRange, new Uint8Array(indexFragment));
-        return this.indexCache.get(zoom, x, y);
+        return this.indexCache.get(tmsIndex);
     }
 
     private initIndex(header: Header): void {
@@ -287,18 +257,23 @@ export default class ComtCache {
         lastBytePos: number,
         cancellationToken?: CancellationToken,
     ): Promise<ArrayBuffer> {
-        const { signal, abort } = new AbortController();
-        if (cancellationToken) {
-            cancellationToken.register(abort);
-        }
-
-        const response = await fetch(url, {
+        const requestOptions = {
             headers: {
                 range: `bytes=${firstBytePos}-${lastBytePos}`,
             },
-            signal,
-        });
-        cancellationToken?.unregister(abort);
+        };
+
+        let abortRequest;
+        if (cancellationToken) {
+            const controller = new AbortController();
+            const { signal, abort } = controller;
+            Object.assign(requestOptions, { signal });
+            abortRequest = abort.bind(controller);
+            cancellationToken.register(abortRequest);
+        }
+
+        const response = await fetch(url, requestOptions);
+        cancellationToken?.unregister(abortRequest);
 
         if (!response.ok) {
             throw new Error(response.statusText);
@@ -377,8 +352,17 @@ export default class ComtCache {
         }
     }
 
-    private async fetchMVT(tileOffset: number, tileSize: number): Promise<Uint8Array> {
-        const buffer = await ComtCache.fetchBinaryData(this.comtUrl, tileOffset, tileOffset + tileSize - 1);
+    private async fetchMVT(
+        tileOffset: number,
+        tileSize: number,
+        cancellationToken: CancellationToken,
+    ): Promise<Uint8Array> {
+        const buffer = await ComtCache.fetchBinaryData(
+            this.comtUrl,
+            tileOffset,
+            tileOffset + tileSize - 1,
+            cancellationToken,
+        );
         const compressedTile = new Uint8Array(buffer);
         return pako.ungzip(compressedTile);
     }

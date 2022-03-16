@@ -1,5 +1,5 @@
 import maplibregl from "maplibre-gl";
-import MapLibreComtProvider from "../src/index";
+import { MapLibreComtProvider } from "../src/index";
 
 MapLibreComtProvider.register();
 

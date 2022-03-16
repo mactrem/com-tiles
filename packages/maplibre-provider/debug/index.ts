@@ -1,7 +1,8 @@
 import maplibregl from "maplibre-gl";
-import { MapLibreComtProvider } from "../src/index";
+import { MapLibreComtProvider, TileFetchStrategy } from "../src/index";
+import { TileContent } from "@com-tiles/provider";
 
-MapLibreComtProvider.register(true, false);
+MapLibreComtProvider.register(TileContent.MVT, TileFetchStrategy.SINGLE);
 
 const map = new maplibregl.Map({
     container: "map",

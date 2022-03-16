@@ -14,42 +14,42 @@ export default class WebMercatorQuadMetadataBuilder {
     private maxZoom = 14;
     private layers = "";
 
-    setName(name: string) {
+    setName(name: string): WebMercatorQuadMetadataBuilder {
         this.name = name;
         return this;
     }
 
-    setDescription(description: string) {
+    setDescription(description: string): WebMercatorQuadMetadataBuilder {
         this.description = description;
         return this;
     }
 
-    setAttribution(attribution: string) {
+    setAttribution(attribution: string): WebMercatorQuadMetadataBuilder {
         this.attribution = attribution;
         return this;
     }
 
-    setTileOffsetBytes(offset: number) {
+    setTileOffsetBytes(offset: number): WebMercatorQuadMetadataBuilder {
         this.tileOffsetBytes = offset;
         return this;
     }
 
-    setTileFormat(tileFormat: TileFormat) {
+    setTileFormat(tileFormat: TileFormat): WebMercatorQuadMetadataBuilder {
         this.tileFormat = tileFormat;
         return this;
     }
 
-    setBoundingBox(bbox: BoundingBox | TileMatrix["tileMatrixLimits"][]) {
+    setBoundingBox(bbox: BoundingBox | TileMatrix["tileMatrixLimits"][]): WebMercatorQuadMetadataBuilder {
         this.bbox = bbox;
         return this;
     }
 
-    setMinZoom(zoom: number) {
+    setMinZoom(zoom: number): WebMercatorQuadMetadataBuilder {
         this.minZoom = zoom;
         return this;
     }
 
-    setMaxZoom(zoom: number) {
+    setMaxZoom(zoom: number): WebMercatorQuadMetadataBuilder {
         this.maxZoom = zoom;
         return this;
     }
@@ -57,7 +57,7 @@ export default class WebMercatorQuadMetadataBuilder {
     /**
      * see https://github.com/mapbox/mbtiles-spec/blob/master/1.3/spec.md#user-content-vector-tileset-metadata
      * */
-    setLayers(layers: string) {
+    setLayers(layers: string): WebMercatorQuadMetadataBuilder {
         this.layers = layers;
         return this;
     }
