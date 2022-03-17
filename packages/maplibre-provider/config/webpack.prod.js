@@ -7,7 +7,7 @@ const ROOT_DIRECTORY = path.resolve("./");
 const ENTRY_POINT = path.join(ROOT_DIRECTORY, "src/index.ts");
 const DIST_DIRECTORY = path.join(ROOT_DIRECTORY, "dist");
 const LIBRARY_NAME = "maplibreComtProvider.js";
-const LIBRARY_TARGET = "comt";
+const LIBRARY_TARGET = "comtiles";
 
 module.exports = merge(common, {
     mode: "production",

@@ -17,7 +17,7 @@
     "serve": "webpack serve --config config/webpack.dev.js",
     "test": "jest",
     "lint": "eslint --max-warnings=0 --fix --ext .ts src",
-    "format": "prettier --write \"**/*.ts\" \"**./*.json\""
+    "format": "prettier --write \"**/*.ts\""
   },
   "dependencies": {
     "@com-tiles/provider": "*",

@@ -1,4 +1,4 @@
-import { Metadata } from "@comt/spec";
+import { Metadata } from "@com-tiles/spec";
 import ComtIndex from "../src/comtIndex";
 
 describe("calculateIndexOffsetForTile", () => {

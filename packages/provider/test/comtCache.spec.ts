@@ -1,4 +1,4 @@
-import { CancellationToken } from "../src";
+import CancellationToken from "../src/cancellationToken";
 
 describe("CancellationToken", () => {
     describe("register", () => {

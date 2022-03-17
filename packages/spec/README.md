@@ -3,6 +3,42 @@ COMTiles are a streamable and read optimized file archive for storing raster and
 in particular vector tilesets at global scale in a cloud object storage and accessing 
 the tiles or tile batches via http range requests.  
 
+## Concept
+A COMTiles archive mainly consists of a metdata, index and data section.  
+A COMTiles file archive has the following layout:  
+![concept](assets/concept.svg)
+
+### Metadata
+The metadata section describes the properties, structure and content of the tileset encoded in a [JSON document](packages/spec/metadata-schema).
+The definiton of the structure and boundaries of a tileset are based on the `OGC Two Dimensional Tile Matrix Set` specification.
+All `TileMatrixSets` listed in the [Common TileMatrixSet definitions](http://docs.opengeospatial.org/is/17-083r2/17-083r2.html#61) are supported with `Web Mercator Quad` as the default.
+A subset of the tileset can be defined based on the `tile matrix set limits` data structure.
+
+### Data
+The data section contains the actual vector or raster tiles.
+The encoding of the map tiles (pbf, jpg, png, webp) is specified with the `tileFormat` property of the metadata document.
+The offset wihtin the data section for and the size of a specific tile is defined in the `index`.
+Based on the information of the index the tiles can be request with HTTP GET range requests.
+To improve the latency the single tile requests for a specific viewport of a map can be batched.
+To minimize the number of batched tile requests the tiles in the data section should be ordered on a space-filling curve.
+The ordering of the tiles can be specified with the `tileOrdering` property (Hilbert, Z-Order, Row-Major) of the metadata document.
+
+### Index
+The basic concept of a COMTiles archive is to create an additional `index` which stores the references (offset and size) to the actual map tiles located in the data section via so called `index entries (records)`.
+For a planet wide vector tileset this index has about 3 gb in size (will be optimized in v2 to about 1.3 gb).
+Because of the resulting size for large tilesets the index has to be streamable which means that only parts of the index can be requested to allow a fluent user experience already known from maps like Google Maps or OpenStreetMap.
+One main design goal of COMTiles is to minimize the number of HTTP GET range requests for the download of parts of the index for performance and cost reasons.
+With ordering the index on space-filling curves (Hilbert, Z-Order, Row-Major), packing pyramids into directories and aggregating the index in fragments three different approaches has been evaluated.
+Tests showed that subdividing the index peer zoom level in so called ``index fragments`` with a variable number of ``index entries`` referencing
+the specific map tiles seems to be the most effective approach in terms of the number of http range requests for viusalizing map tiles at global scale.
+Based on the concept of index fragments most of the time only one additional pre-fetch per zoom level is needed before accessing the map tiles for the current viewport of the map.
+The fragments can be cached on client side which omits the prefetch step for accessing the same viewport again.
+Depending on the boundaries of the tileset the index fragments can be sparse or dense.
+Based on the `tile matrix set limits` structure defined in the metdata document the number of index entries in a sparse fragment can be calculated.
+In addition parts of the index can also be unfragmented which means the index entries are not aggregated into fragments.
+The unfragmented part of the index must be downloaded with the first initial fetch when the page loads.
+For a planet wide tileset this should be zoom level 0 to 7.
+
 ## Specification
 
 ### Layout
