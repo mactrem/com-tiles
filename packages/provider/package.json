@@ -19,7 +19,7 @@
     "format": "prettier --write \"**/*.ts\""
   },
   "dependencies": {
-    "@com-tiles/spec": "*",
+    "@com-tiles/spec": "1.0.0-beta.1",
     "pako": "^2.0.4"
   },
   "devDependencies": {

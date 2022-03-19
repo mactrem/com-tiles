@@ -1,6 +1,6 @@
 ## @com-tiles/maplibre-provider
 
-The `@com-tiles/maplibre-provider` package can be used to access a COMTiles archive hosted on an cloud object storage like AWS S3 directly from the browser.   
+The `@com-tiles/maplibre-provider` package can be used to access a COMTiles archive hosted on an cloud object storage like AWS S3 directly from the browser.  
 To display the map tiles from a COMTiles archive based on the MapLibre web mapping library register 
 the `MapLibreComProvider` before creating a MapLibre map instance.  
 For how to use the `MapLibreComProvider` class via the script tag see the following snippet.
@@ -46,3 +46,10 @@ To disable this optimization create the `MapLibreComtProvider` with the followin
 ````js
 MapLibreComtProvider.register(TileContent.MVT, TileFetchStrategy.SINGLE);
 ````
+
+The `@com-tiles/maplibre-provider` package has currently the following limitations regarding the support of the COMTiles specification
+- The only supported TileMatrixCRS is WebMercatorQuad 
+- Only Mapbox vector tiles are supported as content of a map tile and no raster formats (PNG, WebP)
+- The only supported space-filling curve type for the order of the index fragments and tiles is row-major
+- Only index fragments can be loaded after the initial fetch. 
+  So with the first initial fetch all the unfragmented part of the index has to be fetched and can't be lazy loaded.

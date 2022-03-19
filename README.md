@@ -10,7 +10,7 @@ The main focus of COMTiles is to significantly reduce costs and simplify the hos
 in the cloud because no backend (database, server) is needed. 
 In addition the individual tile requests can also be batched to improve performance and in particular to reduce the storage costs because
 every HTTP range request on a cloud object storage has to be paid.
-This can reduce the number of tile requests on a 4k display by up to 90% and on a HD display by up to 50%.
+This can reduce the number of tile requests by up to 90%
 
 For the basic concepts and a detailed descriptions of the format have a look at the [specification](packages/spec).
 
