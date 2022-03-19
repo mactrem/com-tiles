@@ -46,7 +46,8 @@
     "yocto-queue": "^0.1.0"
   },
   "files": [
-    "dist/*"
+    "dist/*",
+    "CHANGELOG.md"
   ],
   "bugs": {
     "url": "https://github.com/mactrem/com-tiles/issues"

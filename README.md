@@ -29,16 +29,16 @@ For the basic concepts and a detailed descriptions of the format have a look at 
 
 ### Demo
 In the following examples the europe tileset is based on a MBTiles database from [MapTiler](https://www.maptiler.com/data/) and converted to
-a COMTiles archive with the @comt/mbtiles-converter.
+a COMTiles archive with the `@comt/mbtiles-converter`.
 The index for zoom level 0 to 10 is part of the initial fetch when the page is loaded.
 For zoom 11 to 14 the index fragments with a size of 37kb are lazy loaded.
-For exploring a city like munich and surroundings only one additonal HTTP request per zoom level is needed.
-
-Europe tileset hosted on a local MinIO storage with a disabled browser cache:
-[![COMTiles YouTube video](./assets/MinIO.png)](https://www.youtube.com/watch?v=puaJVVxT_KA)
+For exploring a city like munich and surroundings only one additional HTTP request per zoom level is needed.
 
 Europe tileset hosted on a AWS S3 standard storage with a disabled browser cache:
 [![COMTiles YouTube video](./assets/AwsS3.png)](https://www.youtube.com/watch?v=5StxZbfvMUw)
+
+Europe tileset hosted on a local MinIO storage with a disabled browser cache:
+[![COMTiles YouTube video](./assets/MinIO.png)](https://www.youtube.com/watch?v=puaJVVxT_KA)
 
 ### COMTiles archive vs directly hosting the map tiles
 **Advantages of COMTiles**
@@ -63,7 +63,7 @@ A performant binary encoding for geographic data based on flatbuffers that can h
 #### PMTiles
 [PMTiles](https://github.com/protomaps/PMTiles) is a single-file archive format for pyramids of map tiles.
 The index of a PMTiles archive is structured in tile pyramids compared to the fragment based approach in a COMTiles archive.
-For a comparison of the latency see the following video [Video](https://www.youtube.com/watch?v=oqyQ3wo7n18).
+For a comparison of the latency see the following [video](https://www.youtube.com/watch?v=oqyQ3wo7n18).
 
 ### Use Cases
 - Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS
