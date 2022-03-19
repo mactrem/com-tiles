@@ -21,4 +21,7 @@ module.exports = merge(common, {
         umdNamedDefine: true,
     },
     plugins: [new CleanWebpackPlugin()],
+    externals: {
+        "maplibre-gl": "maplibregl",
+    },
 });

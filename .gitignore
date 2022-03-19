@@ -4,6 +4,4 @@ node_modules/
 .idea/
 TODO.txt
 README.md.org
-packages/maplibre-provider/debug/assets/tiles-pmtiles.json
-packages/maplibre-provider/debug/index-pmtiles.html
 

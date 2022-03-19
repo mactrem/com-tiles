@@ -78,11 +78,19 @@ class IndexCache {
     }
 }
 
-export enum TileContent {
-    MVT,
-    PNG,
+export enum HeaderFetchStrategy {
+    PREFETCH = "PREFETCH",
+    LAZY = "LAZY ",
 }
 
+/*
+ * The ComtCache class has currently the following limitations regarding the support of the COMTiles spec:
+ * - The only supported TileMatrixCRS is WebMercatorQuad
+ * - Only Mapbox vector tiles are supported as content of a map tile and no raster formats (PNG, WebP)
+ * - The only supported space-filling curve type for the order of the index fragments and tiles is row-major
+ * - Only index fragments can be loaded after the initial fetch.
+ *   So with the first initial fetch all the unfragmented part of the index has to be fetched and can't be lazy loaded.
+ * */
 export default class ComtCache {
     private static readonly SUPPORTED_VERSION = 1;
     private static readonly INITIAL_CHUNK_SIZE = 2 ** 19; //512k
@@ -106,21 +114,15 @@ export default class ComtCache {
 
     /**
      * @param comtUrl Url to object storage where the COMTiles archive is hosted.
-     * @param tileContent Content type of the map tiles.
      * @param prefetchHeader Specifies if the header should be prefetched or lazy loaded.
      * @param throttleTime Time to wait for batching up the tile requests.
      */
     static async create(
         comtUrl: string,
-        tileContent = TileContent.MVT,
-        prefetchHeader = true,
+        prefetchHeader = HeaderFetchStrategy.PREFETCH,
         throttleTime = 5,
     ): Promise<ComtCache> {
-        if (tileContent !== TileContent.MVT) {
-            throw new Error("Only Mapbox Vector Tiles are currently supported as content of a map tile.");
-        }
-
-        const header = prefetchHeader ? await ComtCache.loadHeader(comtUrl) : null;
+        const header = prefetchHeader === HeaderFetchStrategy.PREFETCH ? await ComtCache.loadHeader(comtUrl) : null;
         return new ComtCache(comtUrl, throttleTime, header);
     }
 

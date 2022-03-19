@@ -10,4 +10,4 @@ const map = new maplibregl.Map({
     zoom: 0,
 });
 
-map.addControl(new maplibregl.NavigationControl());
+map.addControl(new maplibregl.NavigationControl({}));

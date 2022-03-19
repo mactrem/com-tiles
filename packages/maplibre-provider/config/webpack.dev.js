@@ -13,19 +13,19 @@ module.exports = merge(common, {
     devtool: "source-map",
     entry: {
         index: path.join(ROOT_DIRECTORY, "debug/index.ts"),
-        batched: path.join(ROOT_DIRECTORY, "debug/index-batched.ts"),
+        batched: path.join(ROOT_DIRECTORY, "debug/batched.ts"),
         debug: path.join(ROOT_DIRECTORY, "debug/debug.ts"),
     },
     plugins: [
         new HtmlWebpackPlugin({
-            title: "MapLibre GL COMTiles Demo",
+            title: "MapLibre GL COMTiles Demo with individual tile requests",
             filename: "index.html",
             template: HTML_TEMPLATE,
             chunks: ["index"],
         }),
         new HtmlWebpackPlugin({
-            title: "MapLibre GL COMTiles Batched Demo",
-            filename: "index-batched.html",
+            title: "MapLibre GL COMTiles Demo with bath tile requests",
+            filename: "batched.html",
             template: HTML_TEMPLATE,
             chunks: ["batched"],
         }),
@@ -36,9 +36,21 @@ module.exports = merge(common, {
             chunks: ["debug"],
         }),
         new HtmlWebpackPlugin({
-            title: "MapLibre GL PMTiles Demo",
-            filename: "index-pmtiles.html",
-            template: path.join(ROOT_DIRECTORY, "debug/index-pmtiles.html"),
+            title: "MapLibre GL COMTiles UNPKG",
+            filename: "unpkg.html",
+            template: path.join(ROOT_DIRECTORY, "debug/unpkg.html"),
+            chunks: [],
+        }),
+        new HtmlWebpackPlugin({
+            title: "MapLibre PMTiles Demo",
+            filename: "pmtiles.html",
+            template: path.join(ROOT_DIRECTORY, "debug/formats/pmtiles.html"),
+            chunks: [],
+        }),
+        new HtmlWebpackPlugin({
+            title: "MapLibre GL Cotar Demo",
+            filename: "cotar.html",
+            template: path.join(ROOT_DIRECTORY, "debug/formats/cotar.html"),
             chunks: [],
         }),
         new CopyWebpackPlugin({

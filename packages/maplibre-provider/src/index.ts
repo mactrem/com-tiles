@@ -1,11 +1,23 @@
 import maplibregl from "maplibre-gl";
-import { TileContent, CancellationToken, XyzIndex, ComtCache } from "@com-tiles/provider";
+import { CancellationToken, XyzIndex, ComtCache, HeaderFetchStrategy } from "@com-tiles/provider";
 
+/*
+ * The individual tile requests get batched to improve performance and in particular to reduce the storage costs.
+ * This can reduce the number of tile requests up to 90%.
+ * */
 export enum TileFetchStrategy {
-    BATCHED,
-    SINGLE,
+    BATCHED = "BATCHED",
+    SINGLE = "SINGLE",
 }
 
+/**
+ * The MapLibreComtProvider class has currently the following limitations regarding support of the COMTiles spec:
+ * - The only supported TileMatrixCRS is WebMercatorQuad
+ * - Only Mapbox vector tiles are supported as content of a map tile and no raster formats (PNG, WebP)
+ * - The only supported space-filling curve type for the order of the index fragments and tiles is row-major
+ * - Only index fragments can be loaded after the initial fetch.
+ *   So with the first initial fetch all the unfragmented part of the index has to be fetched and can't be lazy loaded.
+ */
 export class MapLibreComtProvider {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     private constructor() {}
@@ -14,11 +26,9 @@ export class MapLibreComtProvider {
      * Adds a COMT provider to MapLibre for displaying the map tiles of a COMTiles archive.
      * The COMT provider will be used when a source with a comt:// schema is used in a Mapbox style.
      *
-     * @param tileContent Content type of the map tiles.
-     * Only Mapbox Vector Tiles are currently supported as content of a map tile.
      * @param tileFetchStrategy Specifies if the tiles should be fetched in batches or tile by tile.
      */
-    static register(tileContent = TileContent.MVT, tileFetchStrategy = TileFetchStrategy.BATCHED): void {
+    static register(tileFetchStrategy = TileFetchStrategy.BATCHED): void {
         let comtCache: ComtCache;
         let fetchTiles: (index: XyzIndex, token: CancellationToken) => Promise<Uint8Array>;
         maplibregl.addProtocol("comt", (params, tileHandler) => {
@@ -32,7 +42,7 @@ export class MapLibreComtProvider {
             };
 
             if (!comtCache) {
-                ComtCache.create(url, tileContent, false).then((cache) => {
+                ComtCache.create(url, HeaderFetchStrategy.LAZY).then((cache) => {
                     comtCache = cache;
 
                     fetchTiles = (
