@@ -5,8 +5,8 @@ To display the map tiles from a COMTiles archive based on the MapLibre web mappi
 the `MapLibreComProvider` before creating a MapLibre map instance.  
 For how to use the `MapLibreComProvider` class via the script tag see the following snippet.
 ````html
-<script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
-<link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@2.1.7/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@2.1.7/dist/maplibre-gl.css" rel="stylesheet" />
 <script src="https://unpkg.com/@com-tiles/maplibre-provider@latest/dist/maplibreComtProvider.js"></script>
 
 <script>
