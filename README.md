@@ -10,7 +10,8 @@ The main focus of COMTiles is to significantly reduce costs and simplify the hos
 in the cloud because no backend (database, server) is needed. 
 In addition the individual tile requests can also be batched to improve performance and in particular to reduce the storage costs because
 every HTTP range request on a cloud object storage has to be paid.
-This can reduce the number of tile requests by up to 90%
+This can reduce the number of tile requests by up to 90%. 
+On 4K display with a vector tileset for example this can result in a reduction from 45 requests with the classic approach to 5 requests with the batched approach.
 
 For the basic concepts and a detailed descriptions of the format have a look at the [specification](packages/spec).
 
@@ -18,14 +19,6 @@ For the basic concepts and a detailed descriptions of the format have a look at 
 - [@com-tiles/mbtiles-converter](packages/converter/mbtiles-converter): To convert a MBTiles database to a COMTiles archive the `@com-tiles/mbtiles-converter` command line tool can be used.
 - [@com-tiles/maplibre-provider](packages/maplibre-provider): For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the `@com-tiles/maplibre-provider`package can be used.
 - [@com-tiles/provider](packages/provider): For the integration in other web mapping libraries like OpenLayer or Leaflet the `@com-tiles/provider` package can be used.
-
-### Repository structure
-- [@com-tiles/spec](packages/spec): COMTiles file format specification
-- [@com-tiles/provider](packages/provider): Utility functions for working with COMTiles
-- [@com-tiles/maplibre-provider](packages/maplibre-provider): COMTiles provider for MapLibre GL JS
-- [@com-tiles/server](packages/server): MapServer for serving tiles, can be hosted in a cloud native (serverless) environment
-- [@com-tiles/mbtiles-converter](packages/converter/mbtiles-converter): Converting map tiles stored in a MBTiles database to a COMTiles archive
-- [@com-tiles/tilelive-comtiles](packages/converter/tilelive-comtiles): Integration into tilelive for generating Mapbox Vector Tiles
 
 ### Demo
 In the following examples the europe tileset is based on a MBTiles database from [MapTiler](https://www.maptiler.com/data/) and converted to
@@ -40,14 +33,18 @@ Europe tileset hosted on a AWS S3 standard storage with a disabled browser cache
 Europe tileset hosted on a local MinIO storage with a disabled browser cache:
 [![COMTiles YouTube video](./assets/MinIO.png)](https://www.youtube.com/watch?v=puaJVVxT_KA)
 
+In following example the tile requests are batched resulting in only 2 to 3 tile requests for a specific zoom level
+compared to up to 15 requests with the standard approach (tile by tile) on an HD display :
+[![COMTiles YouTube video](./assets/AwsS3Batched.png)](https://www.youtube.com/watch?v=deGRdru5hZ8)
+
 ### COMTiles archive vs directly hosting the map tiles
 **Advantages of COMTiles**
 - Loading up over 350 million tiles to a cloud storage for a planet scale vector tiles dataset is significantly more expensive because every tile
   upload has to be paid separately
 - Uploading a single large file is noticeably faster compared to uploading millions of individual files
-- A archive format which combines the metadata which describes the tileset and data into one file is more easy to handle
+- A archive format which combines the metadata and data into one file is more easy to handle
 - Saves storage because a (raster) tileset at global scale can have many repeated tiles (about 70 percent of the earth is water)
-- Tile requests can be batched to significantly reduce the number of requests    
+- Tile requests can be batched to significantly reduce the number of requests by up to 90% 
 
 **Advantages of directly hosting the map tiles**   
 - For a tileset at global scale from zoom level 8 on at least one prefetch for a index fragment is needed for every zoom level up to 14 -> this is bearly or not at all noticeable for the user regarding the user experience and workflow
@@ -69,6 +66,13 @@ For a comparison of the latency see the following [video](https://www.youtube.co
 - Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS
 - Downloading map extracts for the offline usage in apps
 - Downloading map extracts for the hosting on a dedicated on-premise infrastructure
+
+### Repository structure
+- [@com-tiles/spec](packages/spec): COMTiles file format specification
+- [@com-tiles/provider](packages/provider): Utility functions for working with COMTiles
+- [@com-tiles/maplibre-provider](packages/maplibre-provider): COMTiles provider for MapLibre GL JS
+- [@com-tiles/server](packages/server): MapServer for serving tiles, can be hosted in a cloud native (serverless) environment
+- [@com-tiles/mbtiles-converter](packages/converter/mbtiles-converter): Converting map tiles stored in a MBTiles database to a COMTiles archive
 
 ### References
 - https://medium.com/planet-stories/cloud-native-geospatial-part-2-the-cloud-optimized-geotiff-6b3f15c696ed
