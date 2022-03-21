@@ -58,7 +58,7 @@ export default class ComtIndex {
             } else {
                 /*
                  * 1. Calculate the number of index entries which are on the left side of the fragment
-                 * 2. Calculate the number of index entries ‚which are below the the fragment of the specified tile
+                 * 2. Calculate the number of index entries which are below the the fragment of the specified tile
                  * 3. Calculate the number of index entries in the fragment for the end offset
                  *  ________________
                  * |   |    T|      |
@@ -96,7 +96,7 @@ export default class ComtIndex {
     /**
      * Calculates the offset within the index (IndexEntry) for the specified tile based on the metadata.
      * This method can be used when the full index is kept in memory.
-     * If this not the case use index fragments to query parts of the index.
+     * If this is not the case use index fragments to query parts of the index.
      */
     calculateIndexOffsetForTile(zoom: number, x: number, y: number): { offset: number; index: number } {
         const offset = this.tileMatrixSet.tileMatrix

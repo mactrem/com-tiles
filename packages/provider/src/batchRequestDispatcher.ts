@@ -26,7 +26,7 @@ export default class BatchRequestDispatcher {
 
     constructor(private readonly url, private readonly throttleTime = 5) {}
 
-    //TODO: implement aborting the batch tile requests
+    //TODO: implement aborting of the batch tile requests
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     fetchTile(tileRequest: Omit<TileRequest, "promise">, cancellationToken?: CancellationToken): Promise<ArrayBuffer> {
         if (!this.tileRequests.length) {
