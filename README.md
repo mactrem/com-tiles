@@ -11,7 +11,7 @@ in the cloud because no backend (database, server) is needed.
 In addition the individual tile requests can also be batched to improve performance and in particular to reduce the storage costs because
 every HTTP range request on a cloud object storage has to be paid.
 This can reduce the number of tile requests by up to 90%. 
-On a 4K display with a vector tileset for example this can result in a reduction from 45 requests with the classic approach to 5 requests with the batched approach.
+On a 4K display with a vector tileset for example this can result in a reduction from 45 requests with the standard approach (tile by tile) to 5 requests with the tile batch approach.
 
 For the basic concepts and a detailed descriptions of the format have a look at the [specification](packages/spec).
 
