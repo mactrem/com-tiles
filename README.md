@@ -17,7 +17,7 @@ For the basic concepts of COMTiles have a look at the lightning talk at the [OGC
 For a detailed description of the format have a look at the [specification](packages/spec).
 
 ## Tools
-- [@com-tiles/mbtiles-converter](packages/converter/mbtiles-converter): To convert a MBTiles database to a COMTiles archive the `@com-tiles/mbtiles-converter` command line tool can be used.
+- [@com-tiles/mbtiles-converter](packages/mbtiles-converter): To convert a MBTiles database to a COMTiles archive the `@com-tiles/mbtiles-converter` command line tool can be used.
 - [@com-tiles/maplibre-provider](packages/maplibre-provider): For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the `@com-tiles/maplibre-provider`package can be used.
 - [@com-tiles/provider](packages/provider): For the integration in other web mapping libraries like OpenLayer or Leaflet the `@com-tiles/provider` package can be used.
 
@@ -79,7 +79,7 @@ For a comparison of the latency see the following [video](https://www.youtube.co
 - [@com-tiles/provider](packages/provider): Utility functions for working with COMTiles
 - [@com-tiles/maplibre-provider](packages/maplibre-provider): COMTiles provider for MapLibre GL JS
 - [@com-tiles/server](packages/server): MapServer for serving tiles, can be hosted in a cloud native (serverless) environment
-- [@com-tiles/mbtiles-converter](packages/converter/mbtiles-converter): Converting map tiles stored in a MBTiles database to a COMTiles archive
+- [@com-tiles/mbtiles-converter](packages/mbtiles-converter): Converting map tiles stored in a MBTiles database to a COMTiles archive
 
 ## References
 - https://medium.com/planet-stories/cloud-native-geospatial-part-2-the-cloud-optimized-geotiff-6b3f15c696ed
