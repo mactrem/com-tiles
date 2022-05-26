@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import fs from "fs";
-import program from "commander";
+import { program } from "commander";
 import { ComtIndex } from "@com-tiles/provider";
 import { Metadata } from "@com-tiles/spec";
 import { MBTilesRepository } from "./mbTilesRepository";

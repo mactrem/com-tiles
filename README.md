@@ -13,7 +13,7 @@ every HTTP range request on a cloud object storage has to be paid.
 This can reduce the number of tile requests by up to 90%. 
 On a 4K display with a vector tileset for example this can result in a reduction from 45 requests with the standard approach (tile by tile) to 5 requests with the tile batch approach.
 
-For the basic concepts of COMTiles have a look at the lightning talk at the [OGC Cloud-Native Geospatial Outreach Event](https://youtu.be/2_q5NsgxyVE?t=24096).  
+For the basic concepts of COMTiles have a look at the lightning talk at the [OGC Cloud-Native Geospatial Outreach Event](https://youtu.be/2_q5NsgxyVE?t=24096). 
 For a detailed description of the format have a look at the [specification](packages/spec).
 
 ## Tools
