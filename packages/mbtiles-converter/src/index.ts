@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import fs from "fs";
-import program from "commander";
+import { program } from "commander";
 import { ComtIndex } from "@com-tiles/provider";
 import { Metadata } from "@com-tiles/spec";
-import { MBTilesRepository } from "./mbTilesRepository";
+import { MBTilesRepository } from "./mbTilesSyncRepository";
 import { toBytesLE } from "./utils.js";
 import pkg from "../package.json";
 import MapTileProvider, { RecordType } from "./tileProvider";
@@ -30,6 +30,8 @@ const INDEX_ENTRY_SIZE_BYTE_LENGTH = 4;
 const MAX_ZOOM_DB_QUERY = parseInt(options.maxZoomDbQuery) || 8;
 
 (async () => {
+    console.time("conversion");
+
     const logger = new Logger();
     const mbTilesFilename = options.inputFilePath;
     const comTilesFilename = options.outputFilePath;
@@ -37,11 +39,13 @@ const MAX_ZOOM_DB_QUERY = parseInt(options.maxZoomDbQuery) || 8;
     logger.info(`Converting the MBTiles file ${mbTilesFilename} to a COMTiles archive.`);
     await createComTileArchive(mbTilesFilename, comTilesFilename, logger);
     logger.info(`Successfully saved the COMTiles archive in ${comTilesFilename}.`);
+
+    console.timeEnd("conversion");
 })();
 
 async function createComTileArchive(mbTilesFilename: string, comTilesFileName: string, logger: Logger) {
-    const repo = await MBTilesRepository.create(mbTilesFilename);
-    const metadata = await repo.getMetadata();
+    const repo = new MBTilesRepository(mbTilesFilename);
+    const metadata = repo.getMetadata();
     /**
      * Query the TileMatrixLimits for the lower zoom levels from the db.
      * It's common to have more tiles as an overview in the lower zoom levels then specified in the bounding box of the MBTiles metadata.
@@ -51,7 +55,7 @@ async function createComTileArchive(mbTilesFilename: string, comTilesFileName: s
         (tileMatrix) => tileMatrix.zoom <= MAX_ZOOM_DB_QUERY,
     );
     for (const tileMatrix of filteredTileMatrixSet) {
-        tileMatrix.tileMatrixLimits = await repo.getTileMatrixLimits(tileMatrix.zoom);
+        tileMatrix.tileMatrixLimits = repo.getTileMatrixLimits(tileMatrix.zoom);
     }
 
     const tileMatrixSet = metadata.tileMatrixSet.tileMatrix;
@@ -75,7 +79,7 @@ async function createComTileArchive(mbTilesFilename: string, comTilesFileName: s
     await writeTiles(stream, tileProvider);
 
     stream.end();
-    await repo.dispose();
+    repo.dispose();
 
     stream = fs.createWriteStream(comTilesFileName, { flags: "r+", start: 12 });
     const indexLengthBuffer = toBytesLE(indexByteLength, 5);
@@ -117,7 +121,7 @@ async function writeIndex(
     let dataSectionOffset = 0;
     let previousIndex = -1;
     let numIndexEntries = 0;
-    for await (const { zoom, column, row, size: tileLength } of tiles) {
+    for (const { zoom, column, row, size: tileLength } of tiles) {
         const { index: currentIndex } = comtIndex.calculateIndexOffsetForTile(zoom, column, row);
         const padding = currentIndex - previousIndex - 1;
         /* Add a padding in the index for the missing tiles in the MBTiles database */
@@ -156,7 +160,7 @@ async function writeTiles(stream: fs.WriteStream, tileProvider: MapTileProvider)
 
     /* Batching the tile writes did not bring the expected performance gain because allocating the buffer
      * for the tile batches was to expensive. So we simplified again to single tile writes. */
-    for await (const { data: tile } of tiles) {
+    for (const { data: tile } of tiles) {
         const tileLength = tile.byteLength;
         if (tileLength > 0) {
             const tileBuffer = Buffer.from(tile);

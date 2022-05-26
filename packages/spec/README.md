@@ -3,6 +3,29 @@ COMTiles are a streamable and read optimized file archive for storing raster and
 in particular vector tilesets at global scale in a cloud object storage and accessing 
 the tiles or tile batches via http range requests.  
 
+
+- Metadata
+  - JSON document defined with a JSON schema definition
+  - Contains information like the name of the tileset, information about the attribution and content of the actual map tiles in the data section
+  - The tileset is defined via a TileMatrixSet data structure
+    - TileMatrixSet
+      - Only WebMercatorQuad working? -> because of quadtree
+    - TileMatrix
+    - TileMatrixLimits -> based on that structure the fragments can be calculated
+- Index
+  - The index can be unfragmented and fragmented -> standard for global scale dataset 0 to 7 unfragmented
+  - The unfragmented part of the index has to be fetched with the first initial request with the metdata -> good size are 500k
+  - To stream only parts of the index fragments has been evaluated as the most efficent approach compared to sfc and tile pyramids
+  - Index entries
+    - 9 bytes per index record -> optimized with v2
+    - for missing tiles offset and size are set to zero
+  - Index fragments
+    - Calculation of which fragment to fetch based on the limits -> no need to store index redundant
+    - Sparse and dense fragments -> based on the TileMatrixSet limits the offset of the fragment can be calculated
+      - Sparse fragments reduce size
+    - Fix coordinate system always starting at top left
+- Data
+
 ## Concept
 A COMTiles archive mainly consists of a metdata, index and data section.  
 A COMTiles file archive has the following layout:  

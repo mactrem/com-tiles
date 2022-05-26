@@ -1,6 +1,6 @@
 import { TileMatrix } from "@com-tiles/spec/types/tileMatrix";
 import { TileMatrixLimits } from "@com-tiles/spec/types/tileMatrixLimits";
-import { MBTilesRepository } from "./mbTilesRepository";
+import { MBTilesRepository } from "./mbTilesSyncRepository";
 
 export interface TileRecord {
     zoom: number;
@@ -41,7 +41,7 @@ export default class TileProvider {
      * @returns Collection of map tiles or the size of the tiles depending on the {@link TileRecordType}.
      * The tiles are arranged in row-major order.
      */
-    async *getTilesInRowMajorOrder<T extends RecordType>(tileType: T): AsyncIterable<TileRecordType<T>> {
+    *getTilesInRowMajorOrder<T extends RecordType>(tileType: T): Iterable<TileRecordType<T>> {
         const minZoom = this.tileMatrixSet[0].zoom;
         const maxZoom = this.tileMatrixSet.at(-1).zoom;
 
@@ -56,7 +56,7 @@ export default class TileProvider {
             const limits = tileMatrix.tileMatrixLimits;
 
             if (!TileProvider.useIndexFragmentation(tileMatrix)) {
-                const tiles = await getTiles(zoom, limits);
+                const tiles = getTiles(zoom, limits);
                 for (const tile of tiles) {
                     yield { zoom, ...tile };
                 }
@@ -73,7 +73,7 @@ export default class TileProvider {
                             limits,
                             denseFragmentBounds,
                         );
-                        const tiles = await getTiles(zoom, sparseFragmentBounds);
+                        const tiles = getTiles(zoom, sparseFragmentBounds);
                         for (const tile of tiles) {
                             yield { zoom, ...tile };
                         }

@@ -68,7 +68,7 @@ export default class WebMercatorQuadMetadataBuilder {
      * Zoom 0 to 7 are not fragmented and have an aggregation factor of -1.
      * Zoom 8 to 14 have an aggregation factor of 6.
      */
-    async build(): Promise<Metadata> {
+    build(): Metadata {
         if (!this.name || !this.bbox) {
             throw new Error("No name or bounding box specified for the tileset.");
         }

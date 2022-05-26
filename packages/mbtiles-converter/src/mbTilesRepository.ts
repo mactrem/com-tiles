@@ -19,6 +19,8 @@ export class MBTilesRepository {
 
     async getMetadata(): Promise<Metadata> {
         const query = `SELECT name, value FROM ${MBTilesRepository.METADATA_TABLE_NAME};`;
+        const stmt = this.db.exec(query);
+
         const rows = await promisify(this.db.all.bind(this.db))(query);
 
         const metadataBuilder = new WebMercatorQuadMetadataBuilder();
@@ -116,16 +118,7 @@ export class MBTilesRepository {
         return promisify(this.db.all.bind(this.db))(selectStatement);
     }
 
-    private static connect(dbPath: string): Promise<Database> {
-        return new Promise<Database>((resolve, reject) => {
-            const db = new Database(dbPath, OPEN_READONLY, (err) => {
-                if (err) {
-                    reject(err.message);
-                    return;
-                }
-
-                resolve(db);
-            });
-        });
+    private static connect(dbPath: string): Database {
+        return new Database(dbPath);
     }
 }
