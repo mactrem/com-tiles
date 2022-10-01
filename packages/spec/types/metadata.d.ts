@@ -19,10 +19,6 @@ export interface Metadata {
    */
   attribution?: string;
   /**
-   * Number of bytes used to encode the offset to a map tile in an index record. Defaults to 5 bytes.
-   */
-  tileOffsetBytes?: number;
-  /**
    * Based on the MBTiles spec. File format of the tile data. *.pbf as a format refers to gzip-compressed vector tile data in Mapbox Vector Tile format.
    */
   tileFormat: "pbf" | "jpg" | "png" | "webp";

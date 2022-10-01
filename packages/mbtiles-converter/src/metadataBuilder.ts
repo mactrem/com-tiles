@@ -65,17 +65,15 @@ export default class WebMercatorQuadMetadataBuilder {
     /**
      *
      * The boundary is in all TileMatrix (zoom levels) instances the same.
-     * Zoom 0 to 7 are not fragmented and have an aggregation factor of -1.
-     * Zoom 8 to 14 have an aggregation factor of 6.
      */
-    async build(): Promise<Metadata> {
+    async build(pyramidMaxZoom: number, aggregationCoefficientFragment: number): Promise<Metadata> {
         if (!this.name || !this.bbox) {
             throw new Error("No name or bounding box specified for the tileset.");
         }
 
         const tileMatrices: TileMatrix[] = [];
         for (let zoom = this.minZoom; zoom <= this.maxZoom; zoom++) {
-            const aggregationCoefficient = zoom <= 7 ? -1 : 6;
+            const aggregationCoefficient = zoom <= pyramidMaxZoom ? -1 : aggregationCoefficientFragment;
 
             let tileMatrix: TileMatrix;
             if (this.isTileMatrixLimits(this.bbox)) {

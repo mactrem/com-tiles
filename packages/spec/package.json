@@ -1,6 +1,6 @@
 {
   "name": "@com-tiles/spec",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-rc.0",
   "description": "Schema definition of a COMTiles archive",
   "license": "MIT",
   "repository": {
@@ -11,7 +11,6 @@
   "scripts": {
     "generate": "npm-run-all generate:*",
     "generate:metadata": "json2ts -i metadata-schema/metadata.json -o types/metadata.d.ts --cwd metadata-schema",
-    "generate:sfc": "json2ts --i metadata-schema/spaceFillingCurveOrdering.json --o types/spaceFillingCurveOrdering.d.ts --cwd metadata-schema",
     "generate:tileFormat": "json2ts --i metadata-schema/tileFormat.json --o types/tileFormat.d.ts --cwd metadata-schema",
     "generate:tileMatrix": "json2ts --i metadata-schema/tileMatrix.json --o types/tileMatrix.d.ts --cwd metadata-schema",
     "generate:tileMatrixLimits": "json2ts --i metadata-schema/tileMatrixLimits.json --o types/tileMatrixLimits.d.ts --cwd metadata-schema"

@@ -21,9 +21,10 @@
     "format": "prettier --write \"**/*.ts\""
   },
   "dependencies": {
-    "@com-tiles/spec": "*",
     "@com-tiles/provider": "*",
+    "@com-tiles/spec": "*",
     "commander": "^9.0.0",
+    "pako": "^2.0.4",
     "sqlite3": "^5.0.2"
   },
   "devDependencies": {

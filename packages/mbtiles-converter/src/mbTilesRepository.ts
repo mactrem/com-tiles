@@ -17,7 +17,7 @@ export class MBTilesRepository {
         return new MBTilesRepository(db);
     }
 
-    async getMetadata(): Promise<Metadata> {
+    async getMetadata(pyramidMaxZoom: number, aggregationCoefficientFragment: number): Promise<Metadata> {
         const query = `SELECT name, value FROM ${MBTilesRepository.METADATA_TABLE_NAME};`;
         const rows = await promisify(this.db.all.bind(this.db))(query);
 
@@ -48,7 +48,7 @@ export class MBTilesRepository {
             }
         }
 
-        return metadataBuilder.build();
+        return metadataBuilder.build(pyramidMaxZoom, aggregationCoefficientFragment);
     }
 
     /**

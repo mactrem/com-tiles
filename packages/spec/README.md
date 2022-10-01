@@ -4,8 +4,63 @@ in particular vector tilesets at global scale in a cloud object storage and acce
 the tiles or tile batches via http range requests.  
 
 ## Concept
+
+Two concepts
+- compressed tile pyramid which should be eager loaded e.g. with the initial load of the map/page
+  - max size of 4GB but should be much smaller <1 MB -> 21k good size
+  - no absolute offset only 3 bytes per index entry
+  - compression gzip is used
+- index fragments which are lazy loaded and not compressed 
+  - index records and fragments are ordered on a row-major order sfc
+
+
+Layout
+- Header
+  - Magic
+  - Version
+  - Metadata Length
+  - Pyramid Section Length
+  - Fragment Section Length
+- Metadata
+- Data Section
+  - Compressed Index Pyramid Section
+  - Index Fragment Section
+
+Restrictions
+- max tile size 16MB -> 3 bytes
+
+Basics
+- Overview is always a tile pyramid on a planet scale tileset 0-7 is the prefered size
+  - The overview pyramid always has to be fully downloaded
+- After the overview the index is always divided into fragments for streaming portions of the index
+  - The default aggregation coefficient is 6 which means 4096 index entries are clustered
+
+
+TODO:
+- For specifying the zoom levels within a tile pyramid -1 as a flag is used 
+  -> Use concept of a Tile Pyramid also for zoom levels
+
+Options
+- The number of bytes for an index record which are specifying the size of a tile can be configured
+  - Default to 3 bytes which limits the size of an tile to 16mb -> is enough for open map tile schema
+
+
+Tile pyramid is used for the overviews for a limited number of tiles.
+21k is a good number which is zoom 0 to 7 at a planet scale tileset.
+
+- header fields -> magic, version, metadata length, index pyramid length, index fragment length
+- Index is divided into index pyramid and index fragments
+- Loading strategy
+  1. 
+    - load header -> magic, version, metadata length, pyramid length, framgents length
+    - load index pyramid
+  2.
+    - load 501k to save an additional http request -> parts of the fragments are also loaded -> or pyramid is incompleted -> reload pyramid
+
 A COMTiles archive mainly consists of a metdata, index and data section.  
 A COMTiles file archive has the following layout:  
+
+//TODO: correct Index uint32 and uint64
 ![concept](assets/concept.svg)
 
 ### Metadata
