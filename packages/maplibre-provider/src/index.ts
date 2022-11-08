@@ -19,8 +19,47 @@ export enum TileFetchStrategy {
  *   So with the first initial fetch all the unfragmented part of the index has to be fetched and can't be lazy loaded.
  */
 export class MapLibreComtProvider {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    private constructor() {}
+
+    comtCaches: Map<string, ComtCache>;
+    tileFetchStrategy: string;
+    
+    private constructor(tileFetchStrategy = TileFetchStrategy.BATCHED) {
+        this.comtCaches = new Map();
+        this.tileFetchStrategy = tileFetchStrategy === TileFetchStrategy.BATCHED ? 'getTileWithBatchRequest' : 'getTile';
+    }
+
+    getCache(url) {
+        if (!this.comtCaches.has(url)) {
+            this.comtCaches.set(url, ComtCache.createSync(url));
+        }
+        return this.comtCaches.get(url);
+    }
+
+    protocol = (params, callback) => {
+        if (params.type === 'json') {
+            const tilejson = { tiles: [params.url + "/{z}/{x}/{y}"] }
+            callback(null, tilejson, null, null);
+            return {
+                cancel: () => {},
+            };
+        }
+        else {
+            const cancellationToken = new CancellationToken();
+            const [, url, z, x, y] = params.url.match(/\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
+            const xyzIndex = {
+                x: parseInt(x, 10),
+                y: parseInt(y, 10),
+                z: parseInt(z, 10),
+            };
+            this.getCache(url)[this.tileFetchStrategy](xyzIndex, cancellationToken)
+                .then((tile) => callback(null, tile, null, null));
+            return {
+                cancel: () => {
+                    cancellationToken.cancel();
+                },
+            };
+        }
+    }
 
     /**
      * Adds a COMT provider to MapLibre for displaying the map tiles of a COMTiles archive.
@@ -28,48 +67,7 @@ export class MapLibreComtProvider {
      *
      * @param tileFetchStrategy Specifies if the tiles should be fetched in batches or tile by tile.
      */
-    static register(tileFetchStrategy = TileFetchStrategy.BATCHED): void {
-        let comtCache: ComtCache;
-        let fetchTiles: (index: XyzIndex, token: CancellationToken) => Promise<Uint8Array>;
-        maplibregl.addProtocol("comt", (params, tileHandler) => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const [tileUrl, url, z, x, y] = params.url.match(/comt:\/\/(.+)\/(\d+)\/(\d+)\/(\d+)/);
-            const cancellationToken = new CancellationToken();
-            const xyzIndex = {
-                x: parseInt(x, 10),
-                y: parseInt(y, 10),
-                z: parseInt(z, 10),
-            };
-
-            if (!comtCache) {
-                ComtCache.create(url, HeaderFetchStrategy.LAZY).then((cache) => {
-                    comtCache = cache;
-
-                    fetchTiles = (
-                        tileFetchStrategy === TileFetchStrategy.BATCHED
-                            ? comtCache.getTileWithBatchRequest
-                            : comtCache.getTile
-                    ).bind(comtCache);
-                    MapLibreComtProvider.fetchTile(xyzIndex, tileHandler, cancellationToken, fetchTiles);
-                });
-            } else {
-                MapLibreComtProvider.fetchTile(xyzIndex, tileHandler, cancellationToken, fetchTiles);
-            }
-
-            return {
-                cancel: () => {
-                    cancellationToken.cancel();
-                },
-            };
-        });
-    }
-
-    private static fetchTile(
-        xyzIndex: XyzIndex,
-        tileHandler,
-        cancellationToken: CancellationToken,
-        fetchTiles: (index: XyzIndex, token: CancellationToken) => Promise<Uint8Array>,
-    ): void {
-        fetchTiles(xyzIndex, cancellationToken).then((tile) => tileHandler(null, tile, null, null));
+    register(): void {
+        maplibregl.addProtocol("comt", this.protocol);
     }
 }
