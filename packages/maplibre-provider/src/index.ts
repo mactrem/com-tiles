@@ -66,8 +66,6 @@ export class MapLibreComtProvider {
     /**
      * Adds a COMT provider to MapLibre for displaying the map tiles of a COMTiles archive.
      * The COMT provider will be used when a source with a comt:// schema is used in a Mapbox style.
-     *
-     * @param tileFetchStrategy Specifies if the tiles should be fetched in batches or tile by tile.
      */
     register(): void {
         maplibregl.addProtocol("comt", this.protocol);
