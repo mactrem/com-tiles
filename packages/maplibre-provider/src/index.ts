@@ -23,7 +23,7 @@ export class MapLibreComtProvider {
     comtCaches: Map<string, ComtCache>;
     tileFetchStrategy: string;
     
-    private constructor(tileFetchStrategy = TileFetchStrategy.BATCHED) {
+    constructor(tileFetchStrategy = TileFetchStrategy.BATCHED) {
         this.comtCaches = new Map();
         this.tileFetchStrategy = tileFetchStrategy === TileFetchStrategy.BATCHED ? 'getTileWithBatchRequest' : 'getTile';
     }
