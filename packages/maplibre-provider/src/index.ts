@@ -29,10 +29,12 @@ export class MapLibreComtProvider {
     }
 
     getCache(url) {
-        if (!this.comtCaches.has(url)) {
-            this.comtCaches.set(url, ComtCache.createSync(url));
+        let cache = this.comtCaches.get(url);
+        if (!cache) {
+            cache = ComtCache.createSync(url);
+            this.comtCaches.set(url, cache);
         }
-        return this.comtCaches.get(url);
+        return cache;
     }
 
     protocol = (params, callback) => {
