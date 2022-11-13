@@ -127,6 +127,14 @@ export default class ComtCache {
     }
 
     /**
+     * @param comtUrl Url to object storage where the COMTiles archive is hosted.
+     * @param throttleTime Time to wait for batching up the tile requests.
+     */
+    static createSync(comtUrl: string, throttleTime = 5): ComtCache {
+        return new ComtCache(comtUrl, throttleTime);
+    }
+
+    /**
      * Fetches a map tile with the given XYZ index from the specified COMTiles archive.
      *
      * @param xyzIndex Index of the tile in the XYZ tiling scheme.
