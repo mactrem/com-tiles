@@ -65,9 +65,8 @@ via HTTP GET range requests. A COG is limited to raster data.
 A performant binary encoding for geographic data based on flatbuffers that can hold a collection of Simple Features including circular interpolations as defined by SQL-MM Part 3.
 
 ### PMTiles
-[PMTiles](https://github.com/protomaps/PMTiles) is a single-file archive format for pyramids of map tiles.
-The index of a PMTiles archive is structured in tile pyramids compared to the fragment based approach in a COMTiles archive.
-For a comparison of the latency see the following [video](https://www.youtube.com/watch?v=oqyQ3wo7n18).
+[PMTiles](https://github.com/protomaps/PMTiles) is a single-file archive format for directories of map tiles.
+The index of a PMTiles archive is structured in directories compared to the fragment based approach of a COMTiles archive.
 
 ## Use Cases
 - Displaying map tiles directly in the browser via a web mapping framework like MapLibreGL JS
