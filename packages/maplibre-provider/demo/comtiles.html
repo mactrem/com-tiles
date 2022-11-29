@@ -4,9 +4,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>MapLibre COMT Demo</title>
 
-    <script src="https://unpkg.com/maplibre-gl@2.1.7/dist/maplibre-gl.js"></script>
-    <link href="https://unpkg.com/maplibre-gl@2.1.7/dist/maplibre-gl.css" rel="stylesheet" />
-    <script src="http://localhost:9000/assets/maplibreComtProvider.js"></script>
+    <script src="./maplibre-gl.js"></script>
+    <link href="./maplibre-gl.css" rel="stylesheet"/>
+    <script src="./maplibreComtProvider.js"></script>
 
     <style>
         body, #map {
@@ -21,7 +21,7 @@
     comtiles.MapLibreComtProvider.register();
     const map = new maplibregl.Map({
         container: "map",
-        style: "http://localhost:9000/comtiles/style.json",
+        style: "http://localhost:9000/mapdata/style.json",
         center: [0, 0],
         zoom: 0,
     });
