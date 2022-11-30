@@ -6,8 +6,7 @@
 3. Use an object-storage or set up a MinIO docker-container for local development
 4. Upload the `mapdata.comt` to a "mapdata"-bucket
 5. Update and upload the `style.json`, `tiles.json` and `comtiles.html` files to the "mapdata"-bucket
-6. Upload the `style.json`, `tiles.json` and `comtiles.html` files to the "mapdata"-bucket
-7. Upload the fonts to a "assets"-bucket (fonts can be found in `@server/assets/fonts`)
+6. Upload the fonts to a "assets"-bucket (fonts can be found in `@server/assets/fonts`)
 
 As the `@com-tiles/maplibre-provider` package is currently not published, the transpiled file is accessed locally.
 
