@@ -25,7 +25,7 @@ For a detailed description of the format have a look at the [specification](pack
 
 ### How to run a demo
 
-[Demo.md](packages/maplibre-probider/demo/README.md)
+[Demo.md](packages/maplibre-provider/demo/README.md)
 
 In the following examples the europe tileset is based on a MBTiles database from [MapTiler](https://www.maptiler.com/data/) and converted to
 a COMTiles archive with the `@comt/mbtiles-converter`.
