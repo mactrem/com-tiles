@@ -22,6 +22,11 @@ For a detailed description of the format have a look at the [specification](pack
 - [@com-tiles/provider](packages/provider): For the integration in other web mapping libraries like OpenLayer or Leaflet the `@com-tiles/provider` package can be used.
 
 ## Demo
+
+### How to run a demo
+
+[Demo.md](packages/maplibre-provider/demo/README.md)
+
 In the following examples the europe tileset is based on a MBTiles database from [MapTiler](https://www.maptiler.com/data/) and converted to
 a COMTiles archive with the `@comt/mbtiles-converter`.
 The index for zoom level 0 to 10 is part of the initial fetch when the page is loaded.

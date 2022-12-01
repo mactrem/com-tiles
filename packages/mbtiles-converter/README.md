@@ -4,26 +4,33 @@ The `@com-tiles/mbtiles-converter` command line tool can be used to convert a MB
 and directly accessed from a browser with the [@com-tiles/maplibre-provider](../../maplibre-provider) library.
 The main focus of COMTiles is to significantly reduce costs and simplify the hosting of large raster and vector tilesets at global scale in the cloud.
 
-To use the `@com-tiles/mbtiles-converter` Node.js with version 16 or higher has to be installed on the system. 
-Use the following command to install the `@com-tiles/mbtiles-converter`
-````bash
-npm i -g @com-tiles/mbtiles-converter
-````
+## How to use
 
-To display the help for how to use the `convert-comtiles` command execute
+### Requirements
+
+In order to use `@com-tiles/mbtiles-converter` your system must have **Node.js v16 or higher**.
+
+### Build and link`@com-tiles/mbtiles-converter`
+````bash
+cd packages/mbtiles-converter
+npm run build
+npm run link
+````
+The command `convert-comtiles` should now be available on your system
+
+### Show help
 ````bash
 convert-comtiles -h
 ````
 
-For converting a MBTiles database `test.mbtiles` into a COMTiles archive `test.comt` execute
+### Example
 ````bash
-convert-comtiles -i test.mbtiles -o test.comt
+convert-comtiles -i input.mbtiles -o output.comt
 ````
 
-To specify until which zoom level the bounds of the tileset (TileMatrixLimits) should be queried from the db and not calculated 
-based on the bounds of the MBTiles metadata table use the `--maxZoomDbQuery` or `-m` option (defaults to 7).   
-It's common to have more tiles as an overview in the lower zoom levels then specified in the bounding box of the MBTiles metadata table.  
-This is a trade off because querying the limits for all zoom levels from the db takes very long.  
-````bash
-convert-comtiles -i test.mbtiles -o test.comt -m 9
-````
+### Options
+
+`-i, --inputFilePath <path>` → specify path and filename of the MBTiles database <br>
+`-o, --outputFilePath <path>` → specify path and filename of the COMT archive file <br>
+`-m, --maxZoomDbQuery <number>` → specify to which zoom level the TileMatrixLimits should be queried from the database and not calculated based on the bounds
+

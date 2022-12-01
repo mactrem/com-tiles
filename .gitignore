@@ -3,4 +3,4 @@ data/
 node_modules/
 .idea/
 TODO.txt
-
+!packages/maplibre-provider/demo/dist
