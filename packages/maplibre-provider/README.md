@@ -1,3 +1,7 @@
+## Running the demo
+
+[Demo.md](demo/README.md)
+
 ## @com-tiles/maplibre-provider
 
 The `@com-tiles/maplibre-provider` package can be used to access a COMTiles archive hosted on an cloud object storage like AWS S3 directly from the browser.  
