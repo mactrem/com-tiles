@@ -12,7 +12,7 @@ As the `@com-tiles/maplibre-provider` package is currently not published, the tr
 
 In order to work properly, you have to **enable CORS** in your object storage.
 
-**The conversion from MBTiles to COMTiles can take some time.** 
+**The conversion from MBTiles to COMTiles can take some time.**
 
 - Country extracts like germany < 1 min
 - Continent extracts like europe can take up to 30 minutes
