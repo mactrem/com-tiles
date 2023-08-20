@@ -2,16 +2,10 @@
 Based on the ideas of [Cloud Optimized GeoTIFF](https://www.cogeo.org/) and extended for the usage of raster and in particular vector map tilesets.
 COMTiles are a streamable and read optimized file archive for hosting map tiles at global scale on a cloud object storage.
 Currently most geospatial data formats (like MBTiles, Shapefiles, KML, ...) were developed only with the POSIX filesystem access in mind.
-COMTiles in contrast is designed to be hosted on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or server on the backend side.
+COMTiles in contrast is designed to be hosted on a cloud object storage like AWS S3 or Azure Blob Storage without the need for a database or tile server on the backend side.
 The map tiles can be accessed directly from a browser via HTTP GET range requests. Via COMTiles an object storage can be used as a spatial database regarding the visualization of map tiles.
-COMTiles aims to be a MBTiles database for the cloud.
-
-The main focus of COMTiles is to significantly reduce costs and simplify the hosting of large raster and vector tilesets at global scale
-in the cloud because no backend (database, server) is needed. 
-In addition the individual tile requests can also be batched to improve performance and in particular to reduce the storage costs because
-every HTTP range request on a cloud object storage has to be paid.
-This can reduce the number of tile requests by up to 90%. 
-On a 4K display with a vector tileset for example this can result in a reduction from 45 requests with the standard approach (tile by tile) to 5 requests with the tile batch approach.
+COMTiles aims to be a MBTiles database for the cloud. The main focus of COMTiles is to significantly reduce costs and simplify the hosting of large raster and vector tilesets at global scale
+in the cloud, as no dedicated tile backend is required. 
 
 For the basic concepts of COMTiles have a look at the lightning talk at the [OGC Cloud-Native Geospatial Outreach Event](https://youtu.be/2_q5NsgxyVE?t=24096). 
 For a detailed description of the format have a look at the [specification](packages/spec).
