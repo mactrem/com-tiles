@@ -16,6 +16,11 @@ On a 4K display with a vector tileset for example this can result in a reduction
 For the basic concepts of COMTiles have a look at the lightning talk at the [OGC Cloud-Native Geospatial Outreach Event](https://youtu.be/2_q5NsgxyVE?t=24096). 
 For a detailed description of the format have a look at the [specification](packages/spec).
 
+📝 For a more in-depth exploration of further optimizing COMTiles, please refer to the recent published 
+paper called [COMTILES: A CASE STUDY OF A CLOUD OPTIMIZED TILE ARCHIVE FORMAT FOR DEPLOYING PLANET-SCALE TILSETS IN THE CLOUD](https://isprs-archives.copernicus.org/articles/XLVIII-4-W7-2023/231/2023/isprs-archives-XLVIII-4-W7-2023-231-2023.pdf).
+The POC discussed in the paper is not yet integrated into this repository but can be found in the 
+[com-tiles-evaluation](https://github.com/mactrem/com-tiles-evaluation) repository.
+
 ## Tools
 - [@com-tiles/mbtiles-converter](packages/mbtiles-converter): To convert a MBTiles database to a COMTiles archive the `@com-tiles/mbtiles-converter` command line tool can be used.
 - [@com-tiles/maplibre-provider](packages/maplibre-provider): For displaying a COMTiles archive hosted on an object storage directly in the browser based on the MapLibre map framework the `@com-tiles/maplibre-provider`package can be used.
