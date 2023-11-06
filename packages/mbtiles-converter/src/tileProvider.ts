@@ -42,8 +42,6 @@ export default class TileProvider {
      * The tiles are arranged in row-major order.
      */
     async *getTilesInRowMajorOrder<T extends RecordType>(tileType: T): AsyncIterable<TileRecordType<T>> {
-        const minZoom = this.tileMatrixSet[0].zoom;
-        const maxZoom = this.tileMatrixSet.at(-1).zoom;
 
         const getTiles = (
             tileType === RecordType.SIZE
@@ -51,8 +49,8 @@ export default class TileProvider {
                 : this.repository.getTilesByRowMajorOrder
         ).bind(this.repository);
 
-        for (let zoom = minZoom; zoom <= maxZoom; zoom++) {
-            const tileMatrix = this.tileMatrixSet[zoom];
+        for (let tileMatrix of this.tileMatrixSet) {
+            const zoom = tileMatrix.zoom;
             const limits = tileMatrix.tileMatrixLimits;
 
             if (!TileProvider.useIndexFragmentation(tileMatrix)) {
