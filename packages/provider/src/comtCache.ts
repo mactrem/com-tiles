@@ -211,7 +211,7 @@ export default class ComtCache {
         const { x, y, z } = xyzIndex;
         /* COMTiles uses the y-axis alignment of the TMS spec which is flipped compared to xyz */
         const tmsY = (1 << z) - y - 1;
-        const limit = metadata.tileMatrixSet.tileMatrix[z].tileMatrixLimits;
+        const limit = metadata.tileMatrixSet.tileMatrix.find(obj => obj.zoom === z).tileMatrixLimits;
         if (x < limit.minTileCol || x > limit.maxTileCol || tmsY < limit.minTileRow || tmsY > limit.maxTileRow) {
             /* Requested tile not within the boundary ot the TileSet */
             return Optional.empty();
